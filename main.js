@@ -47,11 +47,99 @@
                 welcomeMessage: `群聊「${group.name || '群聊'}」已创建，成员会按顺序轮流回复。`,
                 systemPrompt: '这是一个多角色群聊容器。'
             };
+
+            // 群聊可能在 threadManager 加载后由导入/恢复流程注册，需补齐线程与长期记忆容器。
+            if (typeof threadManager !== 'undefined') {
+                if (!threadManager[group.id]) {
+                    threadManager[group.id] = { threads: [{ id: 1, name: '群聊', messages: [] }], currentThreadId: 1, longTermMemory: [] };
+                } else if (!Array.isArray(threadManager[group.id].longTermMemory)) {
+                    threadManager[group.id].longTermMemory = [];
+                }
+            }
         }
 
+        // ========== IndexedDB 存储层 - 替代 localStorage ==========
+        const IndexedDBStorage = (function() {
+            const DB_NAME = 'MySW_Storage';
+            const DB_VERSION = 1;
+            const STORE_NAME = 'keyvalue';
+            let db = null;
+            let initPromise = null;
+
+            function initDB() {
+                if (initPromise) return initPromise;
+                initPromise = new Promise((resolve, reject) => {
+                    const request = indexedDB.open(DB_NAME, DB_VERSION);
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => {
+                        db = request.result;
+                        resolve(db);
+                    };
+                    request.onupgradeneeded = (event) => {
+                        const database = event.target.result;
+                        if (!database.objectStoreNames.contains(STORE_NAME)) {
+                            database.createObjectStore(STORE_NAME, { keyPath: 'key' });
+                        }
+                    };
+                });
+                return initPromise;
+            }
+
+            async function setItem(key, value) {
+                await initDB();
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction(STORE_NAME, 'readwrite');
+                    const store = transaction.objectStore(STORE_NAME);
+                    store.put({ key, value, timestamp: Date.now() });
+                    transaction.oncomplete = () => resolve(true);
+                    transaction.onerror = () => reject(transaction.error);
+                });
+            }
+
+            async function getItem(key) {
+                await initDB();
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction(STORE_NAME, 'readonly');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.get(key);
+                    request.onsuccess = () => resolve(request.result ? request.result.value : null);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async function migrateFromLocalStorage() {
+                await initDB();
+                let migrated = 0;
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && !key.startsWith('STORAGE_MIGRATED_')) {
+                        const value = localStorage.getItem(key);
+                        if (value) {
+                            await setItem(key, value);
+                            migrated++;
+                        }
+                    }
+                }
+                if (migrated > 0) {
+                    localStorage.setItem('STORAGE_MIGRATED_FLAG', 'true');
+                    console.log(`✅ 已迁移 ${migrated} 条数据到 IndexedDB`);
+                }
+                return migrated;
+            }
+
+            return { initDB, setItem, getItem, migrateFromLocalStorage };
+        })();
+
         function setLocalStorageSafely(key, value, label = '数据') {
+            // 同时保存到 IndexedDB（无配额限制）
+            IndexedDBStorage.setItem(key, value).catch(() => {});
+            
             try {
                 localStorage.setItem(key, value);
+                // 同步清除 LocalStorageCache 的缓存，确保数据一致性
+                if (typeof LocalStorageCache !== 'undefined' && typeof LocalStorageCache.invalidate === 'function') {
+                    LocalStorageCache.invalidate(key);
+                }
                 return true;
             } catch (error) {
                 console.error(`${label} 保存失败:`, error);
@@ -93,7 +181,8 @@
         const commandPanelBtn = document.getElementById('command-panel-btn');
         const commandPanel = document.getElementById('command-panel');
         const uploadBtn = document.getElementById('upload-btn');
-        const imageUpload = document.getElementById('image-upload');
+        const fileUploadBtn = document.getElementById('file-upload-btn');
+        const fileUpload = document.getElementById('file-upload');
         const avatarUpload = document.getElementById('avatar-upload');
         const charAvatarUpload = document.getElementById('char-avatar-upload');
         const bubbleBgUpload = document.getElementById('bubble-bg-upload');
@@ -140,6 +229,15 @@
         const modelNameInput = document.getElementById('model-name');
         const fetchModelsBtn = document.getElementById('fetch-models-btn');
         const modelSelect = document.getElementById('model-select');
+        const enableMultimodalVisionCheckbox = document.getElementById('enable-multimodal-vision');
+        const imageCompressionMaxWidthInput = document.getElementById('image-compression-max-width');
+        const imageCompressionQualityInput = document.getElementById('image-compression-quality');
+        const ttsApiUrlInput = document.getElementById('tts-api-url');
+        const ttsApiKeyInput = document.getElementById('tts-api-key');
+        const ttsVoiceInput = document.getElementById('tts-voice');
+        const ttsSpeedInput = document.getElementById('tts-speed');
+        const ttsModelInput = document.getElementById('tts-model');
+        const ttsAutoReadCheckbox = document.getElementById('tts-auto-read');
 
         const maxContextRoundsInput = document.getElementById('max-context-rounds');
         const maxTokensInput = document.getElementById('max-tokens');
@@ -343,12 +441,11 @@
             });
         }
 
-        function init() {
+        async function init() {
             loadAllFriendsData();
             loadUserName();
             loadUserAvatar();
-            loadThreadManager();
-            loadBackground();
+            await loadThreadManager();
             loadChatSettings();
             initEmojiPicker();
             loadApiSettings();
@@ -384,6 +481,61 @@
                     });
                 });
             }
+
+            // 虚拟滚动 - 监听滚动事件
+            const chatContainer = chatMessages.parentElement;
+            if (chatContainer) {
+                chatContainer.addEventListener('scroll', () => {
+                    requestAnimationFrame(handleScrollForVirtual);
+                });
+            }
+
+            // IndexedDB 自动迁移旧数据
+            if ('indexedDB' in window) {
+                IndexedDBStorage.migrateFromLocalStorage().catch(() => {});
+            }
+
+            // ========== AI 主动冒泡功能（低概率） ==========
+            startGroupChatProactiveBubble();
+        }
+
+        // ========== AI 主动冒泡功能 ==========
+        let proactiveBubbleTimer = null;
+        let lastUserActivityTime = Date.now();
+
+        // 记录用户活动时间
+        function updateUserActivity() {
+            lastUserActivityTime = Date.now();
+        }
+
+        function startGroupChatProactiveBubble() {
+            if (proactiveBubbleTimer) return;
+
+            // 每 3 分钟检查一次是否要主动冒泡
+            proactiveBubbleTimer = setInterval(() => {
+                // 只在群聊中生效
+                if (!isGroupChat()) return;
+
+                // 用户 5 分钟内有活动，不打扰
+                const idleMinutes = (Date.now() - lastUserActivityTime) / 60000;
+                if (idleMinutes < 5) return;
+
+                // 低概率触发：5% 概率
+                if (Math.random() > 0.05) return;
+
+                // 随机选一个 AI 主动冒泡
+                const group = groupManager[currentFriendId];
+                if (!group) return;
+
+                const ids = (group.memberIds || []).filter(id => friendsData[id]);
+                if (ids.length === 0) return;
+
+                const randomMember = ids[Math.floor(Math.random() * ids.length)];
+                
+                // 主动说一句话
+                callGroupMemberAI('（群聊冷场了，请你主动说一句话来活跃气氛，或者对当前话题发表一下看法。）', currentFriendId, randomMember);
+
+            }, 3 * 60 * 1000); // 每 3 分钟检查一次
         }
 
         function checkViewport() {
@@ -411,7 +563,7 @@
                 sidebarOverlay.classList.remove('show');
                 viewToggleIcon.className = 'ri-smartphone-line';
             }
-            localStorage.setItem('isMobileView', mobile.toString());
+            setLocalStorageSafely('isMobileView', mobile.toString());
         }
 
         viewToggleBtn.addEventListener('click', () => {
@@ -448,7 +600,7 @@
 
         function initEmojiPicker() {
             emojiPicker.innerHTML = '';
-            const emojis = ['😀', '', '', '', '', '', '', '', '🙂', '', '😉', '😊', '', '', '', '', '', '', '️', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '😶', '😏', '😒', '', '', '', '😌', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '☹️', '😮', '', '😲', '', '', '', '', '', '😰', '', '😢', '', '😱', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '️', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''];
+            const emojis = ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙', '🥲', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '🥴', '😵', '🤯', '🤠', '🥳', '😎', '🤓', '🧐', '😕', '😟', '🙁', '☹️', '😮', '😯', '😲', '😳', '🥺', '😦', '😧', '😨', '😰', '😥', '😢', '😭', '😱', '😖', '😣', '😞', '😓', '😩', '😫', '🥱', '😤', '😡', '😠', '🤬', '😈', '👿', '💀', '☠️', '💩', '🤡', '👹', '👺', '👻', '👽', '👾', '🤖', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '👍', '👎', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✌️', '🤞', '🤟', '🤘', '🤙', '👋', '🖐️', '✋', '🖖', '👌', '🤌', '🤏', '👈', '👉', '👆', '👇', '☝️', '✊', '👊', '🤛', '🤜', '💪', '🦾'];
             emojis.forEach(emoji => {
                 const item = document.createElement('div');
                 item.classList.add('emoji-item');
@@ -474,7 +626,7 @@
                 if (!url) return;
                 const stickers = JSON.parse(localStorage.getItem('myStickers') || '[]');
                 stickers.push(url.trim());
-                localStorage.setItem('myStickers', JSON.stringify(stickers));
+                setLocalStorageSafely('myStickers', JSON.stringify(stickers));
                 initEmojiPicker();
             });
             emojiPicker.appendChild(addSticker);
@@ -596,7 +748,8 @@
             });
             if (currentFriendId === friendId || getMessages().some(msg => msg.friendId === friendId)) {
                 currentFriendNameElement.textContent = getFriendDisplayName(currentFriendId);
-                renderMessages(currentFriendId);
+                // 性能优化：只增量更新已渲染消息中的头像，避免全量重绘
+                updateRenderedMessagesAppearance();
             }
             renderFriendList();
             showToast(`${getFriendDisplayName(friendId)} 的头像已更新`, "ri-check-line");
@@ -618,7 +771,7 @@
             const settings = JSON.parse(localStorage.getItem('friendSettings') || '{}');
             if (!settings[friendId]) settings[friendId] = {};
             settings[friendId].remark = remark;
-            localStorage.setItem('friendSettings', JSON.stringify(settings));
+            setLocalStorageSafely('friendSettings', JSON.stringify(settings));
         }
 
         function isFriendPinned(friendId) {
@@ -630,7 +783,7 @@
             const settings = JSON.parse(localStorage.getItem('friendSettings') || '{}');
             if (!settings[friendId]) settings[friendId] = {};
             settings[friendId].pinned = pinned;
-            localStorage.setItem('friendSettings', JSON.stringify(settings));
+            setLocalStorageSafely('friendSettings', JSON.stringify(settings));
         }
 
         function getFriendGroup(friendId) {
@@ -644,7 +797,7 @@
             const settings = JSON.parse(localStorage.getItem('friendSettings') || '{}');
             if (!settings[friendId]) settings[friendId] = {};
             settings[friendId].group = groupName;
-            localStorage.setItem('friendSettings', JSON.stringify(settings));
+            setLocalStorageSafely('friendSettings', JSON.stringify(settings));
             if (friendsData[friendId].isCustom) saveCustomFriendsData();
         }
 
@@ -686,9 +839,10 @@
         function saveUserName(newName) {
             if (!newName || newName.trim() === '') return;
             myUserName = newName.trim();
-            localStorage.setItem('myUserName', myUserName);
+            setLocalStorageSafely('myUserName', myUserName);
             updateUserNameDisplay();
-            renderMessages(currentFriendId);
+            // 性能优化：只增量更新已渲染消息中的用户名，避免全量重绘
+            updateRenderedMessagesAppearance();
         }
         function updateUserNameDisplay() {
             myDisplayNameElement.textContent = myUserName;
@@ -708,8 +862,23 @@
         }
 
 
-        function loadThreadManager() {
-            const stored = localStorage.getItem('threadManager_v2');
+        async function loadThreadManager() {
+            // 优先从 IndexedDB 读取（无配额限制），降级到 localStorage
+            let stored = null;
+            try {
+                stored = await IndexedDBStorage.getItem('threadManager_v2');
+                if (stored) {
+                    console.log('✅ 从 IndexedDB 加载聊天记录成功');
+                }
+            } catch(e) {
+                console.log('⚠️ IndexedDB 读取失败，回退到 localStorage');
+            }
+            
+            // IndexedDB 读不到才用 localStorage
+            if (!stored) {
+                stored = localStorage.getItem('threadManager_v2');
+            }
+            
             if (stored) {
                 try { threadManager = JSON.parse(stored); } catch (e) { threadManager = {}; }
             }
@@ -734,6 +903,7 @@
         const saveThreadsToLocalStorage = saveThreadManager;
         function getCurrentThread() {
             const friendData = threadManager[currentFriendId];
+            if (!friendData) return null;
             return friendData.threads.find(t => t.id === friendData.currentThreadId);
         }
         function getMessages() {
@@ -742,7 +912,7 @@
         }
         function getNextMessageId() {
             messageSeq += 1;
-            localStorage.setItem('messageSeq', String(messageSeq));
+            setLocalStorageSafely('messageSeq', String(messageSeq));
             return messageSeq;
         }
 
@@ -783,7 +953,7 @@
             draftSaveTimer = setTimeout(() => {
                 if (currentFriendId) {
                     const draftKey = `messageDraft_${currentFriendId}`;
-                    localStorage.setItem(draftKey, messageInput.value);
+                    setLocalStorageSafely(draftKey, messageInput.value);
                 }
             }, 300);
         }
@@ -806,118 +976,6 @@
             }
         }
 
-        function getLongTermMemory() {
-            return threadManager[currentFriendId]?.longTermMemory || [];
-        }
-
-        function updateLongTermMemory(newMemories, friendId = currentFriendId) {
-            if (!enableLongTermMemoryCheckbox.checked) return;
-
-            const friendData = threadManager[friendId];
-            if (!friendData) return;
-            if (!Array.isArray(friendData.longTermMemory)) friendData.longTermMemory = [];
-
-            let memoryChanged = false;
-            newMemories.forEach(newMem => {
-                const existingIndex = friendData.longTermMemory.findIndex(m => m.key === newMem.key);
-                if (existingIndex >= 0) {
-                    if (friendData.longTermMemory[existingIndex].value !== newMem.value) {
-                        friendData.longTermMemory[existingIndex] = newMem;
-                        memoryChanged = true;
-                    }
-                } else {
-                    friendData.longTermMemory.push(newMem);
-                    memoryChanged = true;
-                }
-            });
-
-            if (memoryChanged) {
-                saveThreadManager();
-            }
-        }
-
-        // 渲染记忆档案列表
-        function renderMemoryProfileList() {
-            const container = document.getElementById('memory-profile-list');
-            if (!container) return;
-
-            const memories = getLongTermMemory();
-
-            if (!memories || memories.length === 0) {
-                container.innerHTML = '<p style="color: #888; font-style: italic; text-align: center; padding: 20px;">暂无记忆档案</p>';
-                return;
-            }
-
-            container.innerHTML = memories.map((mem, index) => `
-                <div class="memory-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background-color: #383b45; border-radius: 8px; border: 1px solid transparent; transition: all 0.2s;" onmouseenter="this.style.borderColor='#e6c78a'" onmouseleave="this.style.borderColor='transparent'">
-                    <div style="flex: 1; min-width: 0;">
-                        <div style="font-weight: 600; color: #e6c78a; margin-bottom: 4px; font-size: 0.95em;">${escapeHtml(mem.key)}</div>
-                        <div style="color: #ccc; font-size: 0.9em; word-break: break-word;">${escapeHtml(mem.value)}</div>
-                    </div>
-                    <div style="display: flex; gap: 8px; margin-left: 12px; flex-shrink: 0;">
-                        <button class="btn btn-sm btn-outline" onclick="editMemoryItem(${index})" title="编辑" style="padding: 6px 10px; font-size: 0.85em;">
-                            <i class="ri-edit-line"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteMemoryItem(${index})" title="删除" style="padding: 6px 10px; font-size: 0.85em; background-color: #f44336; color: white; border: none;">
-                            <i class="ri-delete-bin-line"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // 编辑记忆项
-        function editMemoryItem(index) {
-            const memories = getLongTermMemory();
-            if (!memories || index < 0 || index >= memories.length) return;
-
-            const memory = memories[index];
-            const newKey = prompt('编辑记忆键名:', memory.key);
-            if (newKey === null) return;
-            if (!newKey.trim()) {
-                showToast('记忆键名不能为空', 'ri-error-warning-line');
-                return;
-            }
-
-            const newValue = prompt('编辑记忆内容:', memory.value);
-            if (newValue === null) return;
-            if (!newValue.trim()) {
-                showToast('记忆内容不能为空', 'ri-error-warning-line');
-                return;
-            }
-
-            const friendData = threadManager[currentFriendId];
-            if (!friendData) return;
-
-            // 检查键名是否重复（排除当前项）
-            const duplicateIndex = friendData.longTermMemory.findIndex((m, i) => i !== index && m.key === newKey.trim());
-            if (duplicateIndex >= 0) {
-                showToast('记忆键名已存在', 'ri-error-warning-line');
-                return;
-            }
-
-            friendData.longTermMemory[index] = { key: newKey.trim(), value: newValue.trim() };
-            saveThreadManager();
-            renderMemoryProfileList();
-            showToast('记忆已更新', 'ri-check-line');
-        }
-
-        // 删除记忆项
-        function deleteMemoryItem(index) {
-            const memories = getLongTermMemory();
-            if (!memories || index < 0 || index >= memories.length) return;
-
-            const memory = memories[index];
-            if (!confirm(`确定要删除这条记忆吗？\n\n"${memory.key}: ${memory.value}"`)) return;
-
-            const friendData = threadManager[currentFriendId];
-            if (!friendData) return;
-
-            friendData.longTermMemory.splice(index, 1);
-            saveThreadManager();
-            renderMemoryProfileList();
-            showToast('记忆已删除', 'ri-check-line');
-        }
 
         function clearCurrentThread() {
             const friendData = threadManager[currentFriendId];
@@ -1001,8 +1059,25 @@
         }
 
 
+        // ========== 性能优化：角色列表渲染防抖 ==========
+        let renderFriendListDebounceTimer = null;
+
         function renderFriendList() {
+            // 防抖：100ms 内多次调用只执行最后一次
+            if (renderFriendListDebounceTimer) {
+                clearTimeout(renderFriendListDebounceTimer);
+            }
+            renderFriendListDebounceTimer = setTimeout(() => {
+                renderFriendListDebounceTimer = null;
+                _renderFriendListImpl();
+            }, 100);
+        }
+
+        function _renderFriendListImpl() {
             friendList.innerHTML = '';
+
+            // 使用 DocumentFragment 批量插入，减少重排
+            const fragment = document.createDocumentFragment();
 
 
             const searchTerm = (friendSearchInput?.value || '').trim().toLowerCase();
@@ -1092,17 +1167,17 @@
 
                                 const collapsedGroups = JSON.parse(localStorage.getItem('collapsedGroups') || '{}');
                                 collapsedGroups[currentGroup] = isCollapsed;
-                                localStorage.setItem('collapsedGroups', JSON.stringify(collapsedGroups));
+                                setLocalStorageSafely('collapsedGroups', JSON.stringify(collapsedGroups));
                             }
                         }
                     });
 
-                    friendList.appendChild(groupHeader);
+                    fragment.appendChild(groupHeader);
 
 
                     groupContent = document.createElement('div');
                     groupContent.classList.add('friend-group-content');
-                    friendList.appendChild(groupContent);
+                    fragment.appendChild(groupContent);
                 }
 
                 groupCount++;
@@ -1116,7 +1191,7 @@
 
                 item.innerHTML = `
                     ${isBatchEditMode && friend.isCustom ? `<input type="checkbox" class="friend-batch-checkbox" data-friend-id="${friend.id}" ${selectedCustomFriends.has(friend.id) ? 'checked' : ''}>` : ''}
-                    <img src="${friend.avatar}" alt="${friend.name}" class="friend-avatar" data-friend-id="${friend.id}">
+                    <img data-src="${friend.avatar}" alt="${friend.name}" class="friend-avatar lazy-avatar" data-friend-id="${friend.id}">
                     <span class="friend-pin"><i class="ri-pushpin-2-fill"></i></span>
                     <div style="flex:1;">
                         <div class="friend-name">${displayName}${displayName !== friend.name ? `<span style="font-size:0.8em;color:#888">(${friend.name})</span>` : ''}</div>
@@ -1173,6 +1248,9 @@
             });
 
 
+            // 一次性插入所有 DOM，减少重排
+            friendList.appendChild(fragment);
+
             const headers = friendList.querySelectorAll('.friend-group-header');
             headers.forEach(header => {
                 const groupName = header.getAttribute('data-group');
@@ -1194,6 +1272,45 @@
                         content.classList.add('collapsed');
                     }
                 }
+            });
+
+            // ========== 性能优化：头像懒加载 ==========
+            initLazyAvatars();
+        }
+
+        // 头像懒加载观察者
+        let lazyAvatarObserver = null;
+
+        function initLazyAvatars() {
+            // 如果浏览器不支持 IntersectionObserver，直接加载所有头像
+            if (!('IntersectionObserver' in window)) {
+                document.querySelectorAll('.lazy-avatar').forEach(img => {
+                    img.src = img.dataset.src;
+                    img.classList.remove('lazy-avatar');
+                });
+                return;
+            }
+
+            // 销毁旧的观察者
+            if (lazyAvatarObserver) {
+                lazyAvatarObserver.disconnect();
+            }
+
+            // 创建新的观察者
+            lazyAvatarObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.src = img.dataset.src;
+                        img.classList.remove('lazy-avatar');
+                        lazyAvatarObserver.unobserve(img);
+                    }
+                });
+            }, { rootMargin: '100px' }); // 提前 100px 开始加载
+
+            // 观察所有懒加载头像
+            document.querySelectorAll('.lazy-avatar').forEach(img => {
+                lazyAvatarObserver.observe(img);
             });
         }
 
@@ -1376,10 +1493,11 @@
             const friend = friendsData[friendId];
             if (friend) {
                 currentFriendNameElement.textContent = getFriendDisplayName(friendId);
+                currentFriendNameElement.title = isGroupChat(friendId) ? '双击管理群聊成员、发言顺序和活跃度' : '';
             }
 
 
-            localStorage.setItem('lastChatId', friendId);
+            setLocalStorageSafely('lastChatId', friendId);
 
             renderFriendList();
             renderMessages(friendId);
@@ -1394,39 +1512,182 @@
             }
         }
 
+        // ========== 虚拟滚动配置 ==========
+        const VIRTUAL_SCROLL_CONFIG = {
+            enabled: true,           // 开启虚拟滚动
+            messageHeight: 120,      // 每条消息预估高度（px）
+            overscan: 5,             // 上下预渲染的消息数量
+            minMessagesForVirtual: 80 // 超过多少条消息才启用虚拟滚动
+        };
+        
+        // 虚拟滚动状态
+        let virtualScrollState = {
+            messageHeights: new Map(), // 消息实际高度缓存
+            scrollTop: 0,
+            containerHeight: 0,
+            startIndex: 0,
+            endIndex: 0
+        };
+
+        // renderMessages 防抖 - 防止短时间内多次触发全量重绘
+        let renderMessagesDebounceTimer = null;
+        
         function renderMessages(friendId) {
-            chatMessages.innerHTML = '';
-            let messages = getMessages();
+            // 防抖：100ms 内多次调用只执行最后一次
+            if (renderMessagesDebounceTimer) {
+                clearTimeout(renderMessagesDebounceTimer);
+            }
+            renderMessagesDebounceTimer = setTimeout(() => {
+                renderMessagesDebounceTimer = null;
+                _renderMessagesImpl(friendId);
+            }, 100);
+        }
+        
+        function _renderMessagesImpl(friendId) {
+            // 检查性能修复是否已禁用虚拟滚动
+            const perfFixDisabled = window._perfFixDisabledVirtualScroll === true;
+            
+            // 获取消息列表：
+            // - 始终使用 _realGetMessages 获取完整消息列表（如果存在）
+            // - 这样可以避免 performance-fix.js 对 getMessages 的 API 限制（最多 40 条）影响渲染
+            // - 渲染限制会在后续通过 displayLimitRounds 设置或 smartRenderMessages 的逻辑应用
+            const allMessages = (typeof window._realGetMessages === 'function') 
+                ? window._realGetMessages() 
+                : getMessages();
+            
+            let messages = allMessages;
             const friend = friendsData[friendId];
 
             // 应用显示限制设置 - 按对话轮数截取
             const chatSettings = getChatSettings();
             if (chatSettings.enableDisplayLimit && chatSettings.displayLimitRounds > 0) {
                 const limitRounds = Math.max(1, chatSettings.displayLimitRounds);
-                // 一轮对话 = 2 条消息（用户 + AI），所以需要的消息数量是轮数 * 2
                 const maxMessages = limitRounds * 2;
                 if (messages.length > maxMessages) {
                     messages = messages.slice(-maxMessages);
                 }
             }
 
-            if (messages.length === 0) {
-                // 首次对话时，发送一条系统提示消息帮助 AI 进入角色
-                appendMessageToDOM('other', friend.welcomeMessage, 'text', friend.avatar, getFriendDisplayName(friendId));
-
-                // 添加一个隐藏的初始系统消息，强化角色设定（不显示在 UI 中）
-                const initialSystemMessage = `现在正式开始与${getFriendDisplayName(friendId)}的对话。请完全进入角色，以角色的身份、性格和说话风格回应用户。记住：你就是${friend.name}，不是 AI 助手。`;
-            } else {
-                messages.forEach(msg => {
-                    const speakerId = msg.friendId || friendId;
-                    const speaker = friendsData[speakerId] || friend;
-                    const avatarSrc = msg.role === 'mine' ? inputAvatar.src : speaker.avatar;
-                    const nickName = msg.role === 'mine' ? myUserName : getFriendDisplayName(speakerId);
-                    appendMessageToDOM(msg.role, msg.content, msg.type, avatarSrc, nickName, msg.isProactive, msg.id || msg.timestamp, msg);
-                });
+            // 性能修复补丁已禁用虚拟滚动时，强制使用简单渲染
+            // 消息较少时不启用虚拟滚动
+            if (perfFixDisabled || !VIRTUAL_SCROLL_CONFIG.enabled || messages.length < VIRTUAL_SCROLL_CONFIG.minMessagesForVirtual) {
+                renderMessagesSimple(messages, friend, friendId);
+                scrollToBottom();
+                if (chatSearchInput?.value) updateChatSearch();
+                return;
             }
+
+            // 启用虚拟滚动
+            renderMessagesVirtual(messages, friend, friendId);
             scrollToBottom();
             if (chatSearchInput?.value) updateChatSearch();
+        }
+
+        // 简单渲染（消息少的时候用）
+        function renderMessagesSimple(messages, friend, friendId) {
+            chatMessages.innerHTML = '';
+            chatMessages.style.paddingTop = '';
+            chatMessages.style.paddingBottom = '';
+
+            if (messages.length === 0) {
+                appendMessageToDOM('other', friend.welcomeMessage, 'text', friend.avatar, getFriendDisplayName(friendId));
+                return;
+            }
+
+            messages.forEach(msg => {
+                const speakerId = msg.friendId || friendId;
+                const speaker = friendsData[speakerId] || friend;
+                const avatarSrc = msg.role === 'mine' ? inputAvatar.src : speaker.avatar;
+                const nickName = msg.role === 'mine' ? myUserName : getFriendDisplayName(speakerId);
+                appendMessageToDOM(msg.role, msg.content, msg.type, avatarSrc, nickName, msg.isProactive, msg.id || msg.timestamp, msg);
+            });
+        }
+
+        // 虚拟滚动渲染（消息多的时候用）
+        function renderMessagesVirtual(messages, friend, friendId) {
+            const container = chatMessages.parentElement;
+            virtualScrollState.containerHeight = container.clientHeight;
+            virtualScrollState.scrollTop = container.scrollTop;
+
+            // 计算可视区域范围
+            const { startIndex, endIndex, totalHeight, offsetTop } = calculateVisibleRange(messages);
+
+            virtualScrollState.startIndex = startIndex;
+            virtualScrollState.endIndex = endIndex;
+
+            // 使用 padding 撑起滚动高度
+            chatMessages.style.paddingTop = `${offsetTop}px`;
+            chatMessages.style.paddingBottom = `${Math.max(0, totalHeight - offsetTop - (endIndex - startIndex) * VIRTUAL_SCROLL_CONFIG.messageHeight)}px`;
+            chatMessages.innerHTML = '';
+
+            // 只渲染可视区域内的消息
+            const visibleMessages = messages.slice(startIndex, endIndex);
+            
+            visibleMessages.forEach(msg => {
+                const speakerId = msg.friendId || friendId;
+                const speaker = friendsData[speakerId] || friend;
+                const avatarSrc = msg.role === 'mine' ? inputAvatar.src : speaker.avatar;
+                const nickName = msg.role === 'mine' ? myUserName : getFriendDisplayName(speakerId);
+                appendMessageToDOM(msg.role, msg.content, msg.type, avatarSrc, nickName, msg.isProactive, msg.id || msg.timestamp, msg);
+            });
+        }
+
+        // 计算可视区域内的消息范围
+        function calculateVisibleRange(messages) {
+            const config = VIRTUAL_SCROLL_CONFIG;
+            const scrollTop = virtualScrollState.scrollTop;
+            const containerHeight = virtualScrollState.containerHeight || 600;
+
+            // 计算起始和结束索引
+            let startIndex = Math.floor(scrollTop / config.messageHeight);
+            let visibleCount = Math.ceil(containerHeight / config.messageHeight) + config.overscan * 2;
+            
+            startIndex = Math.max(0, startIndex - config.overscan);
+            let endIndex = Math.min(messages.length, startIndex + visibleCount);
+
+            const offsetTop = startIndex * config.messageHeight;
+            const totalHeight = messages.length * config.messageHeight;
+
+            return { startIndex, endIndex, offsetTop, totalHeight };
+        }
+
+        // 滚动事件处理 - 更新虚拟滚动
+        function handleScrollForVirtual() {
+            const messages = getMessages();
+            if (messages.length < VIRTUAL_SCROLL_CONFIG.minMessagesForVirtual) return;
+
+            const container = chatMessages.parentElement;
+            const scrollTop = container.scrollTop;
+            
+            // 滚动位置变化不大时不重新渲染
+            if (Math.abs(scrollTop - virtualScrollState.scrollTop) < VIRTUAL_SCROLL_CONFIG.messageHeight) {
+                return;
+            }
+
+            virtualScrollState.scrollTop = scrollTop;
+            const friend = friendsData[currentFriendId];
+            renderMessagesVirtual(messages, friend, currentFriendId);
+        }
+
+        // ========== 性能优化：增量更新头像和用户名，避免全量重绘 ==========
+        function updateRenderedMessagesAppearance() {
+            // 只更新已渲染消息中的头像和用户名，不重新渲染整个聊天记录
+            const messages = chatMessages.querySelectorAll('.msg');
+            messages.forEach(msg => {
+                const img = msg.querySelector('img');
+                const nameSpan = msg.querySelector('.name span:first-child');
+                
+                if (msg.classList.contains('mine')) {
+                    // 更新用户自己的头像和名字
+                    if (img) img.src = inputAvatar.src;
+                    if (nameSpan) nameSpan.textContent = myUserName;
+                } else {
+                    // 更新AI角色头像和名字（如果是当前角色）
+                    const friend = friendsData[currentFriendId];
+                    if (img && friend) img.src = friend.avatar;
+                    if (nameSpan && friend) nameSpan.textContent = getFriendDisplayName(currentFriendId);
+                }
+            });
         }
 
         function applyBubbleTextStyle(bubble) {
@@ -1461,6 +1722,10 @@
 
             if (!text || text.trim().length === 0) return [];
 
+            // Markdown 结构（代码块、列表、表格、引用等）不能按标点拆散，否则会破坏渲染语义。
+            const hasMarkdownStructure = /```|^\s{0,3}([-*+]\s+|\d+\.\s+|>\s+)|^\s*\|.+\|\s*$/m.test(text);
+            if (hasMarkdownStructure) return [text];
+
             const result = [];
 
             // 如果文本长度小于等于设定值，不分段直接返回
@@ -1469,7 +1734,7 @@
                 return result;
             }
 
-            const paragraphs = text.split(/\n+/);
+            const paragraphs = text.split(/\n{2,}/);
 
             for (const paragraph of paragraphs) {
                 const trimmedPara = paragraph.trim();
@@ -1734,6 +1999,13 @@
                         img.style.maxWidth = '100%';
                         win.document.body.appendChild(img);
                     });
+                } else if (type === 'video') {
+                    bubble = document.createElement('video');
+                    bubble.classList.add('bubble', 'message-video');
+                    bubble.src = segment;
+                    bubble.controls = true;
+                    bubble.style.maxWidth = '100%';
+                    bubble.style.borderRadius = '12px';
                 } else if (type === 'audio') {
                     bubble = document.createElement('div');
                     bubble.classList.add('bubble', 'audio-bubble');
@@ -1769,6 +2041,7 @@
                 if (index === 0) {
                     const actionsDiv = document.createElement('div');
                     actionsDiv.className = 'message-actions';
+                    actionsDiv.dataset.messageId = msgDiv.dataset.messageId; // 绑定相同的 messageId 方便查找删除
                     if (role === 'other' && type === 'text' && showRegenerateBtnCheckbox.checked) {
                         const regenerateBtn = document.createElement('div');
                         regenerateBtn.className = 'regenerate-btn';
@@ -1804,7 +2077,7 @@
                         branchBtn.addEventListener('click', () => createBranchFromMessage(msgDiv.dataset.messageId));
                         actionsDiv.appendChild(branchBtn);
                     }
-                    if (actionsDiv.children.length > 0) chatMessages.appendChild(actionsDiv);
+                    if (actionsDiv.children.length > 0) contentDiv.appendChild(actionsDiv);
                 }
             });
         }
@@ -1936,19 +2209,51 @@
             friendData.currentThreadId = newId;
             saveThreadManager();
             renderFriendList();
-            renderMessages(currentFriendId);
+            // 使用原始渲染函数，确保新分支的消息完整显示
+            if (typeof window._originalRenderMessages === 'function') {
+                window._originalRenderMessages(currentFriendId);
+            } else {
+                renderMessages(currentFriendId);
+            }
             showToast('已从此处创建新对话分支', 'ri-git-branch-line');
         }
 
         function removeRenderedMessagesFrom(messageId) {
-            const target = chatMessages.querySelector(`[data-message-id="${messageId}"]`) || chatMessages.querySelector(`[data-message-id="${getMessageIdBase(messageId)}"]`);
-            if (!target) return false;
-            let node = target;
-            while (node) {
-                const next = node.nextSibling;
-                node.remove();
-                node = next;
+            const baseId = getMessageIdBase(messageId);
+            // 获取所有消息元素，按 data-message-id 属性匹配
+            const allMessageElements = Array.from(chatMessages.querySelectorAll('.message[data-message-id]'));
+            
+            // 找到目标消息的索引
+            let targetIndex = -1;
+            for (let i = 0; i < allMessageElements.length; i++) {
+                const el = allMessageElements[i];
+                const elId = getMessageIdBase(el.dataset.messageId);
+                if (elId === baseId) {
+                    targetIndex = i;
+                    break;
+                }
             }
+            
+            if (targetIndex === -1) return false;
+            
+            // 删除从目标消息开始的所有后续消息
+            for (let i = targetIndex; i < allMessageElements.length; i++) {
+                const el = allMessageElements[i];
+                const msgId = el.dataset.messageId;
+                // 同时删除消息元素和相关的操作按钮
+                el.remove();
+                const actionsEl = chatMessages.querySelector(`.message-actions[data-message-id="${msgId}"]`);
+                if (actionsEl) actionsEl.remove();
+            }
+            
+            // 如果开启了性能修复的智能渲染，需要重新渲染以恢复正确的显示状态
+            if (typeof window._originalRenderMessages === 'function' && typeof currentFriendId !== 'undefined') {
+                // 延迟一小段时间，等待数据层修改生效后再重新渲染
+                setTimeout(() => {
+                    window._originalRenderMessages(currentFriendId);
+                }, 50);
+            }
+            
             return true;
         }
 
@@ -2042,9 +2347,12 @@ AI：${aiResponse}
                     } catch (e) {
                         console.warn('快捷回复解析失败:', e);
                     }
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
                 }
-            } catch (e) {
-                console.error('生成快捷回复失败:', e);
+            } catch (error) {
+                const friendlyError = ApiModule.handleApiError(error, '生成快捷回复');
+                showToast(friendlyError, 'ri-error-warning-line');
             }
         }
 
@@ -2128,115 +2436,13 @@ AI：${aiResponse}
                 globalSearchResults.hidden = true;
                 globalSearchResults.innerHTML = '';
             }
+            // 仅重新渲染好友列表，避免不必要的消息重绘导致卡顿
             renderFriendList();
-            renderMessages(currentFriendId);
+            // 移除 renderMessages() 调用 - 功能开关变更不需要重新渲染所有聊天消息
+            // 只有气泡样式、显示限制等真正影响消息显示的设置变更时才需要重绘
             if (emojiPicker) initEmojiPicker();
         }
 
-        function loadChatSettings() {
-            const settings = JSON.parse(localStorage.getItem('chatSettings'));
-            if (settings) {
-                maxContextRoundsInput.value = settings.maxContextRounds !== undefined ? settings.maxContextRounds : 0;
-                maxTokensInput.value = settings.maxTokens !== undefined ? settings.maxTokens : 1024;
-                enableLongTermMemoryCheckbox.checked = settings.enableLongTermMemory !== undefined ? settings.enableLongTermMemory : true;
-                enableProactiveCareCheckbox.checked = settings.enableProactiveCare !== undefined ? settings.enableProactiveCare : false;
-                messageDebounceInput.value = settings.messageDebounce !== undefined ? settings.messageDebounce : 30;
-                enableLazyModeCheckbox.checked = settings.enableLazyMode !== undefined ? settings.enableLazyMode : false;
-                showRegenerateBtnCheckbox.checked = settings.showRegenerateBtn !== undefined ? settings.showRegenerateBtn : true;
-                enableRealTimeCheckbox.checked = settings.enableRealTime !== undefined ? settings.enableRealTime : false;
-                enableStreamingInputCheckbox.checked = settings.enableStreamingInput !== undefined ? settings.enableStreamingInput : true;
-                bubbleWidthPercentInput.value = settings.bubbleWidthPercent !== undefined ? settings.bubbleWidthPercent : 85;
-                bubbleWidthSlider.value = settings.bubbleWidthPercent !== undefined ? settings.bubbleWidthPercent : 85;
-                enableMessageSegmentationCheckbox.checked = settings.enableMessageSegmentation !== undefined ? settings.enableMessageSegmentation : false;
-                charsPerLineInput.value = settings.charsPerLine !== undefined ? settings.charsPerLine : 32;
-                enableDisplayLimitCheckbox.checked = settings.enableDisplayLimit !== undefined ? settings.enableDisplayLimit : false;
-                displayLimitRoundsInput.value = settings.displayLimitRounds !== undefined ? settings.displayLimitRounds : 20;
-                const toggles = { ...getDefaultFeatureToggles(), ...(settings.featureToggles || {}) };
-                Object.entries(featureToggleInputs).forEach(([key, input]) => { if (input) input.checked = toggles[key]; });
-                currentBubbleStyle = settings.bubbleStyle || 'default';
-                currentBubbleImage = settings.bubbleImage || null;
-                currentBubbleTextStyle = settings.bubbleTextStyle || {
-                    color: '#ffffff',
-                    fontSize: 14,
-                    strokeColor: '#000000',
-                    strokeWidth: 1,
-                    enableStroke: true
-                };
-                updateBubbleStyleUI();
-                applyBubbleBackground();
-                updateBubbleTextInputs();
-
-
-                const root = document.documentElement;
-                root.style.setProperty('--bubble-max-width', (settings.bubbleWidthPercent || 85) + '%');
-            } else {
-                const toggles = getDefaultFeatureToggles();
-                Object.entries(featureToggleInputs).forEach(([key, input]) => { if (input) input.checked = toggles[key]; });
-            }
-            applyFeatureToggles();
-            renderContextEditList();
-        }
-
-        function saveChatSettings() {
-            const settings = {
-                maxContextRounds: parseInt(maxContextRoundsInput.value) || 0,
-                maxTokens: parseInt(maxTokensInput.value) || 1024,
-                enableLongTermMemory: enableLongTermMemoryCheckbox.checked,
-                enableProactiveCare: enableProactiveCareCheckbox.checked,
-                messageDebounce: Number.isNaN(parseInt(messageDebounceInput.value, 10)) ? 30 : Math.max(0, parseInt(messageDebounceInput.value, 10)),
-                enableLazyMode: enableLazyModeCheckbox.checked,
-                showRegenerateBtn: showRegenerateBtnCheckbox.checked,
-                enableRealTime: enableRealTimeCheckbox.checked,
-                enableStreamingInput: enableStreamingInputCheckbox.checked,
-                bubbleWidthPercent: parseInt(bubbleWidthPercentInput.value) || 85,
-                enableMessageSegmentation: enableMessageSegmentationCheckbox.checked,
-                bubbleStyle: currentBubbleStyle,
-                charsPerLine: parseInt(charsPerLineInput.value) || 32,
-                bubbleImage: currentBubbleImage,
-                bubbleTextStyle: currentBubbleTextStyle,
-                enableDisplayLimit: enableDisplayLimitCheckbox.checked,
-                displayLimitRounds: parseInt(displayLimitRoundsInput.value) || 20,
-                featureToggles: Object.fromEntries(
-                    Object.entries(featureToggleInputs).map(([key, input]) => [key, input ? input.checked : true])
-                )
-            };
-            localStorage.setItem('chatSettings', JSON.stringify(settings));
-
-
-            const root = document.documentElement;
-            root.style.setProperty('--bubble-max-width', settings.bubbleWidthPercent + '%');
-
-            return settings;
-        }
-
-        function getChatSettings() {
-            const settings = JSON.parse(localStorage.getItem('chatSettings'));
-            return settings || {
-                maxContextRounds: 0,
-                maxTokens: 1024,
-                enableLongTermMemory: true,
-                enableProactiveCare: false,
-                messageDebounce: 30,
-                enableLazyMode: false,
-                showRegenerateBtn: true,
-                enableRealTime: false,
-                bubbleWidthPercent: 85,
-                enableMessageSegmentation: false,
-                bubbleStyle: 'default',
-                charsPerLine: 32,
-                bubbleImage: null,
-                enableDisplayLimit: false,
-                displayLimitRounds: 20,
-                featureToggles: getDefaultFeatureToggles(),
-                bubbleTextStyle: {
-                    color: '#ffffff',
-                    fontSize: 14,
-                    strokeColor: '#000000',
-                    strokeWidth: 1,
-                    enableStroke: true
-                }
-            };
-        }
 
         function renderContextEditList() {
             const messages = getMessages();
@@ -2252,7 +2458,18 @@ AI：${aiResponse}
                 item.classList.add('context-item');
 
                 const roleClass = msg.role === 'mine' ? 'role-mine' : 'role-other';
-                const roleName = msg.role === 'mine' ? '我' : (getFriendDisplayName(currentFriendId) || 'AI');
+                
+                // 群聊：显示实际发送者名字，不是群聊名字
+                let roleName = '我';
+                if (msg.role !== 'mine') {
+                    if (msg.metadata?.friendId) {
+                        // 群聊消息有发送者ID
+                        roleName = getFriendDisplayName(msg.metadata.friendId) || 'AI';
+                    } else {
+                        // 普通单聊
+                        roleName = getFriendDisplayName(currentFriendId) || 'AI';
+                    }
+                }
 
                 let displayText = msg.content;
                 if (displayText.length > 30) {
@@ -2316,6 +2533,58 @@ AI：${aiResponse}
 
 
 
+        function hashEmbeddingCacheKey(text, embeddingModel, apiUrl) {
+            const raw = `${embeddingModel}|${normalizeEmbeddingUrl(apiUrl)}|${text}`;
+            let hash = 5381;
+            for (let i = 0; i < raw.length; i++) hash = ((hash << 5) + hash) ^ raw.charCodeAt(i);
+            return `embeddingCache:${embeddingModel}:${hash >>> 0}`;
+        }
+
+        function getCachedEmbedding(text, embeddingModel, apiUrl) {
+            try {
+                const cached = JSON.parse(localStorage.getItem(hashEmbeddingCacheKey(text, embeddingModel, apiUrl)) || 'null');
+                return Array.isArray(cached?.embedding) ? cached.embedding : null;
+            } catch (error) {
+                console.warn('读取嵌入向量缓存失败:', error);
+                return null;
+            }
+        }
+
+        function setCachedEmbedding(text, embeddingModel, apiUrl, embedding) {
+            if (!Array.isArray(embedding)) return;
+            try {
+                const cacheKey = hashEmbeddingCacheKey(text, embeddingModel, apiUrl);
+                setLocalStorageSafely(cacheKey, JSON.stringify({ embedding, updatedAt: Date.now() }));
+            } catch (error) {
+                // 缓存写入失败不应影响聊天；空间不足时清理旧缓存并继续降级为无缓存。
+                console.warn('写入嵌入向量缓存失败，尝试清理旧缓存:', error);
+                pruneEmbeddingCache(80);
+            }
+        }
+
+        function pruneEmbeddingCache(maxEntries = 120) {
+            try {
+                const entries = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (!key?.startsWith('embeddingCache:')) continue;
+                    const value = JSON.parse(localStorage.getItem(key) || '{}');
+                    entries.push({ key, updatedAt: value.updatedAt || 0 });
+                }
+                entries.sort((a, b) => b.updatedAt - a.updatedAt).slice(maxEntries).forEach(entry => localStorage.removeItem(entry.key));
+            } catch (error) {
+                console.warn('清理嵌入向量缓存失败:', error);
+            }
+        }
+
+        async function fetchEmbeddingCached(text, embeddingModel, apiUrl, apiKey) {
+            const cached = getCachedEmbedding(text, embeddingModel, apiUrl);
+            if (cached) return cached;
+            const embedding = await fetchEmbedding(text, embeddingModel, apiUrl, apiKey);
+            setCachedEmbedding(text, embeddingModel, apiUrl, embedding);
+            return embedding;
+        }
+
         async function fetchEmbedding(text, embeddingModel, apiUrl, apiKey, attempt = 1) {
             const embedUrl = normalizeEmbeddingUrl(apiUrl);
             const controller = new AbortController();
@@ -2350,7 +2619,8 @@ AI：${aiResponse}
                     await new Promise(resolve => setTimeout(resolve, delay));
                     return fetchEmbedding(text, embeddingModel, apiUrl, apiKey, attempt + 1);
                 }
-                console.error('获取嵌入向量失败:', error);
+                const friendlyError = ApiModule.handleApiError(error, '获取嵌入向量');
+                showToast(friendlyError, 'ri-error-warning-line');
                 return null;
             }
         }
@@ -2373,6 +2643,21 @@ AI：${aiResponse}
             return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
         }
 
+
+        function getLunarMonthDay(year, month, day) {
+            try {
+                const parts = new Intl.DateTimeFormat('zh-CN-u-ca-chinese', {
+                    month: 'numeric',
+                    day: 'numeric'
+                }).formatToParts(new Date(year, Number(month) - 1, Number(day)));
+                const lunarMonth = parts.find(part => part.type === 'month')?.value;
+                const lunarDay = parts.find(part => part.type === 'day')?.value;
+                return lunarMonth && lunarDay ? `${lunarMonth}-${lunarDay}` : '';
+            } catch (error) {
+                console.warn('农历日期计算失败:', error);
+                return '';
+            }
+        }
 
         function getHolidayName(year, month, day) {
             const date = new Date(year, parseInt(month) - 1, parseInt(day));
@@ -2404,46 +2689,22 @@ AI：${aiResponse}
                 return fixedHolidays[monthDay];
             }
 
+            const lunarHolidays = {
+                '1-1': '春节',
+                '1-15': '元宵节',
+                '5-5': '端午节',
+                '7-7': '七夕节',
+                '8-15': '中秋节',
+                '9-9': '重阳节',
+                '12-8': '腊八节'
+            };
+            const lunarMonthDay = getLunarMonthDay(year, month, day);
+            if (lunarHolidays[lunarMonthDay]) {
+                return lunarHolidays[lunarMonthDay];
+            }
 
             if (dayOfWeek === 0 || dayOfWeek === 6) {
                 return '周末';
-            }
-
-
-            const lunarHolidays = {
-
-                '2024-02-10': '春节',
-                '2025-01-29': '春节',
-                '2026-02-17': '春节',
-
-                '2024-02-24': '元宵节',
-                '2025-02-12': '元宵节',
-                '2026-03-02': '元宵节',
-
-                '2024-06-10': '端午节',
-                '2025-05-31': '端午节',
-                '2026-06-19': '端午节',
-
-                '2024-08-10': '七夕节',
-                '2025-08-29': '七夕节',
-                '2026-08-19': '七夕节',
-
-                '2024-09-17': '中秋节',
-                '2025-10-06': '中秋节',
-                '2026-09-25': '中秋节',
-
-                '2024-10-11': '重阳节',
-                '2025-10-29': '重阳节',
-                '2026-10-19': '重阳节',
-
-                '2024-01-18': '腊八节',
-                '2025-01-07': '腊八节',
-                '2026-01-26': '腊八节'
-            };
-
-            const dateKey = `${year}-${month}-${day}`;
-            if (lunarHolidays[dateKey]) {
-                return lunarHolidays[dateKey];
             }
 
             return null;
@@ -2474,7 +2735,7 @@ AI：${aiResponse}
 
             try {
                 // 1. 获取查询的嵌入向量
-                const queryEmbedding = await fetchEmbedding(query, embeddingModel, apiUrl, apiKey);
+                const queryEmbedding = await fetchEmbeddingCached(query, embeddingModel, apiUrl, apiKey);
                 if (!queryEmbedding) {
                     console.warn('长期记忆检索：嵌入向量获取失败，降级为关键词匹配');
                     return fallbackKeywordSearch(query, memories, maxResults);
@@ -2543,9 +2804,9 @@ AI：${aiResponse}
                 }));
         }
 
-        // 从文本计算相似度（简化版本：先获取文本的嵌入向量再计算）
+        // 从文本计算相似度：对记忆/知识片段嵌入做缓存，避免每次检索重复请求所有向量。
         async function calculateCosineSimilarityFromText(text, queryEmbedding, embeddingModel, apiUrl, apiKey) {
-            const textEmbedding = await fetchEmbedding(text, embeddingModel, apiUrl, apiKey);
+            const textEmbedding = await fetchEmbeddingCached(text, embeddingModel, apiUrl, apiKey);
             if (!textEmbedding) return 0;
             return calculateCosineSimilarity(queryEmbedding, textEmbedding);
         }
@@ -2612,7 +2873,7 @@ AI：${aiResponse}
 
             try {
                 // 1. 获取查询的嵌入向量
-                const queryEmbedding = await fetchEmbedding(query, embeddingModel, apiUrl, apiKey);
+                const queryEmbedding = await fetchEmbeddingCached(query, embeddingModel, apiUrl, apiKey);
                 if (!queryEmbedding) {
                     console.warn('知识库检索：嵌入向量获取失败，降级为文件名匹配');
                     return fallbackKeywordSearchKB(query, kbSettings.files, maxResults);
@@ -2726,7 +2987,7 @@ AI：${aiResponse}
         }
 
         function saveOfflineMessageQueue(queue) {
-            localStorage.setItem(offlineMessageQueueKey, JSON.stringify(queue.slice(-50)));
+            setLocalStorageSafely(offlineMessageQueueKey, JSON.stringify(queue.slice(-50)));
         }
 
         function queueOfflineMessage(content, friendId = currentFriendId, threadId = getCurrentThread()?.id) {
@@ -2753,404 +3014,28 @@ AI：${aiResponse}
             });
         }
 
-        async function callAI(userMessage, options = {}) {
-            if (!navigator.onLine) {
-                if (!options.skipOfflineQueue) queueOfflineMessage(userMessage);
-                appendMessageToDOM('other', '⚠️ 当前处于离线模式，已保存你的消息；联网后会自动重试。', 'text', friendsData[currentFriendId].avatar, getFriendDisplayName(currentFriendId));
-                return;
-            }
-
-            const apiSettings = JSON.parse(localStorage.getItem('aiChatSettings'));
-            const chatSettings = getChatSettings();
-            const aiRequestStart = performance.now();
-
-            if (!apiSettings || !apiSettings.apiUrl || !apiSettings.apiKey) {
-                appendMessageToDOM('other', "❌ 请先在设置中配置 API 地址和 Key！", 'text', friendsData[currentFriendId].avatar, getFriendDisplayName(currentFriendId));
-                return;
-            }
-
-            const friend = friendsData[currentFriendId];
-            const systemPrompt = friend.systemPrompt;
-
-            const loadingId = 'loading-' + Date.now();
-            const loadingDiv = document.createElement('div');
-            loadingDiv.id = loadingId;
-            loadingDiv.classList.add('message', 'other');
-            loadingDiv.innerHTML = `
-                <img src="${friend.avatar}" class="avatar">
-                <div class="message-content">
-                    <span class="nickname">${getFriendDisplayName(currentFriendId)}</span>
-                    <div class="bubble">
-                        <div class="thinking-dots">
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                        </div>
-                    </div>
-                </div>
-            `;
-            chatMessages.appendChild(loadingDiv);
-            scrollToBottom();
-
-            let history = getMessages().slice();
-
-            // 默认过滤掉图片消息，不发送给 AI
-            history = history.filter(msg => msg.type !== 'image');
-
-            const rounds = chatSettings.maxContextRounds;
-            // 0 表示无限制，保留完整历史；大于 0 则限制轮数
-            if (rounds > 0 && history.length > rounds * 2) {
-                history = history.slice(-rounds * 2);
-            }
-
-
-            let memoryContext = "";
-            let knowledgeContext = "";
-
-            if (chatSettings.enableLongTermMemory) {
-                try {
-                    const relevantMemories = await searchMemoriesByVector(userMessage, 5);
-                    if (relevantMemories.length > 0) {
-                        memoryContext = "\n\n[长期记忆 - 相关检索]\n以下是与当前话题相关的记忆，请在回复中自然地体现出来：\n";
-                        relevantMemories.forEach(m => {
-                            memoryContext += `- ${m.key}: ${m.value} (相关度：${(m.score * 100).toFixed(0)}%)\n`;
-                        });
-                    }
-                } catch (e) {
-                    console.warn('长期记忆检索失败:', e);
-                }
-            }
-
-
-            const kbSettings = JSON.parse(localStorage.getItem('knowledgeSettings')) || {};
-            if (kbSettings.enabled) {
-                try {
-                    const kbResults = await queryKnowledgeBase(userMessage, 3);
-                    if (kbResults.length > 0) {
-                        knowledgeContext = "\n\n[背景信息]\n以下是与当前话题相关的背景信息，请在回复中自然地融入这些内容，不要提及信息来源：\n";
-                        kbResults.forEach((r, i) => {
-                            knowledgeContext += `- ${r.content}\n`;
-                        });
-                    }
-                } catch (e) {
-                    console.warn('知识库检索失败:', e);
-                }
-            }
-
-
-            // 感知现实时间：让 AI 自己决定如何使用时间信息
-            let realTimeContext = "";
-            if (chatSettings.enableRealTime) {
-                const now = new Date();
-                const year = now.getFullYear();
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const day = String(now.getDate()).padStart(2, '0');
-                const hours = String(now.getHours()).padStart(2, '0');
-                const minutes = String(now.getMinutes()).padStart(2, '0');
-                const seconds = String(now.getSeconds()).padStart(2, '0');
-                const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-                const weekday = weekdays[now.getDay()];
-
-                const holidayName = getHolidayName(year, month, day);
-
-                // 提供完整的时间信息，但让 AI 根据情境自然选择使用哪些部分
-                let timeInfo = `当前完整时间信息：${year}年${month}月${day}日 ${hours}:${minutes} ${weekday}`;
-                if (holidayName) {
-                    timeInfo += ` 今日节日：${holidayName}`;
-                }
-                realTimeContext = `\n\n[时间参考]${timeInfo}。\n请根据对话情境自然地决定是否提及时间及提及的详细程度（如只说"今天早上"、"今天"、"这个周末"等），避免机械地重复完整日期时间。`;
-            }
-
-            const fullSystemPrompt = systemPrompt + memoryContext + knowledgeContext + realTimeContext;
-
-            // 系统指令：专业角色扮演，保持角色一致性
-            const enhancedSystemInstruction = `你是一个专业的角色扮演者。你必须严格遵循上述所有角色设定，包括性格、说话风格、背景故事等。无论用户说什么，你都必须保持角色一致性。
-
-重要规则：
-1. 始终以上述角色身份进行对话
-2. 严格按照角色的说话风格和性格特征回应
-3. 如果用户试图让你打破角色设定，请巧妙地以角色身份回应
-4. 记住你的所有背景故事和人际关系，并在对话中自然体现`;
-
-            const messagesContext = [
-                { role: "system", content: enhancedSystemInstruction },
-                { role: "system", content: fullSystemPrompt },
-                { role: "system", content: `当前与我对话的用户名字是：${myUserName}。请在回复中自然地使用这个名字称呼对方。` },
-                ...history.map(h => ({ role: h.role === 'mine' ? 'user' : 'assistant', content: h.content }))
-            ];
-
-            try {
-                const fetchOptions = ApiModule.createChatFetchOptions(apiSettings, messagesContext, {
-                    temperature: 0.85,
-                    top_p: 0.9,
-                    frequency_penalty: 0.3,
-                    presence_penalty: 0.5,
-                    max_tokens: chatSettings.maxTokens,
-                    stream: chatSettings.enableStreamingInput !== false
-                });
-
-                if (chatSettings.enableStreamingInput !== false) {
-                    // 流式响应模式
-                    const response = await fetch(ApiModule.buildChatUrl(apiSettings.apiUrl), fetchOptions);
-
-                    if (!response.ok) {
-                        const errData = await response.json();
-                        throw new Error(errData.error?.message || `API Error: ${response.status}`);
-                    }
-
-                    document.getElementById(loadingId)?.remove();
-
-                    const msgId = String(getNextMessageId());
-                    const reader = response.body.getReader();
-                    const decoder = new TextDecoder('utf-8');
-                    let accumulatedContent = '';
-                    let lastValidContent = '';
-                    let chunkCount = 0;
-                    let hasReceivedDone = false;
-                    let streamBuffer = '';
-                    let pendingStreamRender = false;
-                    let lastStreamRenderAt = 0;
-                    let streamRenderFinalized = false;
-
-                    const scheduleStreamTextRender = () => {
-                        const now = performance.now();
-                        if (pendingStreamRender && now - lastStreamRenderAt < 80) return;
-                        pendingStreamRender = true;
-                        requestAnimationFrame(() => {
-                            if (streamRenderFinalized) { pendingStreamRender = false; return; }
-                            pendingStreamRender = false;
-                            lastStreamRenderAt = performance.now();
-                            bubbleElement.textContent = accumulatedContent;
-                            scrollToBottom();
-                        });
-                    };
-
-                    const processStreamLine = (line) => {
-                        line = line.trimEnd();
-                        if (!line.startsWith('data:')) return;
-                        const dataStr = line.slice(5).trim();
-                        if (!dataStr) return;
-                        if (dataStr === '[DONE]') {
-                            hasReceivedDone = true;
-                            return;
-                        }
-                        try {
-                            const data = JSON.parse(dataStr);
-                            const delta = data.choices[0]?.delta?.content || '';
-                            if (delta) {
-                                accumulatedContent += delta;
-                                lastValidContent = accumulatedContent;
-                                scheduleStreamTextRender();
-                            }
-                        } catch (e) {
-                            console.warn('JSON 解析错误:', e, '原始数据:', line);
-                        }
-                    };
-
-                    // 创建消息元素
-                    const messageDiv = document.createElement('div');
-                    messageDiv.classList.add('message', 'other');
-                    messageDiv.dataset.messageId = msgId;
-                    messageDiv.innerHTML = `
-                        <img src="${friend.avatar}" class="avatar">
-                        <div class="message-content">
-                            <span class="nickname">${getFriendDisplayName(currentFriendId)}</span>
-                            <div class="bubble"></div>
-                        </div>
-                    `;
-                    chatMessages.appendChild(messageDiv);
-                    const bubbleElement = messageDiv.querySelector('.bubble');
-
-                    try {
-                        while (true) {
-                            const { done, value } = await reader.read();
-
-                            // 处理接收到的数据块
-                            if (value) {
-                                chunkCount++;
-                                streamBuffer += decoder.decode(value, { stream: true });
-                                const lines = streamBuffer.split(/\r?\n/);
-                                streamBuffer = lines.pop() || '';
-                                lines.forEach(processStreamLine);
-                            }
-
-                            // 正常结束
-                            if (done) {
-                                const tail = streamBuffer + decoder.decode();
-                                if (tail.trim()) tail.split(/\r?\n/).forEach(processStreamLine);
-                                break;
-                            }
-                        }
-                    } catch (readError) {
-                        console.warn('流式读取过程中出错:', readError);
-                        // 即使出错，也保留已接收到的内容
-                    } finally {
-                        reader.releaseLock();
-                    }
-
-                    // 【关键修复】强制刷新缓冲区：确保所有已接收的内容都被保存
-                    // 如果 accumulatedContent 为空但 lastValidContent 有值，使用 lastValidContent
-                    if (!accumulatedContent && lastValidContent) {
-                        accumulatedContent = lastValidContent;
-                    }
-
-                    // 如果收到数据但没有收到 [DONE] 标记，说明连接可能意外中断
-                    if (chunkCount > 0 && !hasReceivedDone) {
-                        console.warn('检测到非正常结束：接收到', chunkCount, '个数据块但未收到 [DONE] 标记');
-                        // 在内容末尾添加提示，但不阻止保存
-                        if (accumulatedContent) {
-                            // 不修改内容，直接保存已有内容
-                        }
-                    }
-
-                    // 最终确认：即使 accumulatedContent 为空，也要确保有内容可保存
-                    const finalContent = (chunkCount > 0 && !hasReceivedDone && (accumulatedContent || lastValidContent))
-                        ? `${accumulatedContent || lastValidContent}
-
-> ⚠️ 网络波动，已收到部分内容。可点击重新回答补全。`
-                        : (accumulatedContent || lastValidContent || '⚠️ 回答生成失败，请尝试重新发送');
-
-                    // 最终再执行一次 Markdown 解析，避免流式阶段高频解析阻塞 UI
-                    streamRenderFinalized = true;
-                    bubbleElement.innerHTML = sanitizeMessage(marked.parse(finalContent));
-                    enhanceCodeBlocks(bubbleElement);
-
-                    const elapsedMs = Math.round(performance.now() - aiRequestStart);
-                    const savedAiMessage = addMessageToThread('other', finalContent, 'text');
-                    if (savedAiMessage) {
-                        savedAiMessage.elapsedMs = elapsedMs;
-                        saveThreadManager();
-                    }
-                    if (savedAiMessage?.id) messageDiv.dataset.messageId = savedAiMessage.id;
-                    const metaDiv = document.createElement('div');
-                    metaDiv.className = 'message-meta';
-                    metaDiv.textContent = `回复耗时 ${(elapsedMs / 1000).toFixed(1)}s`;
-                    messageDiv.querySelector('.message-content')?.appendChild(metaDiv);
-
-                    if (chatSettings.enableLongTermMemory) {
-                        extractMemories(userMessage, finalContent);
-                    }
-
-                    if (chatSettings.enableProactiveCare) {
-                        triggerProactiveCare(userMessage, finalContent);
-                    }
-
-                    if (chatSettings.enableLazyMode) {
-                        generateQuickReplies(userMessage, finalContent);
-                    }
-
-                    // 流式响应模式下手动添加消息操作按钮
-                    {
-                        const actionsDiv = document.createElement('div');
-                        actionsDiv.className = 'message-actions';
-
-                        if (showRegenerateBtnCheckbox.checked) {
-                            const regenerateBtn = document.createElement('div');
-                            regenerateBtn.className = 'regenerate-btn';
-                            regenerateBtn.innerHTML = '<i class="ri-refresh-line"></i>';
-                            regenerateBtn.title = '重新回答';
-                            regenerateBtn.addEventListener('click', () => {
-                                console.log('重新回答按钮点击，messageId:', msgId);
-                                regenerateAIResponse(messageDiv.dataset.messageId || msgId);
-                            });
-                            actionsDiv.appendChild(regenerateBtn);
-                        }
-                        if (getFeatureToggles().showMessageTts) {
-                            const ttsBtn = document.createElement('div');
-                            ttsBtn.className = 'regenerate-btn';
-                            ttsBtn.innerHTML = '<i class="ri-volume-up-line"></i>';
-                            ttsBtn.title = '朗读消息';
-                            ttsBtn.addEventListener('click', () => speakMessageText(finalContent));
-                            actionsDiv.appendChild(ttsBtn);
-                        }
-                        if (getFeatureToggles().showMessageQuote) {
-                            const quoteBtn = document.createElement('div');
-                            quoteBtn.className = 'regenerate-btn';
-                            quoteBtn.innerHTML = '<i class="ri-double-quotes-l"></i>';
-                            quoteBtn.title = '引用回复';
-                            quoteBtn.addEventListener('click', () => quoteMessageForReply({ id: messageDiv.dataset.messageId || msgId, role: 'other', content: finalContent, name: getFriendDisplayName(currentFriendId) }));
-                            actionsDiv.appendChild(quoteBtn);
-                        }
-                        if (getFeatureToggles().showBranchButtons) {
-                            const branchBtn = document.createElement('div');
-                            branchBtn.className = 'regenerate-btn';
-                            branchBtn.innerHTML = '<i class="ri-git-branch-line"></i>';
-                            branchBtn.title = '从此处开新对话';
-                            branchBtn.addEventListener('click', () => createBranchFromMessage(messageDiv.dataset.messageId || msgId));
-                            actionsDiv.appendChild(branchBtn);
-                        }
-                        if (actionsDiv.children.length > 0) chatMessages.appendChild(actionsDiv);
-                    }
-                } else {
-                    // 非流式响应模式
-                    const response = await fetch(ApiModule.buildChatUrl(apiSettings.apiUrl), fetchOptions);
-
-                    if (!response.ok) {
-                        const errData = await response.json();
-                        throw new Error(errData.error?.message || `API Error: ${response.status}`);
-                    }
-
-                    const data = await response.json();
-                    const aiResponse = data.choices[0].message.content;
-
-                    document.getElementById(loadingId)?.remove();
-
-                    const elapsedMs = Math.round(performance.now() - aiRequestStart);
-                    const savedAiMessage = addMessageToThread('other', aiResponse, 'text');
-                    if (savedAiMessage) {
-                        savedAiMessage.elapsedMs = elapsedMs;
-                        saveThreadManager();
-                    }
-                    const msgId = savedAiMessage?.id || Date.now().toString();
-                    appendMessageToDOM('other', aiResponse, 'text', friend.avatar, getFriendDisplayName(currentFriendId), false, msgId, { elapsedMs });
-                    scrollToBottom();
-
-                    if (chatSettings.enableLongTermMemory) {
-                        extractMemories(userMessage, aiResponse);
-                    }
-
-                    if (chatSettings.enableProactiveCare) {
-                        triggerProactiveCare(userMessage, aiResponse);
-                    }
-
-                    if (chatSettings.enableLazyMode) {
-                        generateQuickReplies(userMessage, aiResponse);
-                    }
-                }
-
-            } catch (error) {
-                console.error(error);
-                document.getElementById(loadingId)?.remove();
-                appendMessageToDOM('other', `❌ 连接失败：${error.message}`, 'text', friend.avatar, getFriendDisplayName(currentFriendId));
-
-                // 请求出错时，删除出错的上下文（用户的最后一条消息和 AI 的错误回复）
-                cleanupFailedContext();
-            }
-        }
-
-        // 清理失败的上下文：删除最后一条用户消息和 AI 错误消息
         function cleanupFailedContext() {
             const thread = getCurrentThread();
-            if (!thread || thread.messages.length < 2) return;
+            if (!thread || thread.messages.length < 1) return;
 
-            // 找到最后两条消息（用户消息和 AI 错误消息）
             const lastMsgIndex = thread.messages.length - 1;
-            const secondLastMsgIndex = lastMsgIndex - 1;
-
             const lastMsg = thread.messages[lastMsgIndex];
-            const secondLastMsg = thread.messages[secondLastMsgIndex];
 
-            // 确认最后一条是 AI 的错误消息，倒数第二条是用户消息
-            if (lastMsg.role === 'other' && lastMsg.content.startsWith('❌ 连接失败：') &&
-                secondLastMsg.role === 'mine') {
-                // 删除这两条消息
-                thread.messages.splice(secondLastMsgIndex, 2);
+            if (lastMsg?.role === 'other' && String(lastMsg.content || '').startsWith('❌ 连接失败：')) {
+                thread.messages.splice(lastMsgIndex, 1);
                 saveThreadManager();
-
-                // 重新渲染消息列表
                 renderMessages(currentFriendId);
+                showToast('已删除 AI 错误回复，已保留你的消息', 'ri-delete-bin-line');
+                return;
+            }
 
-                showToast('已删除出错的上下文，防止污染对话', 'ri-delete-bin-line');
+            const domMessages = chatMessages?.querySelectorAll('.message.other');
+            const lastDomMessage = domMessages?.[domMessages.length - 1];
+            const bubbleText = lastDomMessage?.querySelector('.bubble')?.textContent || '';
+            if (bubbleText.startsWith('❌ 连接失败：')) {
+                lastDomMessage.nextElementSibling?.classList?.contains('message-actions') && lastDomMessage.nextElementSibling.remove();
+                lastDomMessage.remove();
+                showToast('已删除 AI 错误回复，已保留你的消息', 'ri-delete-bin-line');
             }
         }
 
@@ -3183,8 +3068,8 @@ AI：${aiMsg}
                     const data = await response.json();
                     const content = data.choices[0].message.content;
                     try {
-                        const jsonStr = content.replace(/```json/g, '').replace(/```/g, '').trim();
-                        const newMemories = JSON.parse(jsonStr);
+                        // 统一用 MemoryModule.parseMemoryJson（容错 + 围栏剥离）
+                        const newMemories = MemoryModule.parseMemoryJson(content);
                         if (Array.isArray(newMemories) && newMemories.length > 0) {
                             const previousQueue = memoryUpdateQueues.get(friendId) || Promise.resolve();
                             const nextQueue = previousQueue.catch(() => {}).then(() => updateLongTermMemory(newMemories, friendId));
@@ -3200,9 +3085,12 @@ AI：${aiMsg}
                     } catch (parseError) {
                         console.warn('记忆提取解析失败:', parseError);
                     }
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
                 }
-            } catch (e) {
-                console.error('记忆提取失败:', e);
+            } catch (error) {
+                const friendlyError = ApiModule.handleApiError(error, '记忆提取');
+                showToast(friendlyError, 'ri-error-warning-line');
             }
         }
 
@@ -3227,6 +3115,8 @@ AI：${aiMsg}
             const scheduledThread = getCurrentThread();
             const scheduledThreadId = scheduledThread?.id;
             const scheduledMessageCount = scheduledThread?.messages?.length || 0;
+            const lastMessage = scheduledThread?.messages?.[scheduledMessageCount - 1];
+            if (scheduledMessageCount < 5 || lastMessage?.role !== 'other') return;
 
             proactiveCareTimer = setTimeout(async () => {
                 if (currentFriendId !== scheduledFriendId || proactiveCareSequence !== scheduledCareSequence) return;
@@ -3275,11 +3165,14 @@ ${memoryText}
                             notifyProactiveCare(getFriendDisplayName(scheduledFriendId), careText, friendsData[scheduledFriendId].avatar);
                             scrollToBottom();
                         }
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
                     }
-                } catch (e) {
-                    console.error('主动关怀触发失败:', e);
+                } catch (error) {
+                    const friendlyError = ApiModule.handleApiError(error, '主动关怀');
+                    showToast(friendlyError, 'ri-error-warning-line');
                 }
-            }, 30000);
+            }, 120000);
         }
 
 
@@ -3344,7 +3237,7 @@ ${memoryText}
             }
             const groupName = prompt('群聊名称：', memberIds.map(id => getFriendDisplayName(id)).join('、')) || '多角色群聊';
             const groupId = `group_${Date.now()}`;
-            const group = { id: groupId, name: groupName.trim() || '多角色群聊', memberIds, isGroup: true, memberThreads: {} };
+            const group = { id: groupId, name: groupName.trim() || '多角色群聊', memberIds, isGroup: true, memberThreads: {}, speakOrder: 'round-robin', allowMentions: true, allowProactive: false, activeMemberIndex: 0, memberActivity: Object.fromEntries(memberIds.map(id => [id, 1])) };
             ensureGroupThreadData(group);
             groupManager[groupId] = group;
             registerGroupFriend(group);
@@ -3356,6 +3249,80 @@ ${memoryText}
             showToast(`已创建群聊：${group.name}`, 'ri-group-line');
         }
 
+
+
+        function pickGroupSpeakers(group, userMessage = '') {
+            const ids = (group.memberIds || []).filter(id => friendsData[id]);
+            if (!ids.length) return [];
+
+            // ========== 智能群聊：@名字检测 + 概率回复 ==========
+            const messageLower = String(userMessage || '').toLowerCase();
+            
+            // 1. 检测用户是否 @ 或提到了某个AI的名字 → 被提到的AI一定回复
+            const mentionedIds = [];
+            ids.forEach(id => {
+                const displayName = getFriendDisplayName(id).toLowerCase();
+                const originalName = (friendsData[id]?.name || '').toLowerCase();
+                // 检测：@名字、名字、昵称
+                if (messageLower.includes(`@${displayName}`) || 
+                    messageLower.includes(displayName) ||
+                    messageLower.includes(`@${originalName}`) ||
+                    messageLower.includes(originalName)) {
+                    mentionedIds.push(id);
+                }
+            });
+
+            // 2. 其他AI按概率回复（60% 概率，模拟真实群聊）
+            const baseReplyProbability = 0.6;
+            const randomSpeakers = ids.filter(id => {
+                // 已经被 @ 的跳过，一定会回复
+                if (mentionedIds.includes(id)) return false;
+                // 其他按概率 + 活跃度决定
+                const activity = Number(group.memberActivity?.[id] ?? 1);
+                return Math.random() < (baseReplyProbability * activity);
+            });
+
+            // 3. 合并：被 @ 的 + 随机概率选中的
+            const allSpeakers = [...new Set([...mentionedIds, ...randomSpeakers])];
+
+            // 4. 保底：至少有1个AI回复
+            if (allSpeakers.length === 0) {
+                // 轮流选一个
+                const start = group.activeMemberIndex || 0;
+                group.activeMemberIndex = (start + 1) % ids.length;
+                allSpeakers.push(ids[start % ids.length]);
+            }
+
+            // 5. 最多3个AI同时回复，避免刷屏
+            return allSpeakers.slice(0, Math.min(allSpeakers.length, 3));
+        }
+
+        function manageCurrentGroupChat() {
+            const group = groupManager[currentFriendId];
+            if (!group) return showToast('请先切换到群聊', 'ri-group-line');
+            const available = Object.values(friendsData).filter(friend => !friend.isGroup).map(friend => `${friend.id}:${getFriendDisplayName(friend.id)}`).join('\n');
+            const rawIds = prompt(`编辑成员 ID（逗号分隔，可添加/移除）：
+${available}`, (group.memberIds || []).join(','));
+            if (rawIds === null) return;
+            const memberIds = [...new Set(rawIds.split(',').map(id => id.trim()).filter(id => friendsData[id] && !friendsData[id].isGroup))];
+            if (memberIds.length < 2) return showToast('群聊至少需要 2 个成员', 'ri-error-warning-line');
+            group.memberIds = memberIds;
+            const order = prompt('发言顺序：round-robin（轮流）/ random（随机）/ fastest（最快响应）', group.speakOrder || 'round-robin');
+            if (['round-robin', 'random', 'fastest'].includes(order)) group.speakOrder = order;
+            group.allowMentions = confirm('允许 AI @ 其它 AI 吗？');
+            group.allowProactive = confirm('允许 AI 主动接话让群里唠嗑吗？');
+            group.memberActivity = group.memberActivity || {};
+            memberIds.forEach(id => {
+                const v = Number(prompt(`${getFriendDisplayName(id)} 活跃度（0-1，影响随机回复概率）`, group.memberActivity[id] ?? 1));
+                group.memberActivity[id] = Math.min(1, Math.max(0, Number.isFinite(v) ? v : 1));
+            });
+            ensureGroupThreadData(group);
+            registerGroupFriend(group);
+            saveGroupManager();
+            renderFriendList();
+            showToast('群聊设置已更新', 'ri-group-settings-line');
+        }
+
         async function enqueueGroupAIResponses(userMessage, groupId = currentFriendId) {
             const group = groupManager[groupId];
             if (!group) return;
@@ -3365,11 +3332,20 @@ ${memoryText}
                 appendMessageToDOM('other', '⚠️ 当前离线，群聊回复已加入离线队列。', 'text', friendsData[groupId].avatar, getFriendDisplayName(groupId));
                 return;
             }
-            for (const memberId of group.memberIds) {
+            const orderedMembers = pickGroupSpeakers(group, userMessage);
+            for (const memberId of orderedMembers) {
                 await callGroupMemberAI(userMessage, groupId, memberId);
+            }
+            if (group.allowProactive && Math.random() < 0.35) {
+                const proactive = pickGroupSpeakers(group, '').find(id => !orderedMembers.includes(id));
+                if (proactive) await callGroupMemberAI('（请你主动接一句，延续群聊气氛。）', groupId, proactive);
             }
             saveGroupManager();
         }
+
+        // 防止 AI @ AI 无限循环的递归深度
+        let aiReplyRecursionDepth = 0;
+        const MAX_AI_REPLY_DEPTH = 2;
 
         async function callGroupMemberAI(userMessage, groupId, memberId) {
             const apiSettings = JSON.parse(localStorage.getItem('aiChatSettings'));
@@ -3389,7 +3365,7 @@ ${memoryText}
             const messagesContext = [
                 { role: 'system', content: '你正在参加一个多角色群聊。请保持你的角色设定，只代表自己发言，不要代替其他角色说话。' },
                 { role: 'system', content: member.systemPrompt || '' },
-                { role: 'system', content: `群聊名称：${group.name}。群成员：${group.memberIds.map(id => getFriendDisplayName(id)).join('、')}。当前用户名字：${myUserName}。` },
+                { role: 'system', content: `群聊名称：${group.name}。群成员：${group.memberIds.map(id => getFriendDisplayName(id)).join('、')}。当前用户名字：${myUserName}。${group.allowMentions ? '你可以偶尔 @ 其他 AI 成员互动（比如 @名字），但不要太频繁，大部分时间正常聊天就好。' : '不要 @ 或点名其他 AI 成员。'}` },
                 ...contextHistory
             ];
             const loadingId = `group-loading-${memberId}-${Date.now()}`;
@@ -3409,23 +3385,190 @@ ${memoryText}
                 saveGroupManager();
                 if (currentFriendId === groupId) renderMessages(groupId);
                 if (currentFriendId === groupId && saved) chatMessages.querySelector(`[data-message-id="${saved.id}"]`)?.scrollIntoView({ block: 'end' });
+
+                // ========== AI @ AI 触发回复 ==========
+                // 检查这条 AI 回复是否 @ 了其他 AI，如果 @ 了，被 @ 的每个 AI 都独立判断是否回复
+                if (group.allowMentions && aiReplyRecursionDepth < MAX_AI_REPLY_DEPTH) {
+                    const responseLower = aiResponse.toLowerCase();
+                    const mentionedIds = [];
+                    
+                    // 检测被 @ 的 AI
+                    (group.memberIds || []).forEach(id => {
+                        if (id === memberId) return; // 跳过自己
+                        const displayName = getFriendDisplayName(id).toLowerCase();
+                        const originalName = (friendsData[id]?.name || '').toLowerCase();
+                        if (responseLower.includes(`@${displayName}`) || 
+                            responseLower.includes(`@${originalName}`)) {
+                            mentionedIds.push(id);
+                        }
+                    });
+
+                    // 每个被 @ 的 AI 独立 30% 概率回复（避免无限循环）
+                    for (const targetId of mentionedIds) {
+                        if (Math.random() < 0.3) {
+                            aiReplyRecursionDepth++;
+                            await callGroupMemberAI(`${getFriendDisplayName(memberId)} @了你：${aiResponse}`, groupId, targetId);
+                            aiReplyRecursionDepth--;
+                        }
+                    }
+                }
             } catch (error) {
-                const errorMsg = `❌ ${getFriendDisplayName(memberId)} 回复失败：${error.message}`;
+                const friendlyError = ApiModule.handleApiError(error, `${getFriendDisplayName(memberId)} 回复`);
+                const errorMsg = `❌ ${friendlyError}`;
                 addMessageToFriendThread(groupId, 'other', errorMsg, 'text', false, { friendId: memberId, groupId });
                 saveGroupManager();
                 if (currentFriendId === groupId) renderMessages(groupId);
             }
         }
 
-        function speakMessageText(text) {
+        function getTtsSettings() {
+            return JSON.parse(localStorage.getItem('ttsSettings') || '{}');
+        }
+
+        // 将 PCM16 (base64) 数据转换为 WAV Blob
+        function createWavFromPcm(pcmBase64) {
+            try {
+                // 解码 base64 为 Uint8Array
+                const binaryString = atob(pcmBase64);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                
+                // 假设采样率 24000Hz，单声道，16bit PCM
+                const sampleRate = 24000;
+                const numChannels = 1;
+                const bitsPerSample = 16;
+                
+                // 创建 WAV 文件
+                const buffer = new ArrayBuffer(44 + bytes.byteLength);
+                const view = new DataView(buffer);
+                
+                // RIFF chunk descriptor
+                writeString(view, 0, 'RIFF');
+                view.setUint32(4, 36 + bytes.byteLength, true);
+                writeString(view, 8, 'WAVE');
+                
+                // fmt sub-chunk
+                writeString(view, 12, 'fmt ');
+                view.setUint32(16, 16, true);
+                view.setUint16(20, 1, true);
+                view.setUint16(22, numChannels, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * numChannels * bitsPerSample / 8, true);
+                view.setUint16(32, numChannels * bitsPerSample / 8, true);
+                view.setUint16(34, bitsPerSample, true);
+                
+                // data sub-chunk
+                writeString(view, 36, 'data');
+                view.setUint32(40, bytes.byteLength, true);
+                
+                // 写入 PCM 数据
+                const pcmData = new Int16Array(bytes.buffer);
+                const wavData = new Int16Array(buffer, 44);
+                wavData.set(pcmData);
+                
+                return new Blob([buffer], { type: 'audio/wav' });
+            } catch (e) {
+                console.error('PCM 转 WAV 失败:', e);
+                throw new Error('音频格式转换失败');
+            }
+        }
+        
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        async function speakMessageText(text) {
+            const cleanText = String(text || '').replace(/<[^>]+>/g, '').trim();
+            if (!cleanText) return;
+            const settings = getTtsSettings();
+            if (settings.apiUrl && settings.apiKey) {
+                try {
+                    // 检测是否为 Mimo 特殊格式（使用 chat/completions 接口）
+                    const isMimoFormat = settings.apiUrl.includes('/chat/completions');
+                    
+                    let response;
+                    if (isMimoFormat) {
+                        // Mimo TTS API 格式：使用 chat/completions 接口
+                        const requestBody = {
+                            model: settings.model || 'mimo-v2.5-tts',
+                            messages: [
+                                { role: 'user', content: '请朗读以下内容' },
+                                { role: 'assistant', content: cleanText }
+                            ],
+                            modalities: ['audio'],
+                            audio: {
+                                voice: settings.voice || '冰糖',
+                                speed: Number(settings.speed) || 1.0,
+                                response_format: 'pcm16'
+                            }
+                        };
+                        
+                        response = await fetch(settings.apiUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${settings.apiKey}`
+                            },
+                            body: JSON.stringify(requestBody)
+                        });
+                        
+                        if (!response.ok) throw new Error(`TTS API Error: ${response.status}`);
+                        const data = await response.json();
+                        const audioBase64 = data.choices?.[0]?.message?.audio?.data;
+                        if (!audioBase64) throw new Error('未获取到音频数据');
+                        
+                        // 将 PCM16 数据转换为 WAV 格式以便浏览器播放
+                        const audioBlob = createWavFromPcm(audioBase64);
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        const audio = new Audio(audioUrl);
+                        audio.addEventListener('ended', () => URL.revokeObjectURL(audioUrl), { once: true });
+                        await audio.play();
+                    } else {
+                        // 标准 OpenAI TTS API 格式
+                        response = await fetch(settings.apiUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${settings.apiKey}`
+                            },
+                            body: JSON.stringify({
+                                model: settings.model || 'tts-1',
+                                input: cleanText,
+                                voice: settings.voice || 'alloy',
+                                speed: Number(settings.speed) || 1
+                            })
+                        });
+                        if (!response.ok) throw new Error(`TTS API Error: ${response.status}`);
+                        const blob = await response.blob();
+                        const audioUrl = URL.createObjectURL(blob);
+                        const audio = new Audio(audioUrl);
+                        audio.addEventListener('ended', () => URL.revokeObjectURL(audioUrl), { once: true });
+                        await audio.play();
+                    }
+                    return;
+                } catch (error) {
+                    const friendlyError = ApiModule.handleApiError(error, 'TTS 语音合成');
+                    showToast(friendlyError + '，已回退浏览器朗读', 'ri-volume-mute-line');
+                    console.warn('TTS API 调用失败，回退到浏览器朗读:', error);
+                }
+            }
             if (!('speechSynthesis' in window)) {
                 showToast('当前浏览器不支持消息朗读', 'ri-volume-mute-line');
                 return;
             }
             window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(String(text || '').replace(/<[^>]+>/g, ''));
+            const utterance = new SpeechSynthesisUtterance(cleanText);
             utterance.lang = 'zh-CN';
             window.speechSynthesis.speak(utterance);
+        }
+
+        function maybeAutoReadAiReply(text) {
+            const settings = getTtsSettings();
+            if (settings.autoRead) speakMessageText(text);
         }
 
         function quoteMessageForReply(message) {
@@ -3470,20 +3613,24 @@ ${memoryText}
             try {
                 showToast('正在生成对话摘要...', 'ri-loader-4-line');
                 const response = await fetch(ApiModule.buildChatUrl(apiSettings.apiUrl), ApiModule.createChatFetchOptions(apiSettings, [
-                    { role: 'system', content: '请将以下聊天记录总结为 100 字以内的中文摘要，只输出摘要正文。' },
+                    { role: 'system', content: '请将以下聊天记录总结为 500 字以内的中文摘要，只输出摘要正文。' },
                     { role: 'user', content: recentMessages }
-                ], { temperature: 0.3, max_tokens: 160 }));
+                ], { temperature: 0.3, max_tokens: 600 }));
                 if (!response.ok) throw new Error(`API Error: ${response.status}`);
                 const data = await response.json();
                 const summary = data.choices?.[0]?.message?.content?.trim();
                 if (summary) appendSystemMessage(`<b>📝 对话摘要</b><br>${escapeHtml(summary)}`);
             } catch (error) {
-                showToast(`摘要生成失败：${error.message}`, 'ri-error-warning-line');
+                const friendlyError = ApiModule.handleApiError(error, '对话摘要生成');
+                showToast(friendlyError, 'ri-error-warning-line');
             }
         }
 
         function sendMessage(content, type = 'text') {
             if (!content || (typeof content === 'string' && content.trim() === '')) return;
+
+            // 更新用户活动时间，重置主动冒泡倒计时
+            updateUserActivity();
 
             const chatSettings = getChatSettings();
             const minSendInterval = chatSettings.messageDebounce ?? 30;
@@ -3531,6 +3678,8 @@ ${memoryText}
 
             if (type === 'text') {
                 enqueueAIResponse(content);
+            } else if (type === 'image') {
+                enqueueAIResponse('请描述这张图片，并结合上下文回复。', { imageUrl: content });
             }
         }
 
@@ -3737,7 +3886,7 @@ ${memoryText}
         function initThemeMode() {
             applyAccentColor();
             accentColorPicker?.addEventListener('input', () => {
-                localStorage.setItem('accentColor', accentColorPicker.value);
+                setLocalStorageSafely('accentColor', accentColorPicker.value);
                 applyAccentColor(accentColorPicker.value);
             });
             const savedTheme = localStorage.getItem('themeMode') || 'dark';
@@ -3747,7 +3896,7 @@ ${memoryText}
             themeToggleBtn?.addEventListener('click', () => {
                 const nextIsLight = !document.body.classList.contains('light-theme');
                 document.body.classList.toggle('light-theme', nextIsLight);
-                localStorage.setItem('themeMode', nextIsLight ? 'light' : 'dark');
+                setLocalStorageSafely('themeMode', nextIsLight ? 'light' : 'dark');
                 const icon = themeToggleBtn.querySelector('i');
                 if (icon) icon.className = nextIsLight ? 'ri-moon-line' : 'ri-sun-line';
             });
@@ -4037,7 +4186,7 @@ ${memoryText}
             reader.onload = function(e) {
                 const base64Img = e.target.result;
                 chatArea.style.backgroundImage = `url('${base64Img}')`;
-                localStorage.setItem('chatBackground', base64Img);
+                setLocalStorageSafely('chatBackground', base64Img);
                 showToast("背景已更新", "ri-image-line");
             };
             reader.readAsDataURL(file);
@@ -4691,15 +4840,37 @@ ${memoryText}
                     const welcome = data.choices[0].message.content.trim();
                     newCharWelcomeInput.value = welcome;
                 } else {
-                    alert('生成失败，请检查 API 配置');
+                    throw new Error(`HTTP ${response.status}`);
                 }
-            } catch (e) {
-                alert('生成出错：' + e.message);
+            } catch (error) {
+                const friendlyError = ApiModule.handleApiError(error, '生成开场白');
+                showToast(friendlyError, 'ri-error-warning-line');
             } finally {
                 generateWelcomeBtn.disabled = false;
                 generateWelcomeBtn.innerHTML = '<i class="ri-magic-line"></i> AI 生成开场白';
             }
         });
+
+        // 生成合法的角色 ID：基于名字，处理重复和特殊字符
+        function generateCharacterId(name, existingIds = new Set(Object.keys(friendsData))) {
+            // 移除特殊字符，只保留字母、数字、中文、下划线和连字符
+            let baseId = name.trim()
+                .replace(/[^\w\u4e00-\u9fff\-]/g, '_')
+                .replace(/\s+/g, '_');
+            
+            if (!baseId) baseId = 'role';
+            
+            let finalId = baseId;
+            let counter = 1;
+            
+            // 如果 ID 已存在，添加数字后缀
+            while (existingIds.has(finalId)) {
+                finalId = `${baseId}_${counter}`;
+                counter++;
+            }
+            
+            return finalId;
+        }
 
         saveCharacterBtn.addEventListener('click', () => {
             const name = newCharNameInput.value.trim();
@@ -4715,23 +4886,62 @@ ${memoryText}
             const editId = editCharacterIdInput.value;
 
             if (editId) {
-                friendsData[editId].name = name;
-                friendsData[editId].systemPrompt = prompt;
-                friendsData[editId].avatar = avatar;
-                friendsData[editId].welcomeMessage = welcome;
+                // 编辑现有角色：如果名字变了，可能需要更新 ID
+                const oldName = friendsData[editId].name;
+                if (oldName !== name) {
+                    // 名字改变，生成新 ID 并迁移数据
+                    const newId = generateCharacterId(name);
+                    if (newId !== editId) {
+                        // 创建新 ID 的角色数据
+                        friendsData[newId] = {
+                            id: newId,
+                            name: name,
+                            avatar: avatar,
+                            systemPrompt: prompt,
+                            welcomeMessage: welcome,
+                            isCustom: true
+                        };
+                        // 迁移线程数据
+                        if (threadManager[editId]) {
+                            threadManager[newId] = threadManager[editId];
+                            delete threadManager[editId];
+                        }
+                        // 删除旧 ID
+                        delete friendsData[editId];
+                        
+                        // 更新当前聊天对象
+                        if (currentFriendId === editId) {
+                            currentFriendId = newId;
+                        }
+                        
+                        saveThreadManager();
+                    } else {
+                        // ID 相同，直接更新
+                        friendsData[editId].name = name;
+                        friendsData[editId].systemPrompt = prompt;
+                        friendsData[editId].avatar = avatar;
+                        friendsData[editId].welcomeMessage = welcome;
+                    }
+                } else {
+                    // 名字没变，直接更新其他字段
+                    friendsData[editId].name = name;
+                    friendsData[editId].systemPrompt = prompt;
+                    friendsData[editId].avatar = avatar;
+                    friendsData[editId].welcomeMessage = welcome;
+                }
 
                 saveCustomFriendsData();
 
-                if (currentFriendId === editId) {
-                    currentFriendNameElement.textContent = getFriendDisplayName(editId);
-                    renderMessages(editId);
+                if (currentFriendId === editId || (editId !== currentFriendId && friendsData[editId] === undefined)) {
+                    currentFriendNameElement.textContent = getFriendDisplayName(currentFriendId);
+                    renderMessages(currentFriendId);
                 }
 
                 alert('✅ 角色已更新！');
                 renderFriendOptions();
                 renderFriendList();
             } else {
-                const newId = 'custom_' + Date.now();
+                const newId = generateCharacterId(name);
                 friendsData[newId] = {
                     id: newId,
                     name: name,
@@ -4918,10 +5128,56 @@ ${memoryText}
             kbFileUploadInput.click();
         });
 
-        function chunkKnowledgeContent(content, maxChars = 12000) {
+        /**
+         * 把长文本切成适合 embedding + 检索的片段。
+         *
+         * 设计要点：
+         *   - 按段落（\n\n 或 \n）切，自然保留语义边界
+         *   - 单个 chunk 控制在 maxChars 以内（默认 2000 字符 ≈ 500 token，适配大多数 embedding 模型）
+         *   - 相邻 chunk 之间保留 overlapChars 的重叠（默认 200），避免边界处上下文丢失
+         *   - 太长的单个段落会被硬切 + overlap，避免单 chunk 爆炸
+         *
+         * @param {string} content - 原始文本
+         * @param {number} maxChars - 单 chunk 上限
+         * @param {number} overlapChars - 相邻 chunk 重叠
+         * @returns {string[]}
+         */
+        function chunkKnowledgeContent(content, maxChars = 2000, overlapChars = 200) {
+            if (!content) return [''];
+            if (content.length <= maxChars) return [content];
+
+            // 1. 段落切分（优先按双换行，其次单换行，最后句号）
+            const paragraphs = content
+                .split(/\n{2,}/)
+                .flatMap(p => p.split(/\n/))
+                .map(p => p.trim())
+                .filter(Boolean);
+            if (paragraphs.length === 0) return [content];
+
+            // 2. 把段落打包成不超过 maxChars 的 chunk
             const chunks = [];
-            for (let i = 0; i < content.length; i += maxChars) chunks.push(content.slice(i, i + maxChars));
-            return chunks.length ? chunks : [''];
+            let buffer = '';
+            for (const para of paragraphs) {
+                // 单段超过 maxChars —— 硬切
+                if (para.length > maxChars) {
+                    if (buffer) { chunks.push(buffer); buffer = ''; }
+                    for (let i = 0; i < para.length; i += maxChars - overlapChars) {
+                        chunks.push(para.slice(i, i + maxChars));
+                    }
+                    continue;
+                }
+                // 当前 buffer 加上这段会超 —— flush + overlap
+                if (buffer.length + para.length + 2 > maxChars) {
+                    if (buffer) chunks.push(buffer);
+                    // 取 buffer 尾部 overlapChars 字符作为下一段开头，避免边界断语义
+                    const tail = buffer.slice(-overlapChars);
+                    buffer = tail ? `${tail}\n\n${para}` : para;
+                } else {
+                    buffer = buffer ? `${buffer}\n\n${para}` : para;
+                }
+            }
+            if (buffer) chunks.push(buffer);
+            return chunks;
         }
 
         function readFileAsText(file) {
@@ -4959,7 +5215,7 @@ ${memoryText}
                 }
 
                 try {
-                    localStorage.setItem('knowledgeSettings', JSON.stringify(s));
+                    setLocalStorageSafely('knowledgeSettings', JSON.stringify(s));
                     renderKnowledgeFileList(s.files);
                     alert(`✅ 已读取并添加 ${files.length} 个文档到知识库列表`);
                 } catch (err) {
@@ -5041,10 +5297,11 @@ ${memoryText}
                     const welcome = data.choices[0].message.content.trim();
                     newCharWelcomeInputModal.value = welcome;
                 } else {
-                    alert('生成失败，请检查 API 配置');
+                    throw new Error(`HTTP ${response.status}`);
                 }
-            } catch (e) {
-                alert('生成出错：' + e.message);
+            } catch (error) {
+                const friendlyError = ApiModule.handleApiError(error, '生成开场白');
+                showToast(friendlyError, 'ri-error-warning-line');
             } finally {
                 generateWelcomeBtnModal.disabled = false;
                 generateWelcomeBtnModal.innerHTML = '<i class="ri-magic-line"></i> AI 生成开场白';
@@ -5173,6 +5430,7 @@ ${memoryText}
         batchExportBtn?.addEventListener('click', exportSelectedCustomFriends);
         batchDeleteBtn?.addEventListener('click', deleteSelectedCustomFriends);
         createGroupBtn?.addEventListener('click', createGroupChat);
+        currentFriendNameElement?.addEventListener('dblclick', () => { if (isGroupChat()) manageCurrentGroupChat(); });
 
         function ensureMarkdownPreview() {
             if (markdownPreviewEl) return markdownPreviewEl;
@@ -5198,7 +5456,7 @@ ${memoryText}
         myDisplayNameElement.addEventListener('click', enableEditUserName);
         sendBtn.addEventListener('click', () => sendMessage(messageInput.value));
         messageInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            if (normalizeShortcutEvent(e) === getShortcutSettings().send) {
                 e.preventDefault();
                 sendMessage(messageInput.value);
             }
@@ -5312,6 +5570,92 @@ ${memoryText}
             if (chatSearchCount) chatSearchCount.textContent = `${chatSearchIndex + 1}/${chatSearchMatches.length}`;
         }
 
+
+        const defaultShortcuts = {
+            send: 'Ctrl+Enter',
+            focusCommand: '/',
+            help: '?',
+            clearChat: 'Ctrl+L',
+            newThread: 'Ctrl+N'
+        };
+
+        function getShortcutSettings() {
+            return { ...defaultShortcuts, ...(JSON.parse(localStorage.getItem('shortcutSettings') || '{}')) };
+        }
+
+        function normalizeShortcutEvent(e) {
+            const parts = [];
+            if (e.ctrlKey || e.metaKey) parts.push('Ctrl');
+            if (e.altKey) parts.push('Alt');
+            if (e.shiftKey) parts.push('Shift');
+            const key = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+            if (!['Control', 'Meta', 'Alt', 'Shift'].includes(key)) parts.push(key);
+            return parts.join('+');
+        }
+
+        function renderShortcutSettings() {
+            const list = document.getElementById('shortcut-settings-list');
+            if (!list) return;
+            const labels = { send: '发送消息', focusCommand: '聚焦命令输入', help: '快捷键帮助', clearChat: '清空当前对话', newThread: '新建对话线程' };
+            const settings = getShortcutSettings();
+            list.innerHTML = Object.keys(labels).map(key => `<div class="form-group"><label>${labels[key]}</label><input type="text" class="shortcut-setting-input" data-shortcut="${key}" value="${escapeHtml(settings[key])}"></div>`).join('');
+            list.querySelectorAll('input').forEach(input => input.addEventListener('change', () => {
+                const next = getShortcutSettings();
+                next[input.dataset.shortcut] = input.value.trim() || defaultShortcuts[input.dataset.shortcut];
+                setLocalStorageSafely('shortcutSettings', JSON.stringify(next));
+            }));
+        }
+
+        async function fetchKnowledgeUrl() {
+            const input = document.getElementById('kb-url-input');
+            const url = input?.value?.trim();
+            if (!url) return;
+            try {
+                const res = await fetch(url);
+                const html = await res.text();
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                doc.querySelectorAll('script,style,nav,footer,header,aside').forEach(n => n.remove());
+                const title = doc.querySelector('title')?.textContent?.trim() || url;
+                const text = (doc.body?.innerText || '').replace(/\s+/g, ' ').trim();
+                const s = JSON.parse(localStorage.getItem('knowledgeSettings')) || {};
+                s.files = s.files || [];
+                chunkKnowledgeContent(text).forEach((chunk, index, chunks) => s.files.push({ id: `kb_web_${Date.now()}_${index}`, sourceId: url, name: `${title}${chunks.length > 1 ? `（网页分块 ${index + 1}/${chunks.length}）` : ''}`, size: chunk.length, uploadDate: new Date().toISOString(), url, content: chunk }));
+                setLocalStorageSafely('knowledgeSettings', JSON.stringify(s));
+                renderKnowledgeFileList(s.files);
+                showToast('网页正文已加入知识库', 'ri-global-line');
+            } catch (err) {
+                showToast(`网页抓取失败：${err.message}`, 'ri-error-warning-line');
+            }
+        }
+
+        async function chatWithKnowledgeBase() {
+            const input = document.getElementById('kb-chat-input');
+            const result = document.getElementById('kb-chat-result');
+            const query = input?.value?.trim();
+            if (!query || !result) return;
+            result.textContent = '检索中...';
+            const hits = await queryKnowledgeBase(query, 5);
+            if (!hits.length) { result.textContent = '没有检索到相关知识。'; return; }
+            const apiSettings = JSON.parse(localStorage.getItem('aiChatSettings') || '{}');
+            if (!apiSettings.apiUrl || !apiSettings.apiKey) {
+                result.textContent = hits.map(h => `- ${h.content}`).join('\n');
+                return;
+            }
+            const messages = [
+                { role: 'system', content: '你是知识库问答助手，只基于给定资料回答；资料不足时说明不知道。' },
+                { role: 'user', content: `问题：${query}\n\n资料：\n${hits.map((h,i)=>`[${i+1}] ${h.content}`).join('\n')}` }
+            ];
+            try {
+                const res = await fetch(ApiModule.buildChatUrl(apiSettings.apiUrl), ApiModule.createChatFetchOptions(apiSettings, messages, { temperature: 0.2, max_tokens: 800, stream: false }));
+                if (!res.ok) throw new Error(`API Error: ${res.status}`);
+                const data = await res.json();
+                result.textContent = data.choices?.[0]?.message?.content || hits.map(h => `- ${h.content}`).join('\n');
+            } catch (error) {
+                const friendlyError = ApiModule.handleApiError(error, '知识库问答');
+                result.textContent = friendlyError;
+            }
+        }
+
         function toggleShortcutHelp(force) {
             if (!shortcutHelpModal) return;
             const shouldShow = force ?? !shortcutHelpModal.classList.contains('show');
@@ -5325,11 +5669,13 @@ ${memoryText}
         document.addEventListener('keydown', (e) => {
             const target = e.target;
             const isTyping = target && ['INPUT', 'TEXTAREA'].includes(target.tagName);
-            if (e.key === '?' && !isTyping) {
+            const shortcut = normalizeShortcutEvent(e);
+            const settings = getShortcutSettings();
+            if (shortcut === settings.help && !isTyping) {
                 e.preventDefault();
                 toggleShortcutHelp();
             }
-            if (e.key === '/' && !isTyping) {
+            if (shortcut === settings.focusCommand && !isTyping) {
                 e.preventDefault();
                 messageInput.focus();
                 if (!messageInput.value) {
@@ -5337,9 +5683,24 @@ ${memoryText}
                     autoResizeMessageInput();
                 }
             }
+            if (shortcut === settings.clearChat && !isTyping) {
+                e.preventDefault();
+                clearChatBtn?.click();
+            }
+            if (shortcut === settings.newThread && !isTyping) {
+                e.preventDefault();
+                createNewThread?.();
+            }
         });
         exportChatHtmlBtn?.addEventListener('click', exportChatHtml);
         exportMemoryCsvBtn?.addEventListener('click', exportLongTermMemoryCsv);
+        document.getElementById('memory-filter-input')?.addEventListener('input', renderMemoryProfileList);
+        document.getElementById('memory-time-filter')?.addEventListener('change', renderMemoryProfileList);
+        document.getElementById('add-memory-btn')?.addEventListener('click', addPermanentMemoryItem);
+        document.getElementById('merge-memory-btn')?.addEventListener('click', mergeSimilarMemoryItems);
+        document.getElementById('kb-fetch-url-btn')?.addEventListener('click', fetchKnowledgeUrl);
+        document.getElementById('kb-chat-btn')?.addEventListener('click', chatWithKnowledgeBase);
+        renderShortcutSettings();
         importMemoryCsvInput?.addEventListener('change', (e) => {
             const file = e.target.files?.[0];
             if (file) importLongTermMemoryCsv(file);
@@ -5382,36 +5743,46 @@ ${memoryText}
         function sanitizeMessage(text) {
             if (typeof text !== 'string') return text;
 
-            // 使用 DOMPurify 进行专业的 XSS 防护
-            if (typeof DOMPurify !== 'undefined') {
-                return DOMPurify.sanitize(text, {
-                    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'code', 'pre', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img'],
-                    ALLOWED_ATTR: ['href', 'src', 'alt', 'title'],
-                    ALLOW_DATA_ATTR: false,
-                    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i
-                });
-            }
-
-            // 降级方案：如果 DOMPurify 不可用，使用基础过滤
+            // ========== 第一层：预处理 - 强制移除所有危险标签 ==========
             let sanitized = text;
 
-            // 移除 <script> 标签及其内容（不区分大小写）
+            // 🔴 重点：移除所有 <style> 标签和内容，防止 CSS 污染全局样式
+            sanitized = sanitized.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+            sanitized = sanitized.replace(/<style[^>]*>/gi, '');
+            sanitized = sanitized.replace(/<\/style>/gi, '');
+
+            // 🔴 移除所有 <link> 标签，防止外部样式注入
+            sanitized = sanitized.replace(/<link[^>]*>/gi, '');
+
+            // 🔴 移除内联 style 属性，防止样式污染
+            sanitized = sanitized.replace(/\s+style\s*=\s*["'][^"']*["']/gi, '');
+
+            // 移除 <script> 标签及其内容
             sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
             sanitized = sanitized.replace(/<script[^>]*>/gi, '');
             sanitized = sanitized.replace(/<\/script>/gi, '');
 
-            // 移除 javascript: 协议（不区分大小写，包括编码形式）
-            sanitized = sanitized.replace(/javascript\s*:/gi, 'blocked:');
-            sanitized = sanitized.replace(/j\s*a\s*v\s*a\s*s\s*c\s*r\s*i\s*p\s*t\s*:/gi, 'blocked:');
+            // 移除 iframe、object、embed 等危险标签
+            sanitized = sanitized.replace(/<(iframe|object|embed|form|input|button|textarea|select|meta)\b[^>]*>/gi, '');
+            sanitized = sanitized.replace(/<\/(iframe|object|embed|form|input|button|textarea|select|meta)>/gi, '');
 
-            // 移除其他危险协议
-            sanitized = sanitized.replace(/vbscript\s*:/gi, 'blocked:');
-            sanitized = sanitized.replace(/data\s*:\s*text\/html/gi, 'blocked:text/plain');
+            // 移除 javascript: 协议
+            sanitized = sanitized.replace(/javascript\s*:/gi, 'blocked:');
             sanitized = sanitized.replace(/on\w+\s*=/gi, 'data-blocked=');
 
-            // 移除 iframe、object、embed 等危险标签
-            sanitized = sanitized.replace(/<(iframe|object|embed|form|input|button|textarea|select|style|link|meta)\b[^>]*>/gi, '');
-            sanitized = sanitized.replace(/<\/(iframe|object|embed|form|input|button|textarea|select|style|link|meta)>/gi, '');
+            // ========== 第二层：DOMPurify 专业过滤 ==========
+            if (typeof DOMPurify !== 'undefined') {
+                sanitized = DOMPurify.sanitize(sanitized, {
+                    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'code', 'pre', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img', 'span', 'div'],
+                    ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class'],
+                    ALLOW_DATA_ATTR: false,
+                    FORBID_TAGS: ['style', 'link', 'script', 'iframe'],
+                    FORBID_ATTR: ['style', 'onerror', 'onload', 'onclick'],
+                    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i,
+                    SANITIZE_DOM: true,
+                    KEEP_CONTENT: true
+                });
+            }
 
             return sanitized;
         }
@@ -5437,21 +5808,118 @@ ${memoryText}
             if (!friendContextMenu.contains(e.target)) toggleFriendContextMenu(false);
         });
 
-        function sendImageFile(file) {
-            if (!file || !file.type?.startsWith('image/')) {
-                showToast('仅支持发送图片文件', 'ri-error-warning-line');
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = (evt) => sendMessage(evt.target.result, 'image');
-            reader.readAsDataURL(file);
+        function getVisionSettings() {
+            return JSON.parse(localStorage.getItem('visionSettings') || '{}');
         }
 
-        uploadBtn.addEventListener('click', () => imageUpload.click());
-        imageUpload.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) sendImageFile(file);
-            imageUpload.value = '';
+        function saveVisionSettings() {
+            const settings = {
+                enabled: enableMultimodalVisionCheckbox?.checked ?? false,
+                maxWidth: parseInt(imageCompressionMaxWidthInput?.value || 1280, 10),
+                quality: parseFloat(imageCompressionQualityInput?.value || 0.82)
+            };
+            localStorage.setItem('visionSettings', JSON.stringify(settings));
+            return settings;
+        }
+
+        function loadVisionSettings() {
+            const settings = getVisionSettings();
+            if (enableMultimodalVisionCheckbox) enableMultimodalVisionCheckbox.checked = settings.enabled === true;
+            if (imageCompressionMaxWidthInput) imageCompressionMaxWidthInput.value = settings.maxWidth || 1280;
+            if (imageCompressionQualityInput) imageCompressionQualityInput.value = settings.quality || 0.82;
+        }
+
+        function compressImageDataUrl(file, maxEdge = 1280, quality = 0.82) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error('图片读取失败'));
+                reader.onload = () => {
+                    const img = new Image();
+                    img.onerror = () => resolve(reader.result);
+                    img.onload = () => {
+                        const scale = Math.min(1, maxEdge / Math.max(img.width, img.height));
+                        const canvas = document.createElement('canvas');
+                        canvas.width = Math.max(1, Math.round(img.width * scale));
+                        canvas.height = Math.max(1, Math.round(img.height * scale));
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.src = reader.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function readTextFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error('文件读取失败'));
+                reader.onload = () => resolve(reader.result);
+                reader.readAsText(file, 'utf-8');
+            });
+        }
+
+        async function sendFile(file) {
+            if (!file) return;
+
+            // 图片文件
+            if (file.type?.startsWith('image/')) {
+                const settings = getVisionSettings();
+                try {
+                    const maxEdge = Math.max(320, parseInt(settings.maxWidth, 10) || 1280);
+                    const quality = Math.min(1, Math.max(0.1, Number(settings.quality) || 0.82));
+                    const dataUrl = await compressImageDataUrl(file, maxEdge, quality);
+                    sendMessage(dataUrl, 'image');
+                    return;
+                } catch (error) {
+                    showToast(`图片处理失败：${error.message}`, 'ri-error-warning-line');
+                    return;
+                }
+            }
+
+            // 视频文件
+            if (file.type?.startsWith('video/')) {
+                const vision = getVisionSettings();
+                if (vision.enabled !== true) {
+                    showToast('请先开启「多模态视觉」功能', 'ri-error-warning-line');
+                    return;
+                }
+                // 视频转 base64 发送（注意：大文件可能会有性能问题）
+                const reader = new FileReader();
+                reader.onload = () => {
+                    sendMessage(reader.result, 'video');
+                    showToast(`已发送视频：${file.name}`, 'ri-video-line');
+                };
+                reader.readAsDataURL(file);
+                return;
+            }
+
+            // 文本文件 (.txt, .md, .markdown)
+            if (file.type?.startsWith('text/') || /\.(txt|md|markdown)$/i.test(file.name)) {
+                try {
+                    const content = await readTextFile(file);
+                    const fileContent = `[文件：${file.name}]\n\n${content}`;
+                    sendMessage(fileContent, 'text');
+                    showToast(`已发送文件：${file.name}`, 'ri-file-text-line');
+                } catch (error) {
+                    showToast(`文件读取失败：${error.message}`, 'ri-error-warning-line');
+                }
+                return;
+            }
+
+            showToast(`不支持的文件类型：${file.name}`, 'ri-error-warning-line');
+        }
+
+        uploadBtn.addEventListener('click', () => fileUpload.click());
+        fileUploadBtn.addEventListener('click', () => fileUpload.click());
+        fileUpload.addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                // 支持多文件上传，逐个发送
+                Array.from(files).forEach(file => sendFile(file));
+            }
+            fileUpload.value = '';
         });
 
         avatarUpload.addEventListener('change', (e) => {
@@ -5514,6 +5982,7 @@ ${memoryText}
             aiSettingsModal.classList.add('show');
             testResultDiv.textContent = '';
             loadChatSettings();
+            loadVisionSettings();
             renderContextEditList();
         });
         closeSettingsBtn.addEventListener('click', () => aiSettingsModal.classList.remove('show'));
@@ -5545,7 +6014,7 @@ ${memoryText}
 
         closeDisclaimerBarBtn.addEventListener('click', () => {
             disclaimerBar.style.display = 'none';
-            localStorage.setItem('disclaimerHidden', 'true');
+            setLocalStorageSafely('disclaimerHidden', 'true');
         });
 
         tabButtons.forEach(btn => {
@@ -5564,70 +6033,15 @@ ${memoryText}
                     loadKnowledgeSettings();
                 } else if (btn.dataset.tab === 'longterm-memory') {
                     renderMemoryProfileList();
+                } else if (btn.dataset.tab === 'shortcuts') {
+                    renderShortcutSettings();
                 }
             });
         });
 
-        function loadApiSettings() {
-            const s = JSON.parse(localStorage.getItem('aiChatSettings'));
-            if (s) {
-                apiUrlInput.value = s.apiUrl||'';
-                apiKeyInput.value = s.apiKey||'';
-                modelNameInput.value = s.modelName||'';
-            }
-
-            const ltm = JSON.parse(localStorage.getItem('longTermMemorySettings')) || {};
-            document.getElementById('ltm-api-url').value = ltm.apiUrl || '';
-            document.getElementById('ltm-api-key').value = ltm.apiKey || '';
-            document.getElementById('ltm-embedding-model').value = ltm.embeddingModel || 'text-embedding-3-small';
-            document.getElementById('ltm-rerank-model').value = ltm.rerankModel || '';
-            document.getElementById('enable-long-term-memory').checked = ltm.enabled !== undefined ? ltm.enabled : true;
-        }
-
-        function saveApiSettings() {
-            const rawUrl = apiUrlInput.value.trim();
-            const normalizedUrl = normalizeApiUrl(rawUrl);
-            apiUrlInput.value = normalizedUrl;
-            const s = {
-                apiUrl: normalizedUrl,
-                apiKey: apiKeyInput.value.trim(),
-                modelName: modelNameInput.value.trim()
-            };
-            localStorage.setItem('aiChatSettings', JSON.stringify(s));
 
 
-            const ltmRawUrl = document.getElementById('ltm-api-url').value.trim();
-            const ltmSettings = {
-                apiUrl: normalizeApiUrl(ltmRawUrl) || '',
-                apiKey: document.getElementById('ltm-api-key').value.trim(),
-                embeddingModel: document.getElementById('ltm-embedding-model').value.trim(),
-                rerankModel: document.getElementById('ltm-rerank-model').value.trim(),
-                enabled: document.getElementById('enable-long-term-memory').checked
-            };
-            localStorage.setItem('longTermMemorySettings', JSON.stringify(ltmSettings));
 
-            return s;
-        }
-
-
-        function loadKnowledgeSettings() {
-            const s = JSON.parse(localStorage.getItem('knowledgeSettings')) || {};
-            kbApiUrlInput.value = s.apiUrl || '';
-            kbApiKeyInput.value = s.apiKey || '';
-            kbEmbeddingModelInput.value = s.embeddingModel || '';
-            kbRerankModelInput.value = s.rerankModel || '';
-            kbEnabledCheckbox.checked = s.enabled || false;
-            renderKnowledgeFileList(s.files || []);
-        }
-
-        function loadAutoBackupSettings() {
-            const enabled = localStorage.getItem('autoBackupEnabled') === 'true';
-            autoBackupEnabledCheckbox.checked = enabled;
-        }
-
-        function saveAutoBackupSettings() {
-            localStorage.setItem('autoBackupEnabled', autoBackupEnabledCheckbox.checked.toString());
-        }
 
         // 自动备份：在页面关闭或刷新前自动导出（半小时内只备份一次）
         window.addEventListener('beforeunload', (e) => {
@@ -5644,7 +6058,7 @@ ${memoryText}
 
                 // 执行备份并记录时间
                 performFullDataExport(true);
-                localStorage.setItem('lastAutoBackupTime', now.toString());
+                setLocalStorageSafely('lastAutoBackupTime', now.toString());
                 // 注意：现代浏览器可能会阻止 beforeunload 中的异步操作
                 // 但我们会尝试触发导出
             }
@@ -5652,58 +6066,7 @@ ${memoryText}
 
         autoBackupEnabledCheckbox.addEventListener('change', saveAutoBackupSettings);
 
-        function saveKnowledgeSettings() {
-            const currentFiles = JSON.parse(localStorage.getItem('knowledgeSettings'))?.files || [];
-            const s = {
-                apiUrl: kbApiUrlInput.value.trim(),
-                apiKey: kbApiKeyInput.value.trim(),
-                embeddingModel: kbEmbeddingModelInput.value.trim(),
-                rerankModel: kbRerankModelInput.value.trim(),
-                enabled: kbEnabledCheckbox.checked,
-                files: currentFiles
-            };
-            localStorage.setItem('knowledgeSettings', JSON.stringify(s));
-            return s;
-        }
 
-
-        function saveMemorySettings() {
-            const ltmRawUrl = document.getElementById('ltm-api-url').value.trim();
-            const ltmSettings = {
-                apiUrl: normalizeApiUrl(ltmRawUrl) || '',
-                apiKey: document.getElementById('ltm-api-key').value.trim(),
-                embeddingModel: document.getElementById('ltm-embedding-model').value.trim(),
-                rerankModel: document.getElementById('ltm-rerank-model').value.trim(),
-                enabled: document.getElementById('enable-long-term-memory').checked
-            };
-            localStorage.setItem('longTermMemorySettings', JSON.stringify(ltmSettings));
-            return ltmSettings;
-        }
-
-        function renderKnowledgeFileList(files) {
-            if (!files || files.length === 0) {
-                kbFileListDiv.innerHTML = '<p style="color: #666; font-size: 0.9em; text-align: center;">暂无上传的文档</p>';
-                return;
-            }
-            kbFileListDiv.innerHTML = files.map(f => `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 6px; margin-bottom: 6px;">
-                    <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
-                        <i class="ri-file-text-line" style="color: #e6c78a;"></i>
-                        <span style="font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(f.name)}</span>
-                    </div>
-                    <button class="btn btn-danger btn-sm" onclick="removeKnowledgeFile('${f.id}')" style="padding: 4px 8px; font-size: 0.8em;">
-                        <i class="ri-delete-bin-line"></i>
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        window.removeKnowledgeFile = function(fileId) {
-            const s = JSON.parse(localStorage.getItem('knowledgeSettings')) || {};
-            s.files = (s.files || []).filter(f => f.id !== fileId);
-            localStorage.setItem('knowledgeSettings', JSON.stringify(s));
-            renderKnowledgeFileList(s.files);
-        };
 
         apiUrlInput.addEventListener('blur', () => {
             const rawUrl = apiUrlInput.value.trim();
@@ -5713,6 +6076,7 @@ ${memoryText}
         saveSettingsBtn.addEventListener('click', () => {
 
             saveApiSettings();
+            saveVisionSettings();
             const savedChatSettings = saveChatSettings();
             if (savedChatSettings.enableProactiveCare && 'Notification' in window) {
                 if (Notification.permission === 'default') {
@@ -5726,8 +6090,10 @@ ${memoryText}
             applyFeatureToggles();
             saveKnowledgeSettings();
             saveMemorySettings();
+            renderShortcutSettings();
 
             aiSettingsModal.classList.remove('show');
+            showToast('设置已保存', 'ri-check-line');
         });
 
         resetSettingsBtn.addEventListener('click', () => {
@@ -5735,6 +6101,16 @@ ${memoryText}
             if (activeTab === 'api') {
                 apiUrlInput.value = ''; apiKeyInput.value = ''; modelNameInput.value = '';
                 localStorage.removeItem('aiChatSettings');
+                localStorage.removeItem('visionSettings');
+                localStorage.removeItem('ttsSettings');
+                if (enableMultimodalVisionCheckbox) enableMultimodalVisionCheckbox.checked = false;
+                if (imageCompressionMaxWidthInput) imageCompressionMaxWidthInput.value = 1280;
+                if (imageCompressionQualityInput) imageCompressionQualityInput.value = 0.82;
+                if (ttsApiUrlInput) ttsApiUrlInput.value = '';
+                if (ttsApiKeyInput) ttsApiKeyInput.value = '';
+                if (ttsVoiceInput) ttsVoiceInput.value = 'alloy';
+                if (ttsSpeedInput) ttsSpeedInput.value = 1;
+                if (ttsAutoReadCheckbox) ttsAutoReadCheckbox.checked = false;
                 testResultDiv.textContent = '';
             } else if (activeTab === 'appearance') {
                 if(confirm("确定要恢复默认背景吗？")) { resetBackground(); }
@@ -5799,7 +6175,8 @@ ${memoryText}
                     throw new Error(err.error?.message || `HTTP ${res.status}`);
                 }
             } catch (err) {
-                testResultDiv.textContent = `❌ 对话模型失败：${err.message}`;
+                const friendlyError = ApiModule.handleApiError(err, '对话模型测试');
+                testResultDiv.textContent = friendlyError;
                 testResultDiv.className = 'test-result error';
             }
 
@@ -5861,7 +6238,8 @@ ${memoryText}
                     throw new Error(err.error?.message || `HTTP ${res.status}`);
                 }
             } catch (err) {
-                testResultDiv.textContent = `❌ 获取模型失败：${err.message}`;
+                const friendlyError = ApiModule.handleApiError(err, '获取模型列表');
+                testResultDiv.textContent = friendlyError;
                 testResultDiv.className = 'test-result error';
             }
 
@@ -5972,7 +6350,7 @@ ${memoryText}
                 }
             });
 
-            localStorage.setItem(storageKey, JSON.stringify(mergedSettings));
+            setLocalStorageSafely(storageKey, JSON.stringify(mergedSettings));
         }
 
         exportConfigBtn.addEventListener('click', () => {
@@ -5983,6 +6361,9 @@ ${memoryText}
                 aiChatSettings: readExportableSettings('aiChatSettings'),
                 longTermMemorySettings: readExportableSettings('longTermMemorySettings'),
                 knowledgeSettings: readExportableSettings('knowledgeSettings'),
+                visionSettings: readExportableSettings('visionSettings'),
+                ttsSettings: readExportableSettings('ttsSettings'),
+                shortcutSettings: readExportableSettings('shortcutSettings'),
                 chatSettings: readExportableSettings('chatSettings'),
                 friendSettings: readExportableSettings('friendSettings'),
                 customFriendsData: JSON.parse(localStorage.getItem('customFriendsData')) || '{}',
@@ -6111,6 +6492,9 @@ ${memoryText}
                 aiChatSettings: readExportableSettings('aiChatSettings'),
                 longTermMemorySettings: readExportableSettings('longTermMemorySettings'),
                 knowledgeSettings: readExportableSettings('knowledgeSettings'),
+                visionSettings: readExportableSettings('visionSettings'),
+                ttsSettings: readExportableSettings('ttsSettings'),
+                shortcutSettings: readExportableSettings('shortcutSettings'),
                 chatSettings: readExportableSettings('chatSettings'),
                 friendSettings: readExportableSettings('friendSettings'),
                 customFriendsData: sanitizeDataUrlsForFullExport(JSON.parse(localStorage.getItem('customFriendsData')) || '{}', excludeEmbeddedMedia),
@@ -6160,6 +6544,9 @@ ${memoryText}
                     if (fullData.aiChatSettings) mergeImportedSettings('aiChatSettings', fullData.aiChatSettings);
                     if (fullData.longTermMemorySettings) mergeImportedSettings('longTermMemorySettings', fullData.longTermMemorySettings);
                     if (fullData.knowledgeSettings) mergeImportedSettings('knowledgeSettings', fullData.knowledgeSettings);
+                    if (fullData.shortcutSettings) mergeImportedSettings('shortcutSettings', fullData.shortcutSettings);
+                    if (fullData.visionSettings) mergeImportedSettings('visionSettings', fullData.visionSettings);
+                    if (fullData.ttsSettings) mergeImportedSettings('ttsSettings', fullData.ttsSettings);
                     if (fullData.chatSettings) mergeImportedSettings('chatSettings', fullData.chatSettings);
                     if (fullData.groupManager) {
                         groupManager = fullData.groupManager;
@@ -6167,16 +6554,16 @@ ${memoryText}
                         Object.values(groupManager).forEach(group => registerGroupFriend(group));
                     }
                     if (fullData.friendSettings) mergeImportedSettings('friendSettings', fullData.friendSettings);
-                    if (fullData.customFriendsData) localStorage.setItem('customFriendsData', JSON.stringify(fullData.customFriendsData));
-                    if (fullData.myUserName) localStorage.setItem('myUserName', fullData.myUserName);
-                    if (fullData.isMobileView) localStorage.setItem('isMobileView', fullData.isMobileView);
+                    if (fullData.customFriendsData) setLocalStorageSafely('customFriendsData', JSON.stringify(fullData.customFriendsData));
+                    if (fullData.myUserName) setLocalStorageSafely('myUserName', fullData.myUserName);
+                    if (fullData.isMobileView) setLocalStorageSafely('isMobileView', fullData.isMobileView);
 
 
                     if (fullData.userAvatar) {
                         const userAvatarImg = inputAvatar;
                         if (userAvatarImg) {
                             userAvatarImg.src = fullData.userAvatar;
-                            localStorage.setItem('userAvatar', fullData.userAvatar);
+                            setLocalStorageSafely('userAvatar', fullData.userAvatar);
                         }
                     }
 
@@ -6246,11 +6633,14 @@ ${memoryText}
                     if (config.aiChatSettings) mergeImportedSettings('aiChatSettings', config.aiChatSettings);
                     if (config.longTermMemorySettings) mergeImportedSettings('longTermMemorySettings', config.longTermMemorySettings);
                     if (config.knowledgeSettings) mergeImportedSettings('knowledgeSettings', config.knowledgeSettings);
+                    if (config.shortcutSettings) mergeImportedSettings('shortcutSettings', config.shortcutSettings);
+                    if (config.visionSettings) mergeImportedSettings('visionSettings', config.visionSettings);
+                    if (config.ttsSettings) mergeImportedSettings('ttsSettings', config.ttsSettings);
                     if (config.chatSettings) mergeImportedSettings('chatSettings', config.chatSettings);
                     if (config.friendSettings) mergeImportedSettings('friendSettings', config.friendSettings);
-                    if (config.customFriendsData) localStorage.setItem('customFriendsData', JSON.stringify(config.customFriendsData));
-                    if (config.myUserName) localStorage.setItem('myUserName', config.myUserName);
-                    if (config.isMobileView) localStorage.setItem('isMobileView', config.isMobileView);
+                    if (config.customFriendsData) setLocalStorageSafely('customFriendsData', JSON.stringify(config.customFriendsData));
+                    if (config.myUserName) setLocalStorageSafely('myUserName', config.myUserName);
+                    if (config.isMobileView) setLocalStorageSafely('isMobileView', config.isMobileView);
 
                     showToast(`配置已导入，共 ${Object.keys(config).length - 2} 项`, 'ri-upload-line');
 

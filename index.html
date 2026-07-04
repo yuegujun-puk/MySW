@@ -44,13 +44,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/core.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/javascript.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/python.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/bash.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/json.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/xml.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/css.min.js"></script>
+    <!-- highlight.js 完整浏览器版本（包含所有常用语言，非CommonJS模块） -->
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/build/highlight.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <link rel="stylesheet" href="style.css">
 
@@ -114,7 +109,7 @@
             <!-- 底部输入框 -->
             <footer class="chat-input-area" role="contentinfo">
                 <input type="file" id="avatar-upload" accept="image/*" hidden>
-                <input type="file" id="image-upload" accept="image/*" hidden>
+                <input type="file" id="file-upload" accept="image/*,video/*,.txt,.md,.markdown" multiple hidden>
                 <input type="file" id="import-upload" accept=".json" hidden>
                 <input type="file" id="char-avatar-upload" accept="image/*" hidden>
                 <input type="file" id="bubble-bg-upload" accept="image/*" hidden>
@@ -125,7 +120,7 @@
                     <div class="input-wrapper">
                         <textarea id="message-input" rows="1" placeholder="输入消息... (Enter 换行，Ctrl+Enter 发送，试试 /help 查看指令)" aria-label="输入消息"></textarea>
                         <div class="input-icons">
-                            <i class="ri-sticky-note-line" title="剪贴板" role="button" tabindex="0" aria-label="剪贴板"></i>
+                            <i class="ri-attachment-2-line" id="file-upload-btn" title="上传文件" role="button" tabindex="0" aria-label="上传文件"></i>
                             <i class="ri-image-add-line" id="upload-btn" title="发送图片" role="button" tabindex="0" aria-label="发送图片"></i>
                             <i class="ri-emotion-line" id="emoji-btn" title="表情" role="button" tabindex="0" aria-label="选择表情"></i>
                             <i class="ri-mic-line" id="voice-input-btn" title="语音输入" role="button" tabindex="0" aria-label="语音输入"></i>
@@ -236,6 +231,7 @@
                     <button class="tab-button" data-tab="import">导入导出</button>
                     <button class="tab-button" data-tab="knowledge">知识库</button>
                     <button class="tab-button" data-tab="longterm-memory">长期记忆</button>
+                    <button class="tab-button" data-tab="shortcuts">快捷键</button>
                 </div>
                 
                 <!-- API 配置 Tab -->
@@ -262,6 +258,39 @@
                         </select>
                     </div>
                     <div id="test-result" class="test-result"></div>
+                    <div class="form-group" style="border-top: 1px dashed #444; padding-top: 15px; margin-top: 15px;">
+                        <h3 style="margin-bottom: 12px; color: #e6c78a;"><i class="ri-image-line"></i> 多模态视觉</h3>
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="enable-multimodal-vision" style="width: 18px; height: 18px;">
+                            <span>启用图片识别（需要后端模型支持视觉）</span>
+                        </label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                            <div>
+                                <label for="image-compression-max-width" style="font-size: 0.85em; color: #aaa;">图片最大边长</label>
+                                <input type="number" id="image-compression-max-width" value="1280" min="320" max="4096">
+                            </div>
+                            <div>
+                                <label for="image-compression-quality" style="font-size: 0.85em; color: #aaa;">压缩质量 (0.1-1)</label>
+                                <input type="number" id="image-compression-quality" value="0.82" min="0.1" max="1" step="0.05">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="border-top: 1px dashed #444; padding-top: 15px; margin-top: 15px;">
+                        <h3 style="margin-bottom: 12px; color: #e6c78a;"><i class="ri-volume-up-line"></i> 高级 TTS</h3>
+                        <p style="font-size: 0.8em; color: #888; margin-bottom: 10px;">配置后朗读按钮将调用 TTS API；留空则使用浏览器自带朗读。</p>
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 10px;">
+                            <input type="checkbox" id="tts-auto-read" style="width: 18px; height: 18px;">
+                            <span>AI 回复后自动朗读</span>
+                        </label>
+                        <div class="form-group"><label for="tts-api-url">TTS API 端点</label><input type="text" id="tts-api-url" placeholder="https://api.openai.com/v1/audio/speech"></div>
+                        <div class="form-group"><label for="tts-api-key">TTS API Key</label><input type="password" id="tts-api-key" placeholder="sk-..."></div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div><label for="tts-voice" style="font-size: 0.85em; color: #aaa;">声音</label><input type="text" id="tts-voice" value="alloy" placeholder="alloy / zh-CN-XiaoxiaoNeural"></div>
+                            <div><label for="tts-speed" style="font-size: 0.85em; color: #aaa;">语速</label><input type="number" id="tts-speed" value="1" min="0.25" max="4" step="0.05"></div>
+                        </div>
+                        <div class="form-group" style="margin-top: 10px;"><label for="tts-model">语音模型</label><input type="text" id="tts-model" placeholder="tts-1 / tts-1-hd"></div>
+                    </div>
                 </div>
 
                 <!-- 界面外观 Tab -->
@@ -504,6 +533,14 @@
                             <label><input type="checkbox" id="show-chat-stats" checked> 统计看板按钮</label>
                             <label><input type="checkbox" id="show-markdown-preview" checked> Markdown 预览</label>
                             <label><input type="checkbox" id="show-group-chat" checked> 多角色群聊</label>
+                            <label><input type="checkbox" id="enable-latex-mermaid"> LaTeX 公式 + Mermaid 图表渲染</label>
+                            <label><input type="checkbox" id="enable-message-reply"> 消息引用/回复功能</label>
+                            <label><input type="checkbox" id="enable-draft-sync"> 跨标签页草稿同步</label>
+                            <label><input type="checkbox" id="enable-branch-manager"> 分支可视化管理面板</label>
+                            <label><input type="checkbox" id="enable-analytics"> 对话分析仪表盘</label>
+                            <label><input type="checkbox" id="enable-theater-mode"> 对话回放/剧场模式</label>
+                            <label><input type="checkbox" id="enable-virtual-scroll"> 虚拟滚动优化（消息过多时）</label>
+                            <label><input type="checkbox" id="enable-performance-fix" checked> 大量消息性能修复（推荐开启）</label>
                         </div>
                     </div>
 
@@ -653,6 +690,18 @@
                                 <p style="color: #666; font-size: 0.9em; text-align: center;">暂无上传的文档</p>
                             </div>
                         </div>
+                        <div class="form-group" style="border-top: 1px dashed #444; padding-top: 15px; margin-top: 15px;">
+                            <h3 style="margin-bottom: 12px; color: #e6c78a;"><i class="ri-global-line"></i> 网页抓取与知识库聊天</h3>
+                            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                <input type="url" id="kb-url-input" placeholder="输入网页 URL 自动提取正文" style="flex:1; min-width:240px;">
+                                <button class="btn btn-outline" id="kb-fetch-url-btn"><i class="ri-download-cloud-line"></i> 抓取网页</button>
+                            </div>
+                            <div style="display:flex; gap:8px; margin-top:10px;">
+                                <input type="text" id="kb-chat-input" placeholder="单独向知识库提问（RAG 问答）" style="flex:1;">
+                                <button class="btn btn-primary" id="kb-chat-btn"><i class="ri-question-answer-line"></i> 提问</button>
+                            </div>
+                            <div id="kb-chat-result" style="margin-top:10px; color:#ccc; white-space:pre-wrap;"></div>
+                        </div>
                 </div>
                 
                 <!-- 长期记忆 Tab -->
@@ -711,6 +760,10 @@
                             </p>
                             
                             <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+                                <input type="search" id="memory-filter-input" placeholder="按标签/内容筛选记忆" style="flex:1; min-width:180px;">
+                                <select id="memory-time-filter" style="max-width:160px;"><option value="all">全部时间</option><option value="7d">最近 7 天</option><option value="30d">最近 30 天</option><option value="permanent">永久记忆</option></select>
+                                <button class="btn btn-outline btn-sm" id="add-memory-btn"><i class="ri-add-line"></i> 手动添加</button>
+                                <button class="btn btn-outline btn-sm" id="merge-memory-btn"><i class="ri-git-merge-line"></i> 融合相似</button>
                                 <button class="btn btn-outline btn-sm" id="export-memory-csv-btn"><i class="ri-file-excel-line"></i> 导出 CSV</button>
                                 <label class="btn btn-outline btn-sm" for="import-memory-csv-input" style="cursor:pointer;"><i class="ri-upload-line"></i> 导入 CSV</label>
                                 <input type="file" id="import-memory-csv-input" accept=".csv,text/csv" hidden>
@@ -720,6 +773,13 @@
                                 <p style="color: #888; font-style: italic; text-align: center; padding: 20px;">暂无记忆档案</p>
                             </div>
                         </div>
+                </div>
+                <div id="tab-shortcuts" class="tab-content">
+                    <div class="form-group">
+                        <h3 style="margin-bottom: 15px; color: #e6c78a;"><i class="ri-keyboard-line"></i> 快捷键自定义</h3>
+                        <p style="font-size:0.85em;color:#aaa;margin-bottom:12px;">填写组合键，例如 Ctrl+Enter、/、?、Ctrl+L，保存后写入 localStorage。</p>
+                        <div id="shortcut-settings-list"></div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer" style="flex-wrap: wrap; gap: 15px;">
@@ -925,7 +985,14 @@
     <script src="api.js"></script>
     <script src="memory.js"></script>
     <script src="knowledge.js"></script>
+    <script src="settings.js"></script>
+    <script src="memory-ui.js"></script>
+    <script src="knowledge-ui.js"></script>
     <script src="main.js"></script>
+    <script src="chat.js"></script>
+    <script src="optimizations.js"></script>
+    <script src="advanced-features.js"></script>
+    <script src="performance-fix.js"></script>
 
     
     <!-- 防止托管方广告脚本 -->

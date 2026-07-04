@@ -187,7 +187,9 @@
         }
         .friend-item:hover { background-color: var(--bg-tertiary); }
         .friend-item.active { background-color: #3a3d47; border-left: 3px solid var(--accent-gold); }
-        .friend-avatar { width: var(--avatar-size-sm); height: var(--avatar-size-sm); border-radius: 50%; object-fit: cover; margin-right: 12px; border: 2px solid transparent; }
+        .friend-avatar { width: var(--avatar-size-sm); height: var(--avatar-size-sm); border-radius: 50%; object-fit: cover; margin-right: 12px; border: 2px solid transparent; background-color: #3a3d47; }
+        .friend-avatar.lazy-avatar { background: linear-gradient(90deg, #3a3d47 25%, #4a4d57 50%, #3a3d47 75%); background-size: 200% 100%; animation: lazyShimmer 1.5s infinite; }
+        @keyframes lazyShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
         .friend-item.active .friend-avatar { border-color: var(--accent-gold); }
         .friend-name { font-size: 1em; font-weight: 500; }
         .friend-status { font-size: 0.75em; color: var(--text-muted); margin-left: auto; }
@@ -656,7 +658,7 @@
             display: flex;
             gap: 8px;
             margin-top: 8px;
-            margin-left: 57px;
+            margin-left: 0;
         }
         .regenerate-btn {
             display: flex;
@@ -683,7 +685,7 @@
             display: flex;
             gap: 10px;
             margin-top: 10px;
-            margin-left: 57px;
+            margin-left: 0;
             flex-wrap: wrap;
         }
         .quick-reply-btn {
@@ -726,6 +728,14 @@
             cursor: pointer;
         }
         .message-image:hover { transform: scale(1.02); }
+
+        .message-video {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            display: block;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
 
         .message.other { align-self: flex-start; }
         .message.other .bubble { background-color: var(--accent-gold); color: #333; border-top-left-radius: 2px; }
@@ -1659,3 +1669,9 @@ kbd { background: #1f222b; border: 1px solid #555; border-bottom-width: 2px; bor
     z-index: 20;
 }
 .markdown-preview-popover[hidden] { display: none; }
+.memory-tag { display: inline-block; margin-right: 4px; color: var(--accent-gold); }
+
+/* 修复：操作按钮现在在 message-content 内部，不需要左边距 */
+.message-actions {
+    margin-left: 0 !important;
+}
