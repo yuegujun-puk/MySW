@@ -14,7 +14,32 @@
                     console.error('加载自定义角色失败:', e);
                 }
             }
+            applyFriendAvatarOverrides();
             loadGroupManager();
+        }
+
+        function getStoredFriendAvatarOverrides() {
+            try { return JSON.parse(localStorage.getItem('friendAvatarOverrides') || '{}'); } catch (e) { return {}; }
+        }
+
+        function saveStoredFriendAvatarOverrides(overrides) {
+            setLocalStorageSafely('friendAvatarOverrides', JSON.stringify(overrides), '角色头像覆盖');
+        }
+
+        function getDefaultFriendAvatar(friendId) {
+            return defaultFriendsData[friendId]?.avatar || friendsData[friendId]?.defaultAvatar || friendsData[friendId]?.avatar || '';
+        }
+
+        function isFriendAvatarCustomized(friendId) {
+            const friend = friendsData[friendId];
+            return Boolean(friend && friend.avatar && friend.avatar !== getDefaultFriendAvatar(friendId));
+        }
+
+        function applyFriendAvatarOverrides() {
+            const overrides = getStoredFriendAvatarOverrides();
+            Object.entries(overrides).forEach(([friendId, avatar]) => {
+                if (friendsData[friendId] && avatar) friendsData[friendId].avatar = avatar;
+            });
         }
 
         function isGroupChat(friendId = currentFriendId) {
@@ -185,6 +210,7 @@
         const fileUpload = document.getElementById('file-upload');
         const avatarUpload = document.getElementById('avatar-upload');
         const charAvatarUpload = document.getElementById('char-avatar-upload');
+        const friendAvatarUpload = document.getElementById('friend-avatar-upload');
         const bubbleBgUpload = document.getElementById('bubble-bg-upload');
         const inputAvatar = document.getElementById('input-avatar');
         const emojiBtn = document.getElementById('emoji-btn');
@@ -214,6 +240,7 @@
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
         const saveSettingsBtn = document.getElementById('save-settings-btn');
+        const settingsSearchInput = document.getElementById('settings-search');
         const resetSettingsBtn = document.getElementById('reset-settings-btn');
         const testConnectionBtn = document.getElementById('test-connection-btn');
         const testResultDiv = document.getElementById('test-result');
@@ -229,6 +256,13 @@
         const modelNameInput = document.getElementById('model-name');
         const fetchModelsBtn = document.getElementById('fetch-models-btn');
         const modelSelect = document.getElementById('model-select');
+        const apiTemperatureInput = document.getElementById('api-temperature');
+        const apiTopPInput = document.getElementById('api-top-p');
+        const apiPresencePenaltyInput = document.getElementById('api-presence-penalty');
+        const apiFrequencyPenaltyInput = document.getElementById('api-frequency-penalty');
+        const apiStopSequencesInput = document.getElementById('api-stop-sequences');
+        const apiSeedInput = document.getElementById('api-seed');
+        const apiTimeoutSecondsInput = document.getElementById('api-timeout-seconds');
         const enableMultimodalVisionCheckbox = document.getElementById('enable-multimodal-vision');
         const imageCompressionMaxWidthInput = document.getElementById('image-compression-max-width');
         const imageCompressionQualityInput = document.getElementById('image-compression-quality');
@@ -251,7 +285,6 @@
         const bubbleWidthSlider = document.getElementById('bubble-width-slider');
         const bubbleWidthPercentInput = document.getElementById('bubble-width-percent');
         const enableMessageSegmentationCheckbox = document.getElementById('enable-message-segmentation');
-        const charsPerLineInput = document.getElementById('chars-per-line');
         const enableDisplayLimitCheckbox = document.getElementById('enable-display-limit');
         const displayLimitRoundsInput = document.getElementById('display-limit-rounds');
         const featureToggleInputs = {
@@ -269,7 +302,15 @@
             showChatSummary: document.getElementById('show-chat-summary'),
             showChatStats: document.getElementById('show-chat-stats'),
             showMarkdownPreview: document.getElementById('show-markdown-preview'),
-            showGroupChat: document.getElementById('show-group-chat')
+            showGroupChat: document.getElementById('show-group-chat'),
+            enableMessageReply: document.getElementById('enable-message-reply'),
+            enableDraftSync: document.getElementById('enable-draft-sync'),
+            enableBranchManager: document.getElementById('enable-branch-manager'),
+            enableAnalytics: document.getElementById('enable-analytics'),
+            enableTheaterMode: document.getElementById('enable-theater-mode'),
+            enableLatexMermaid: null,
+            enableVirtualScroll: null,
+            enablePerformanceFix: null
         };
 
 
@@ -354,6 +395,7 @@
         const menuSetUrl = document.getElementById('menu-set-url');
         const aiMenuUploadFile = document.getElementById('ai-menu-upload-file');
         const aiMenuSetUrl = document.getElementById('ai-menu-set-url');
+        const aiMenuResetAvatar = document.getElementById('ai-menu-reset-avatar');
 
 
         const friendContextMenu = document.getElementById('friend-context-menu');
@@ -368,6 +410,8 @@
         const menuTogglePin = document.getElementById('menu-toggle-pin');
         const pinText = document.getElementById('pin-text');
         const menuSetRemark = document.getElementById('menu-set-remark');
+        const menuChangeAvatar = document.getElementById('menu-change-avatar');
+        const menuResetAvatar = document.getElementById('menu-reset-avatar');
         const menuChangeGroup = document.getElementById('menu-change-group');
         const menuDeleteFriend = document.getElementById('menu-delete-friend');
 
@@ -527,7 +571,8 @@
                 const group = groupManager[currentFriendId];
                 if (!group) return;
 
-                const ids = (group.memberIds || []).filter(id => friendsData[id]);
+                normalizeGroupState(group);
+                const ids = (group.memberIds || []).filter(id => friendsData[id] && !isGroupMemberMuted(group, id));
                 if (ids.length === 0) return;
 
                 const randomMember = ids[Math.floor(Math.random() * ids.length)];
@@ -647,28 +692,23 @@
             else show ? emojiPicker.classList.add('show') : emojiPicker.classList.remove('show');
         }
 
+        function toggleMenuElement(menu, show) {
+            if (!menu) return;
+            const shouldShow = show === undefined ? !menu.classList.contains('show') : show;
+            menu.classList.toggle('show', shouldShow);
+            menu.hidden = !shouldShow;
+        }
+
         function toggleAvatarMenu(show) {
-            if (show === undefined) {
-                avatarContextMenu.classList.toggle('show');
-            } else {
-                show ? avatarContextMenu.classList.add('show') : avatarContextMenu.classList.remove('show');
-            }
+            toggleMenuElement(avatarContextMenu, show);
         }
 
         function toggleAiAvatarMenu(show) {
-            if (show === undefined) {
-                aiAvatarContextMenu.classList.toggle('show');
-            } else {
-                show ? aiAvatarContextMenu.classList.add('show') : aiAvatarContextMenu.classList.remove('show');
-            }
+            toggleMenuElement(aiAvatarContextMenu, show);
         }
 
         function toggleFriendContextMenu(show) {
-            if (show === undefined) {
-                friendContextMenu.classList.toggle('show');
-            } else {
-                show ? friendContextMenu.classList.add('show') : friendContextMenu.classList.remove('show');
-            }
+            toggleMenuElement(friendContextMenu, show);
         }
 
 
@@ -702,7 +742,7 @@
             toggleAiAvatarMenu(false);
             if (currentAiAvatarTarget) {
                 const targetFriendId = currentAiAvatarTarget;
-                avatarUpload.onchange = function(e) {
+                friendAvatarUpload.onchange = function(e) {
                     const file = e.target.files[0];
                     if (file) {
                         const reader = new FileReader();
@@ -711,10 +751,10 @@
                         };
                         reader.readAsDataURL(file);
                     }
-                    avatarUpload.value = '';
-                    avatarUpload.onchange = null;
+                    friendAvatarUpload.value = '';
+                    friendAvatarUpload.onchange = null;
                 };
-                avatarUpload.click();
+                friendAvatarUpload.click();
             }
         });
 
@@ -738,10 +778,17 @@
         }
 
         function updateFriendAvatar(friendId, src) {
-            if (!friendsData[friendId]) return;
-            friendsData[friendId].avatar = src;
-            if (friendsData[friendId].isCustom) {
+            if (!friendsData[friendId] || !src) return;
+            const friend = friendsData[friendId];
+            if (friend.isCustom && !friend.defaultAvatar) friend.defaultAvatar = friend.avatar;
+            friend.avatar = src;
+            if (friend.isCustom) {
                 saveCustomFriendsData();
+            } else {
+                const overrides = getStoredFriendAvatarOverrides();
+                if (src === getDefaultFriendAvatar(friendId)) delete overrides[friendId];
+                else overrides[friendId] = src;
+                saveStoredFriendAvatarOverrides(overrides);
             }
             Object.values(groupManager).forEach(group => {
                 if (group.memberIds?.[0] === friendId && friendsData[group.id]) friendsData[group.id].avatar = src;
@@ -754,6 +801,24 @@
             renderFriendList();
             showToast(`${getFriendDisplayName(friendId)} 的头像已更新`, "ri-check-line");
         }
+
+        function restoreFriendAvatar(friendId) {
+            if (!friendsData[friendId]) return;
+            const defaultAvatar = getDefaultFriendAvatar(friendId);
+            friendsData[friendId].avatar = defaultAvatar;
+            if (friendsData[friendId].isCustom) saveCustomFriendsData();
+            const overrides = getStoredFriendAvatarOverrides();
+            delete overrides[friendId];
+            saveStoredFriendAvatarOverrides(overrides);
+            if (currentFriendId === friendId) updateRenderedMessagesAppearance();
+            renderFriendList();
+            showToast(`${getFriendDisplayName(friendId)} 的头像已恢复默认`, 'ri-refresh-line');
+        }
+
+        aiMenuResetAvatar?.addEventListener('click', () => {
+            if (currentAiAvatarTarget) restoreFriendAvatar(currentAiAvatarTarget);
+            toggleAiAvatarMenu(false);
+        });
 
         function getFriendDisplayName(friendId) {
             const friend = friendsData[friendId];
@@ -1324,6 +1389,8 @@
 
 
             const friend = friendsData[friendId];
+            menuChangeAvatar.style.display = friend && !friend.isGroup ? "flex" : "none";
+            menuResetAvatar.style.display = friend && !friend.isGroup && isFriendAvatarCustomized(friendId) ? "flex" : "none";
             menuChangeGroup.style.display = "flex";
             menuDeleteFriend.style.display = friend && friend.isCustom ? "flex" : "none";
             const rect = e.target.getBoundingClientRect();
@@ -1359,6 +1426,22 @@
             toggleFriendContextMenu(false);
         });
 
+
+        menuChangeAvatar.addEventListener('click', () => {
+            if (!currentFriendMenuTarget) return;
+            currentAiAvatarTarget = currentFriendMenuTarget;
+            aiMenuResetAvatar.style.display = isFriendAvatarCustomized(currentAiAvatarTarget) ? 'flex' : 'none';
+            const rect = friendContextMenu.getBoundingClientRect();
+            aiAvatarContextMenu.style.left = `${rect.left}px`;
+            aiAvatarContextMenu.style.top = `${rect.bottom + 6}px`;
+            toggleFriendContextMenu(false);
+            toggleAiAvatarMenu(true);
+        });
+
+        menuResetAvatar.addEventListener('click', () => {
+            if (currentFriendMenuTarget) restoreFriendAvatar(currentFriendMenuTarget);
+            toggleFriendContextMenu(false);
+        });
 
         menuChangeGroup.addEventListener('click', () => {
             if (!currentFriendMenuTarget) return;
@@ -1544,18 +1627,7 @@
         }
         
         function _renderMessagesImpl(friendId) {
-            // 检查性能修复是否已禁用虚拟滚动
-            const perfFixDisabled = window._perfFixDisabledVirtualScroll === true;
-            
-            // 获取消息列表：
-            // - 始终使用 _realGetMessages 获取完整消息列表（如果存在）
-            // - 这样可以避免 performance-fix.js 对 getMessages 的 API 限制（最多 40 条）影响渲染
-            // - 渲染限制会在后续通过 displayLimitRounds 设置或 smartRenderMessages 的逻辑应用
-            const allMessages = (typeof window._realGetMessages === 'function') 
-                ? window._realGetMessages() 
-                : getMessages();
-            
-            let messages = allMessages;
+            let messages = getMessages();
             const friend = friendsData[friendId];
 
             // 应用显示限制设置 - 按对话轮数截取
@@ -1568,9 +1640,8 @@
                 }
             }
 
-            // 性能修复补丁已禁用虚拟滚动时，强制使用简单渲染
             // 消息较少时不启用虚拟滚动
-            if (perfFixDisabled || !VIRTUAL_SCROLL_CONFIG.enabled || messages.length < VIRTUAL_SCROLL_CONFIG.minMessagesForVirtual) {
+            if (!VIRTUAL_SCROLL_CONFIG.enabled || messages.length < VIRTUAL_SCROLL_CONFIG.minMessagesForVirtual) {
                 renderMessagesSimple(messages, friend, friendId);
                 scrollToBottom();
                 if (chatSearchInput?.value) updateChatSearch();
@@ -1597,8 +1668,8 @@
             messages.forEach(msg => {
                 const speakerId = msg.friendId || friendId;
                 const speaker = friendsData[speakerId] || friend;
-                const avatarSrc = msg.role === 'mine' ? inputAvatar.src : speaker.avatar;
-                const nickName = msg.role === 'mine' ? myUserName : getFriendDisplayName(speakerId);
+                const avatarSrc = msg.role === 'mine' ? inputAvatar.src : (msg.role === 'system' ? (friendsData[friendId]?.avatar || speaker.avatar) : speaker.avatar);
+                const nickName = msg.role === 'mine' ? myUserName : (msg.role === 'system' ? '群内通报' : (isGroupChat(friendId) ? getGroupMemberLabel(groupManager[friendId], speakerId) : getFriendDisplayName(speakerId)));
                 appendMessageToDOM(msg.role, msg.content, msg.type, avatarSrc, nickName, msg.isProactive, msg.id || msg.timestamp, msg);
             });
         }
@@ -1626,11 +1697,19 @@
             visibleMessages.forEach(msg => {
                 const speakerId = msg.friendId || friendId;
                 const speaker = friendsData[speakerId] || friend;
-                const avatarSrc = msg.role === 'mine' ? inputAvatar.src : speaker.avatar;
-                const nickName = msg.role === 'mine' ? myUserName : getFriendDisplayName(speakerId);
+                const avatarSrc = msg.role === 'mine' ? inputAvatar.src : (msg.role === 'system' ? (friendsData[friendId]?.avatar || speaker.avatar) : speaker.avatar);
+                const nickName = msg.role === 'mine' ? myUserName : (msg.role === 'system' ? '群内通报' : (isGroupChat(friendId) ? getGroupMemberLabel(groupManager[friendId], speakerId) : getFriendDisplayName(speakerId)));
                 appendMessageToDOM(msg.role, msg.content, msg.type, avatarSrc, nickName, msg.isProactive, msg.id || msg.timestamp, msg);
             });
         }
+
+        window.getMessages = getMessages;
+        window.renderMessages = renderMessages;
+        window.getCurrentThread = getCurrentThread;
+        window.getThreadList = function(friendId = currentFriendId) {
+            return threadManager[friendId]?.threads || [];
+        };
+        Object.defineProperty(window, 'currentFriendId', { get: () => currentFriendId, configurable: true });
 
         // 计算可视区域内的消息范围
         function calculateVisibleRange(messages) {
@@ -1717,198 +1796,90 @@
 
 
         function splitMessageByPunctuation(text) {
-            const chatSettings = getChatSettings();
-            const charsPerLine = chatSettings.charsPerLine || 32;
-
             if (!text || text.trim().length === 0) return [];
 
             // Markdown 结构（代码块、列表、表格、引用等）不能按标点拆散，否则会破坏渲染语义。
             const hasMarkdownStructure = /```|^\s{0,3}([-*+]\s+|\d+\.\s+|>\s+)|^\s*\|.+\|\s*$/m.test(text);
             if (hasMarkdownStructure) return [text];
 
+            const MAX_SEGMENT_LENGTH = 220;
+            const MIN_SEGMENT_LENGTH = 48;
+            const HARD_SPLIT_LENGTH = 320;
+            const paragraphs = text.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
             const result = [];
 
-            // 如果文本长度小于等于设定值，不分段直接返回
-            if (text.length <= charsPerLine) {
-                result.push(text);
-                return result;
-            }
-
-            const paragraphs = text.split(/\n{2,}/);
-
             for (const paragraph of paragraphs) {
-                const trimmedPara = paragraph.trim();
-                if (!trimmedPara) continue;
+                const sentenceParts = paragraph
+                    .split(/(?<=[。！？!?；;])\s*/)
+                    .map(part => part.trim())
+                    .filter(Boolean);
 
-
-                smartSplit(trimmedPara, charsPerLine, result);
-            }
-
-            return result;
-        }
-
-
-        function extractBracketsContent(text) {
-            const brackets = [];
-
-            const bracketRegex = /([[](?:[^]]*)(?:]|$)|[(](?:[^)]*)(?:\)|$)|[\[](?:[^\]]*)(?:\]|$)|[{](?:[^}]*)(?:}|$))/g;
-
-            let match;
-            let lastIndex = 0;
-            let processedText = '';
-
-            while ((match = bracketRegex.exec(text)) !== null) {
-
-                processedText += text.slice(lastIndex, match.index);
-
-                const placeholder = `\u0000BRACKET${brackets.length}\u0000`;
-                processedText += placeholder;
-                brackets.push(match[0]);
-                lastIndex = match.index + match[0].length;
-            }
-
-
-            processedText += text.slice(lastIndex);
-
-            return { processedText, brackets };
-        }
-
-
-        function restoreBracketsContent(text, brackets) {
-            let result = text;
-            for (let i = 0; i < brackets.length; i++) {
-                const placeholder = `\u0000BRACKET${i}\u0000`;
-                result = result.split(placeholder).join(brackets[i]);
-            }
-            return result;
-        }
-
-
-        function smartSplit(text, maxLen, result) {
-            if (!text || text.length === 0) return;
-
-
-            if (text.length <= maxLen) {
-                result.push(text);
-                return;
-            }
-
-
-            const { processedText, brackets } = extractBracketsContent(text);
-
-
-
-            const punctuationRegex = /([。！？；，、.!?;,\s]+)/g;
-            const segments = processedText.split(punctuationRegex);
-
-            let current = '';
-            for (let i = 0; i < segments.length; i++) {
-                const segment = segments[i];
-                if (!segment) continue;
-
-
-                const hasBracketInSegment = /\u0000BRACKET\d+\u0000/.test(segment);
-
-
-                const testStr = current + segment;
-
-                if (testStr.length <= maxLen) {
-                    current = testStr;
-                } else {
-
-                    if (current.trim()) {
-                        result.push(restoreBracketsContent(current.trim(), brackets));
-                    }
-
-
-                    if (hasBracketInSegment) {
-
-                        const bracketParts = segment.split(/(\u0000BRACKET\d+\u0000)/);
-                        let tempCurrent = '';
-                        for (const part of bracketParts) {
-                            if (!part) continue;
-                            const testTemp = tempCurrent + part;
-                            if (testTemp.length <= maxLen) {
-                                tempCurrent = testTemp;
-                            } else {
-                                if (tempCurrent.trim()) {
-                                    result.push(restoreBracketsContent(tempCurrent.trim(), brackets));
-                                }
-
-                                if (/^\u0000BRACKET\d+\u0000$/.test(part) && part.length > maxLen) {
-
-                                    result.push(restoreBracketsContent(part, brackets));
-                                    tempCurrent = '';
-                                } else {
-                                    tempCurrent = part;
-                                }
-                            }
-                        }
-                        current = tempCurrent;
-                    } else if (segment.length > maxLen) {
-
-                        forceSplit(segment, maxLen, result, brackets);
-                        current = '';
-                    } else {
-                        current = segment;
-                    }
-                }
-            }
-
-
-            if (current && current.trim()) {
-                result.push(restoreBracketsContent(current.trim(), brackets));
-            }
-        }
-
-
-        function forceSplit(text, maxLen, result, brackets = []) {
-            if (!text || text.length === 0) return;
-
-
-            const hasPlaceholders = /\u0000BRACKET\d+\u0000/.test(text);
-
-
-            const naturalBreaks = /([\s\-—–]+)/g;
-            const parts = text.split(naturalBreaks);
-
-            if (parts.length > 1) {
-
+                const pieces = sentenceParts.length ? sentenceParts : [paragraph];
                 let current = '';
-                for (const part of parts) {
-                    if (!part) continue;
-                    const testStr = current + part;
-                    if (testStr.length <= maxLen) {
-                        current = testStr;
+
+                for (const piece of pieces) {
+                    if (piece.length > HARD_SPLIT_LENGTH) {
+                        if (current) {
+                            result.push(current);
+                            current = '';
+                        }
+                        splitLongSegment(piece, MAX_SEGMENT_LENGTH, result);
+                        continue;
+                    }
+
+                    const next = current ? joinMessageSegments(current, piece) : piece;
+                    if (next.length <= MAX_SEGMENT_LENGTH || current.length < MIN_SEGMENT_LENGTH) {
+                        current = next;
                     } else {
-                        if (current.trim()) {
-                            const restored = hasPlaceholders ? restoreBracketsContent(current.trim(), brackets) : current.trim();
-                            result.push(restored);
-                        }
-                        if (part.length > maxLen) {
-                            forceSplit(part, maxLen, result, brackets);
-                        } else {
-                            current = part;
-                        }
+                        result.push(current);
+                        current = piece;
                     }
                 }
-                if (current && current.trim()) {
-                    const restored = hasPlaceholders ? restoreBracketsContent(current.trim(), brackets) : current.trim();
-                    result.push(restored);
-                }
-                return;
+
+                if (current) result.push(current);
             }
 
-
-            for (let i = 0; i < text.length; i += maxLen) {
-                const chunk = text.substring(i, i + maxLen);
-                if (chunk.trim()) {
-                    const restored = hasPlaceholders ? restoreBracketsContent(chunk.trim(), brackets) : chunk.trim();
-                    result.push(restored);
-                }
-            }
+            return mergeShortSegments(result, MAX_SEGMENT_LENGTH, MIN_SEGMENT_LENGTH);
         }
 
+        function joinMessageSegments(left, right) {
+            if (!left) return right;
+            if (!right) return left;
+            const needsSpace = /[A-Za-z0-9)]$/.test(left) && /^[A-Za-z0-9(]/.test(right);
+            return needsSpace ? `${left} ${right}` : left + right;
+        }
+
+        function splitLongSegment(text, maxLen, result) {
+            let rest = text.trim();
+            while (rest.length > maxLen) {
+                const windowText = rest.slice(0, maxLen);
+                const breakIndex = Math.max(
+                    windowText.lastIndexOf('，'),
+                    windowText.lastIndexOf(','),
+                    windowText.lastIndexOf('、'),
+                    windowText.lastIndexOf(' ')
+                );
+                const cutAt = breakIndex >= Math.floor(maxLen * 0.55) ? breakIndex + 1 : maxLen;
+                result.push(rest.slice(0, cutAt).trim());
+                rest = rest.slice(cutAt).trim();
+            }
+            if (rest) result.push(rest);
+        }
+
+        function mergeShortSegments(segments, maxLen, minLen) {
+            const merged = [];
+            for (const segment of segments) {
+                const trimmed = segment.trim();
+                if (!trimmed) continue;
+                const previous = merged[merged.length - 1];
+                if (previous && (previous.length < minLen || trimmed.length < minLen) && previous.length + trimmed.length <= maxLen) {
+                    merged[merged.length - 1] = joinMessageSegments(previous, trimmed);
+                } else {
+                    merged.push(trimmed);
+                }
+            }
+            return merged.length ? merged : [segments.join('').trim()].filter(Boolean);
+        }
 
 
         function appendMessageToDOM(role, text, type, avatarSrc, nickName, isProactive = false, messageId = null, meta = {}) {
@@ -1937,12 +1908,35 @@
                 if (role === 'other' && index === 0) {
                     avatarImg.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        currentAiAvatarTarget = currentFriendId;
+                        currentAiAvatarTarget = meta?.friendId || currentFriendId;
                         const rect = avatarImg.getBoundingClientRect();
                         aiAvatarContextMenu.style.left = rect.left + 'px';
                         aiAvatarContextMenu.style.top = (rect.bottom + 5) + 'px';
                         toggleAiAvatarMenu(true);
                     });
+                    const setGroupTitle = (e) => {
+                        if (!isGroupChat() || !meta?.friendId) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const group = groupManager[currentFriendId];
+                        const title = prompt(`设置 ${getFriendDisplayName(meta.friendId)} 的群头衔（留空清除）：`, group.memberTitles?.[meta.friendId] || '');
+                        if (title === null) return;
+                        group.memberTitles = group.memberTitles || {};
+                        if (title.trim()) group.memberTitles[meta.friendId] = title.trim().slice(0, 20);
+                        else delete group.memberTitles[meta.friendId];
+                        saveGroupManager();
+                        renderMessages(currentFriendId);
+                        showToast('群头衔已更新', 'ri-vip-crown-line');
+                        const busybody = pickGroupSpeakers(group, '').filter(id => id !== meta.friendId && Number(group.memberActivity?.[id] ?? 0) >= 0.6)[0];
+                        if (busybody && Math.random() < Number(group.memberActivity?.[busybody] ?? 0)) {
+                            callGroupMemberAI(`群主刚给 ${getGroupMemberLabel(group, meta.friendId)} 设置了群头衔「${title.trim() || '无'}」，你可以简短点评或凑个热闹。`, currentFriendId, busybody);
+                        }
+                    };
+                    avatarImg.addEventListener('contextmenu', setGroupTitle);
+                    let titlePressTimer;
+                    avatarImg.addEventListener('touchstart', (e) => { titlePressTimer = setTimeout(() => setGroupTitle(e), 600); }, { passive: false });
+                    avatarImg.addEventListener('touchend', () => clearTimeout(titlePressTimer));
+                    avatarImg.addEventListener('touchmove', () => clearTimeout(titlePressTimer));
                 }
 
                 if(role === 'mine' && index === 0) avatarImg.addEventListener('click', () => avatarUpload.click());
@@ -2041,7 +2035,6 @@
                 if (index === 0) {
                     const actionsDiv = document.createElement('div');
                     actionsDiv.className = 'message-actions';
-                    actionsDiv.dataset.messageId = msgDiv.dataset.messageId; // 绑定相同的 messageId 方便查找删除
                     if (role === 'other' && type === 'text' && showRegenerateBtnCheckbox.checked) {
                         const regenerateBtn = document.createElement('div');
                         regenerateBtn.className = 'regenerate-btn';
@@ -2209,58 +2202,30 @@
             friendData.currentThreadId = newId;
             saveThreadManager();
             renderFriendList();
-            // 使用原始渲染函数，确保新分支的消息完整显示
-            if (typeof window._originalRenderMessages === 'function') {
-                window._originalRenderMessages(currentFriendId);
-            } else {
-                renderMessages(currentFriendId);
-            }
+            renderMessages(currentFriendId);
             showToast('已从此处创建新对话分支', 'ri-git-branch-line');
         }
 
         function removeRenderedMessagesFrom(messageId) {
             const baseId = getMessageIdBase(messageId);
-            // 获取所有消息元素，按 data-message-id 属性匹配
-            const allMessageElements = Array.from(chatMessages.querySelectorAll('.message[data-message-id]'));
-            
-            // 找到目标消息的索引
-            let targetIndex = -1;
-            for (let i = 0; i < allMessageElements.length; i++) {
-                const el = allMessageElements[i];
-                const elId = getMessageIdBase(el.dataset.messageId);
-                if (elId === baseId) {
-                    targetIndex = i;
-                    break;
+            const target = chatMessages.querySelector(`[data-message-id="${messageId}"]`) || chatMessages.querySelector(`[data-message-id="${baseId}"]`);
+            if (!target) return false;
+            let node = target;
+            while (node) {
+                const next = node.nextSibling;
+                // 只删除消息元素和相关的操作按钮，避免误删其他 DOM 元素
+                if (node.classList?.contains('message') || node.classList?.contains('message-actions')) {
+                    node.remove();
                 }
+                node = next;
             }
-            
-            if (targetIndex === -1) return false;
-            
-            // 删除从目标消息开始的所有后续消息
-            for (let i = targetIndex; i < allMessageElements.length; i++) {
-                const el = allMessageElements[i];
-                const msgId = el.dataset.messageId;
-                // 同时删除消息元素和相关的操作按钮
-                el.remove();
-                const actionsEl = chatMessages.querySelector(`.message-actions[data-message-id="${msgId}"]`);
-                if (actionsEl) actionsEl.remove();
-            }
-            
-            // 如果开启了性能修复的智能渲染，需要重新渲染以恢复正确的显示状态
-            if (typeof window._originalRenderMessages === 'function' && typeof currentFriendId !== 'undefined') {
-                // 延迟一小段时间，等待数据层修改生效后再重新渲染
-                setTimeout(() => {
-                    window._originalRenderMessages(currentFriendId);
-                }, 50);
-            }
-            
             return true;
         }
 
         function regenerateAIResponse(messageId) {
             const messages = getMessages();
 
-            const baseId = messageId.split('-')[0];
+            const baseId = getMessageIdBase(messageId);
             const msgIndex = messages.findIndex(m => String(m.id || m.timestamp) === baseId);
 
             console.log('重新回答调试:', { messageId, baseId, msgIndex, messagesCount: messages.length });
@@ -2396,7 +2361,13 @@ AI：${aiResponse}
                 showChatSummary: true,
                 showChatStats: true,
                 showMarkdownPreview: true,
-                showGroupChat: true
+                showGroupChat: true,
+                enableLatexMermaid: true,
+                enableVirtualScroll: true,
+                enablePerformanceFix: true,
+                enableBranchManager: false,
+                enableAnalytics: false,
+                enableTheaterMode: false
             };
         }
 
@@ -3218,26 +3189,235 @@ ${memoryText}
             return false;
         }
 
+        const GROUP_MAX_MEMBERS = 80;
+        const GROUP_MUTE_MAX_MINUTES = 30;
+
+        function getGroupAdminLimit(group) {
+            const count = (group?.memberIds || []).length;
+            return count < 20 ? 2 : Math.max(1, Math.floor(count / 20));
+        }
+
+        function normalizeGroupState(group) {
+            if (!group) return;
+            group.memberIds = [...new Set((group.memberIds || []).filter(id => friendsData[id] && !friendsData[id].isGroup))].slice(0, GROUP_MAX_MEMBERS);
+            group.adminIds = [...new Set(group.adminIds || [])].filter(id => group.memberIds.includes(id)).slice(0, getGroupAdminLimit(group));
+            group.mutedUntil = group.mutedUntil || {};
+            group.memberActivity = group.memberActivity || {};
+            group.memberTitles = group.memberTitles || {};
+            group.memberIds.forEach(id => {
+                if (!Number.isFinite(Number(group.memberActivity[id]))) group.memberActivity[id] = 1;
+                group.memberActivity[id] = Math.min(1, Math.max(0, Number(group.memberActivity[id])));
+            });
+            Object.keys(group.mutedUntil).forEach(id => {
+                if (!group.memberIds.includes(id) || Number(group.mutedUntil[id]) <= Date.now()) delete group.mutedUntil[id];
+            });
+        }
+
         function ensureGroupThreadData(group) {
+            normalizeGroupState(group);
             if (!group.memberThreads) group.memberThreads = {};
             (group.memberIds || []).forEach(memberId => {
                 if (!group.memberThreads[memberId]) group.memberThreads[memberId] = { messages: [] };
             });
         }
 
-        function createGroupChat() {
-            const available = Object.values(friendsData).filter(friend => !friend.isGroup).slice(0, 12);
-            const hint = available.map(friend => `${friend.id}:${getFriendDisplayName(friend.id)}`).join('\n');
-            const rawIds = prompt(`请输入 2~3 个角色 ID，用英文逗号分隔：\n${hint}`, available.slice(0, 3).map(friend => friend.id).join(','));
-            if (rawIds === null) return;
-            const memberIds = [...new Set(rawIds.split(',').map(id => id.trim()).filter(id => friendsData[id] && !friendsData[id].isGroup))].slice(0, 3);
+        function getGroupMemberLabel(group, memberId) {
+            const title = group?.memberTitles?.[memberId]?.trim();
+            return `${getFriendDisplayName(memberId)}${title ? `【${title}】` : ''}`;
+        }
+
+        function isGroupMemberMuted(group, memberId) {
+            return Number(group?.mutedUntil?.[memberId] || 0) > Date.now();
+        }
+
+        function muteGroupMember(group, memberId, minutes = GROUP_MUTE_MAX_MINUTES) {
+            if (!group?.memberIds?.includes(memberId)) return false;
+            if (group.adminIds?.includes(memberId)) return false;
+            group.mutedUntil = group.mutedUntil || {};
+            const safeMinutes = Math.min(GROUP_MUTE_MAX_MINUTES, Math.max(1, Number(minutes) || GROUP_MUTE_MAX_MINUTES));
+            group.mutedUntil[memberId] = Date.now() + safeMinutes * 60 * 1000;
+            return true;
+        }
+
+        function removeGroupMember(group, memberId) {
+            if (!group?.memberIds?.includes(memberId)) return false;
+            if (group.adminIds?.includes(memberId)) return false;
+            if (group.memberIds.length <= 2) return false;
+            group.memberIds = group.memberIds.filter(id => id !== memberId);
+            delete group.memberActivity?.[memberId];
+            delete group.memberTitles?.[memberId];
+            delete group.mutedUntil?.[memberId];
+            return true;
+        }
+
+        function ensureGroupMemberSelectModal() {
+            let modal = document.getElementById('group-member-select-modal');
+            if (modal) return modal;
+            modal = document.createElement('div');
+            modal.className = 'modal-overlay group-member-select-modal';
+            modal.id = 'group-member-select-modal';
+            modal.innerHTML = `
+                <div class="modal-content group-member-select-content">
+                    <div class="modal-header">
+                        <h2 id="group-member-select-title">选择群聊成员</h2>
+                        <button class="close-modal" id="group-member-select-close" aria-label="关闭"><i class="ri-close-line"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="group-member-select-toolbar">
+                            <span id="group-member-select-count">已选择 0/${GROUP_MAX_MEMBERS}</span>
+                            <button class="btn btn-outline btn-sm" id="group-member-select-toggle" type="button">全选可见</button>
+                        </div>
+                        <input type="text" id="group-member-select-search" class="group-member-select-search" placeholder="搜索角色名称或备注...">
+                        <div id="group-member-select-list" class="group-member-select-list"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" id="group-member-select-cancel" type="button">取消</button>
+                        <button class="btn btn-primary" id="group-member-select-confirm" type="button">确定</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+            return modal;
+        }
+
+        function selectGroupMembersDialog(group = null) {
+            const existing = new Set(group?.memberIds || []);
+            const candidates = Object.values(friendsData)
+                .filter(friend => !friend.isGroup)
+                .sort((a, b) => getFriendDisplayName(a.id).localeCompare(getFriendDisplayName(b.id), 'zh-CN'));
+            if (candidates.length < 2) {
+                showToast('至少需要 2 个好友角色才能创建群聊', 'ri-error-warning-line');
+                return Promise.resolve(null);
+            }
+
+            const modal = ensureGroupMemberSelectModal();
+            const title = modal.querySelector('#group-member-select-title');
+            const closeBtn = modal.querySelector('#group-member-select-close');
+            const cancelBtn = modal.querySelector('#group-member-select-cancel');
+            const confirmBtn = modal.querySelector('#group-member-select-confirm');
+            const selectToggleBtn = modal.querySelector('#group-member-select-toggle');
+            const searchInput = modal.querySelector('#group-member-select-search');
+            const countEl = modal.querySelector('#group-member-select-count');
+            const listEl = modal.querySelector('#group-member-select-list');
+            const selected = new Set(existing.size ? existing : candidates.slice(0, 2).map(friend => friend.id));
+            title.textContent = group ? `编辑「${group.name || '群聊'}」成员` : '创建群聊：选择 AI 成员';
+
+            return new Promise(resolve => {
+                let settled = false;
+                const cleanup = (value) => {
+                    if (settled) return;
+                    settled = true;
+                    modal.classList.remove('show');
+                    modal.removeEventListener('click', onBackdropClick);
+                    closeBtn.removeEventListener('click', onCancel);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    confirmBtn.removeEventListener('click', onConfirm);
+                    selectToggleBtn.removeEventListener('click', onToggleVisibleSelection);
+                    searchInput.removeEventListener('input', render);
+                    resolve(value);
+                };
+                const updateCount = () => {
+                    countEl.textContent = `已选择 ${selected.size}/${GROUP_MAX_MEMBERS}`;
+                    confirmBtn.disabled = selected.size < 2;
+                    updateSelectToggleButton();
+                };
+                const toggleMember = (id, checked) => {
+                    if (checked) {
+                        if (selected.size >= GROUP_MAX_MEMBERS && !selected.has(id)) {
+                            showToast(`群人数上限为 ${GROUP_MAX_MEMBERS}`, 'ri-error-warning-line');
+                            return false;
+                        }
+                        selected.add(id);
+                    } else {
+                        selected.delete(id);
+                    }
+                    updateCount();
+                    return true;
+                };
+                function render() {
+                    const keyword = searchInput.value.trim().toLowerCase();
+                    const visible = candidates.filter(friend => {
+                        const name = getFriendDisplayName(friend.id).toLowerCase();
+                        const rawName = String(friend.name || '').toLowerCase();
+                        return !keyword || name.includes(keyword) || rawName.includes(keyword);
+                    });
+                    listEl.innerHTML = visible.map(friend => {
+                        const checked = selected.has(friend.id) ? 'checked' : '';
+                        const disabled = !selected.has(friend.id) && selected.size >= GROUP_MAX_MEMBERS ? 'disabled' : '';
+                        return `
+                            <label class="group-member-option ${checked ? 'selected' : ''} ${disabled ? 'disabled' : ''}" data-member-id="${escapeHtml(friend.id)}">
+                                <input type="checkbox" value="${escapeHtml(friend.id)}" ${checked} ${disabled}>
+                                <img src="${escapeHtml(friend.avatar)}" alt="${escapeHtml(friend.name)}">
+                                <span class="group-member-option-info">
+                                    <strong>${escapeHtml(getFriendDisplayName(friend.id))}</strong>
+                                    ${getFriendDisplayName(friend.id) !== friend.name ? `<small>${escapeHtml(friend.name)}</small>` : ''}
+                                </span>
+                                <i class="ri-check-line group-member-option-check"></i>
+                            </label>`;
+                    }).join('') || '<div class="empty-state">没有匹配的角色</div>';
+                    listEl.querySelectorAll('input[type="checkbox"]').forEach(input => {
+                        input.addEventListener('change', () => {
+                            if (!toggleMember(input.value, input.checked)) input.checked = false;
+                            render();
+                        });
+                    });
+                    updateCount();
+                }
+                function onCancel() { cleanup(null); }
+                function onConfirm() {
+                    if (selected.size < 2) return showToast('群聊至少需要 2 个成员', 'ri-error-warning-line');
+                    cleanup([...selected].filter(id => friendsData[id] && !friendsData[id].isGroup));
+                }
+                function getVisibleCandidates() {
+                    const keyword = searchInput.value.trim().toLowerCase();
+                    return candidates.filter(friend => {
+                        const name = getFriendDisplayName(friend.id).toLowerCase();
+                        const rawName = String(friend.name || '').toLowerCase();
+                        return !keyword || name.includes(keyword) || rawName.includes(keyword);
+                    });
+                }
+                function updateSelectToggleButton() {
+                    if (!selectToggleBtn) return;
+                    const visible = getVisibleCandidates();
+                    selectToggleBtn.textContent = visible.length && visible.every(friend => selected.has(friend.id)) ? '清空可见' : '全选可见';
+                }
+                function onToggleVisibleSelection() {
+                    const visible = getVisibleCandidates();
+                    if (visible.length && visible.every(friend => selected.has(friend.id))) {
+                        visible.forEach(friend => selected.delete(friend.id));
+                    } else {
+                        visible.forEach(friend => {
+                            if (selected.size < GROUP_MAX_MEMBERS) selected.add(friend.id);
+                        });
+                    }
+                    render();
+                }
+                function onBackdropClick(e) {
+                    if (e.target === modal) onCancel();
+                }
+                closeBtn.addEventListener('click', onCancel);
+                cancelBtn.addEventListener('click', onCancel);
+                confirmBtn.addEventListener('click', onConfirm);
+                selectToggleBtn.addEventListener('click', onToggleVisibleSelection);
+                searchInput.addEventListener('input', render);
+                modal.addEventListener('click', onBackdropClick);
+                searchInput.value = '';
+                render();
+                modal.classList.add('show');
+                searchInput.focus();
+            });
+        }
+
+        async function createGroupChat() {
+            const memberIds = await selectGroupMembersDialog();
+            if (!memberIds) return;
             if (memberIds.length < 2) {
                 showToast('群聊至少需要 2 个有效角色', 'ri-error-warning-line');
                 return;
             }
-            const groupName = prompt('群聊名称：', memberIds.map(id => getFriendDisplayName(id)).join('、')) || '多角色群聊';
+            const groupName = await groupNameDialog('创建群聊：设置群名', memberIds.map(id => getFriendDisplayName(id)).join('、'));
+            if (groupName === null) return;
             const groupId = `group_${Date.now()}`;
-            const group = { id: groupId, name: groupName.trim() || '多角色群聊', memberIds, isGroup: true, memberThreads: {}, speakOrder: 'round-robin', allowMentions: true, allowProactive: false, activeMemberIndex: 0, memberActivity: Object.fromEntries(memberIds.map(id => [id, 1])) };
+            const group = { id: groupId, name: groupName.trim() || '多角色群聊', memberIds, isGroup: true, memberThreads: {}, speakOrder: 'round-robin', allowMentions: true, allowProactive: true, activeMemberIndex: 0, adminIds: [], mutedUntil: {}, memberTitles: {}, memberActivity: Object.fromEntries(memberIds.map(id => [id, 0.5])) };
             ensureGroupThreadData(group);
             groupManager[groupId] = group;
             registerGroupFriend(group);
@@ -3246,13 +3426,12 @@ ${memoryText}
             saveThreadManager();
             renderFriendList();
             switchFriend(groupId);
-            showToast(`已创建群聊：${group.name}`, 'ri-group-line');
+            showToast(`已创建群聊：${group.name}（${memberIds.length}/${GROUP_MAX_MEMBERS}）`, 'ri-group-line');
         }
 
-
-
         function pickGroupSpeakers(group, userMessage = '') {
-            const ids = (group.memberIds || []).filter(id => friendsData[id]);
+            normalizeGroupState(group);
+            const ids = (group.memberIds || []).filter(id => friendsData[id] && !isGroupMemberMuted(group, id));
             if (!ids.length) return [];
 
             // ========== 智能群聊：@名字检测 + 概率回复 ==========
@@ -3273,12 +3452,12 @@ ${memoryText}
             });
 
             // 2. 其他AI按概率回复（60% 概率，模拟真实群聊）
-            const baseReplyProbability = 0.6;
+            const baseReplyProbability = messageLower.trim() ? 0.35 : 0.5;
             const randomSpeakers = ids.filter(id => {
                 // 已经被 @ 的跳过，一定会回复
                 if (mentionedIds.includes(id)) return false;
                 // 其他按概率 + 活跃度决定
-                const activity = Number(group.memberActivity?.[id] ?? 1);
+                const activity = Number(group.memberActivity?.[id] ?? 0.5);
                 return Math.random() < (baseReplyProbability * activity);
             });
 
@@ -3293,34 +3472,313 @@ ${memoryText}
                 allSpeakers.push(ids[start % ids.length]);
             }
 
-            // 5. 最多3个AI同时回复，避免刷屏
-            return allSpeakers.slice(0, Math.min(allSpeakers.length, 3));
+            // 5. 最多允许所有未禁言群成员回复，不再限制为 3 个 AI。
+            return allSpeakers.slice(0, ids.length);
         }
 
-        function manageCurrentGroupChat() {
+        function ensureGroupNameModal() {
+            let modal = document.getElementById('group-name-modal');
+            if (modal) return modal;
+            modal = document.createElement('div');
+            modal.className = 'modal-overlay group-name-modal';
+            modal.id = 'group-name-modal';
+            modal.innerHTML = `
+                <div class="modal-content group-name-content">
+                    <div class="modal-header">
+                        <h2 id="group-name-title">设置群名</h2>
+                        <button class="close-modal" id="group-name-close" aria-label="关闭"><i class="ri-close-line"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="group-name-input">群聊名称</label>
+                            <input type="text" id="group-name-input" maxlength="40" placeholder="请输入群聊名称">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" id="group-name-cancel" type="button">取消</button>
+                        <button class="btn btn-primary" id="group-name-confirm" type="button">确定</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+            return modal;
+        }
+
+        function groupNameDialog(titleText, defaultName = '多角色群聊') {
+            const modal = ensureGroupNameModal();
+            const title = modal.querySelector('#group-name-title');
+            const input = modal.querySelector('#group-name-input');
+            const closeBtn = modal.querySelector('#group-name-close');
+            const cancelBtn = modal.querySelector('#group-name-cancel');
+            const confirmBtn = modal.querySelector('#group-name-confirm');
+            title.textContent = titleText || '设置群名';
+            input.value = defaultName || '多角色群聊';
+            return new Promise(resolve => {
+                let settled = false;
+                const cleanup = (value) => {
+                    if (settled) return;
+                    settled = true;
+                    modal.classList.remove('show');
+                    modal.removeEventListener('click', onBackdropClick);
+                    closeBtn.removeEventListener('click', onCancel);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    confirmBtn.removeEventListener('click', onConfirm);
+                    input.removeEventListener('keydown', onKeydown);
+                    resolve(value);
+                };
+                function onCancel() { cleanup(null); }
+                function onConfirm() {
+                    const value = input.value.trim();
+                    if (!value) return showToast('群名不能为空', 'ri-error-warning-line');
+                    cleanup(value.slice(0, 40));
+                }
+                function onKeydown(e) {
+                    if (e.key === 'Enter') onConfirm();
+                    if (e.key === 'Escape') onCancel();
+                }
+                function onBackdropClick(e) { if (e.target === modal) onCancel(); }
+                modal.addEventListener('click', onBackdropClick);
+                closeBtn.addEventListener('click', onCancel);
+                cancelBtn.addEventListener('click', onCancel);
+                confirmBtn.addEventListener('click', onConfirm);
+                input.addEventListener('keydown', onKeydown);
+                modal.classList.add('show');
+                input.focus();
+                input.select();
+            });
+        }
+
+        function cssEscapeValue(value) {
+            if (window.CSS?.escape) return CSS.escape(String(value));
+            return String(value).replace(/[^a-zA-Z0-9_-]/g, char => `\\${char}`);
+        }
+
+        function ensureGroupManageModal() {
+            let modal = document.getElementById('group-manage-modal');
+            if (modal) return modal;
+            modal = document.createElement('div');
+            modal.className = 'modal-overlay group-manage-modal';
+            modal.id = 'group-manage-modal';
+            modal.innerHTML = `
+                <div class="modal-content group-manage-content">
+                    <div class="modal-header">
+                        <h2 id="group-manage-title"><i class="ri-group-settings-line"></i> 管理群聊</h2>
+                        <button class="close-modal" id="group-manage-close" aria-label="关闭"><i class="ri-close-line"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="group-manage-grid">
+                            <section class="group-manage-panel">
+                                <h3><i class="ri-edit-2-line"></i> 群聊操作</h3>
+                                <div class="form-group"><label for="group-manage-name">群名</label><input id="group-manage-name" type="text" maxlength="40"></div>
+                                <button class="btn btn-outline" id="group-manage-members" type="button"><i class="ri-user-add-line"></i> 添加/移除 AI 成员</button>
+                            </section>
+                            <section class="group-manage-panel">
+                                <h3><i class="ri-shield-user-line"></i> AI 群管</h3>
+                                <p class="group-manage-hint" id="group-admin-limit-text"></p>
+                                <div id="group-admin-list" class="group-manage-list"></div>
+                            </section>
+                            <section class="group-manage-panel group-manage-wide">
+                                <h3><i class="ri-volume-mute-line"></i> 群主管理操作</h3>
+                                <p class="group-manage-hint">你作为群主可以直接禁言或移出普通 AI；AI 群管只用于 AI 自主管群，不是手动操作入口。</p>
+                                <div id="group-admin-actions" class="group-admin-actions"></div>
+                            </section>
+                            <section class="group-manage-panel group-manage-wide">
+                                <h3><i class="ri-fire-line"></i> 活跃值</h3>
+                                <p class="group-manage-hint">0=潜水，1=很爱水群；不影响被 @ 时回复。</p>
+                                <div id="group-activity-list" class="group-manage-list"></div>
+                            </section>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" id="group-manage-disband" type="button"><i class="ri-delete-bin-line"></i> 解散群聊</button>
+                        <button class="btn btn-secondary" id="group-manage-cancel" type="button">取消</button>
+                        <button class="btn btn-primary" id="group-manage-save" type="button">保存设置</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+            return modal;
+        }
+
+        async function manageCurrentGroupChat() {
             const group = groupManager[currentFriendId];
             if (!group) return showToast('请先切换到群聊', 'ri-group-line');
-            const available = Object.values(friendsData).filter(friend => !friend.isGroup).map(friend => `${friend.id}:${getFriendDisplayName(friend.id)}`).join('\n');
-            const rawIds = prompt(`编辑成员 ID（逗号分隔，可添加/移除）：
-${available}`, (group.memberIds || []).join(','));
-            if (rawIds === null) return;
-            const memberIds = [...new Set(rawIds.split(',').map(id => id.trim()).filter(id => friendsData[id] && !friendsData[id].isGroup))];
-            if (memberIds.length < 2) return showToast('群聊至少需要 2 个成员', 'ri-error-warning-line');
-            group.memberIds = memberIds;
-            const order = prompt('发言顺序：round-robin（轮流）/ random（随机）/ fastest（最快响应）', group.speakOrder || 'round-robin');
-            if (['round-robin', 'random', 'fastest'].includes(order)) group.speakOrder = order;
-            group.allowMentions = confirm('允许 AI @ 其它 AI 吗？');
-            group.allowProactive = confirm('允许 AI 主动接话让群里唠嗑吗？');
-            group.memberActivity = group.memberActivity || {};
-            memberIds.forEach(id => {
-                const v = Number(prompt(`${getFriendDisplayName(id)} 活跃度（0-1，影响随机回复概率）`, group.memberActivity[id] ?? 1));
-                group.memberActivity[id] = Math.min(1, Math.max(0, Number.isFinite(v) ? v : 1));
-            });
             ensureGroupThreadData(group);
-            registerGroupFriend(group);
+            const modal = ensureGroupManageModal();
+            const draft = JSON.parse(JSON.stringify({
+                name: group.name || '多角色群聊',
+                memberIds: group.memberIds || [],
+                adminIds: group.adminIds || [],
+                mutedUntil: group.mutedUntil || {},
+                memberActivity: group.memberActivity || {}
+            }));
+            const nameInput = modal.querySelector('#group-manage-name');
+            const title = modal.querySelector('#group-manage-title');
+            const closeBtn = modal.querySelector('#group-manage-close');
+            const cancelBtn = modal.querySelector('#group-manage-cancel');
+            const saveBtn = modal.querySelector('#group-manage-save');
+            const disbandBtn = modal.querySelector('#group-manage-disband');
+            const membersBtn = modal.querySelector('#group-manage-members');
+            const adminLimitText = modal.querySelector('#group-admin-limit-text');
+            const adminList = modal.querySelector('#group-admin-list');
+            const actions = modal.querySelector('#group-admin-actions');
+            const activityList = modal.querySelector('#group-activity-list');
+            const pendingNotices = [];
+
+            const render = () => {
+                const limit = getGroupAdminLimit(draft);
+                draft.adminIds = [...new Set(draft.adminIds || [])].filter(id => draft.memberIds.includes(id)).slice(0, limit);
+                title.innerHTML = `<i class="ri-group-settings-line"></i> 管理群聊「${escapeHtml(draft.name || '多角色群聊')}」`;
+                nameInput.value = draft.name || '多角色群聊';
+                adminLimitText.textContent = `最多 ${limit} 名；群管不能互相移除/禁言。当前成员 ${draft.memberIds.length}/${GROUP_MAX_MEMBERS}。`;
+                adminList.innerHTML = draft.memberIds.map(id => `
+                    <label class="group-manage-row">
+                        <input type="checkbox" data-admin-id="${escapeHtml(id)}" ${draft.adminIds.includes(id) ? 'checked' : ''} ${!draft.adminIds.includes(id) && draft.adminIds.length >= limit ? 'disabled' : ''}>
+                        <img src="${escapeHtml(friendsData[id]?.avatar || '')}" alt="${escapeHtml(getFriendDisplayName(id))}">
+                        <span>${escapeHtml(getFriendDisplayName(id))}</span>
+                        ${draft.adminIds.includes(id) ? '<em>群管</em>' : ''}
+                    </label>`).join('') || '<div class="empty-state">暂无成员</div>';
+                activityList.innerHTML = draft.memberIds.map(id => {
+                    const value = Math.min(1, Math.max(0, Number(draft.memberActivity[id] ?? 0.5)));
+                    return `<div class="group-activity-row">
+                        <img src="${escapeHtml(friendsData[id]?.avatar || '')}" alt="${escapeHtml(getFriendDisplayName(id))}">
+                        <span>${escapeHtml(getFriendDisplayName(id))}</span>
+                        <input type="range" min="0" max="1" step="0.05" value="${value}" data-activity-id="${escapeHtml(id)}">
+                        <input type="number" min="0" max="1" step="0.05" value="${value}" data-activity-number-id="${escapeHtml(id)}">
+                    </div>`;
+                }).join('') || '<div class="empty-state">暂无成员</div>';
+                const targetOptions = draft.memberIds.filter(id => !draft.adminIds.includes(id)).map(id => `<option value="${escapeHtml(id)}">${escapeHtml(getFriendDisplayName(id))}${Number(draft.mutedUntil[id] || 0) > Date.now() ? '（禁言中）' : ''}</option>`).join('');
+                actions.innerHTML = `
+                    <select id="group-action-target">${targetOptions}</select>
+                    <input id="group-action-minutes" type="number" min="1" max="${GROUP_MUTE_MAX_MINUTES}" value="${GROUP_MUTE_MAX_MINUTES}" title="禁言分钟数">
+                    <button class="btn btn-outline btn-sm" id="group-action-mute" type="button">禁言</button>
+                    <button class="btn btn-danger btn-sm" id="group-action-kick" type="button">移出</button>`;
+                if (!targetOptions) actions.insertAdjacentHTML('beforeend', '<p class="group-manage-hint">没有可操作的普通 AI 目标（群管不会出现在这里）。</p>');
+                bindDynamicEvents();
+            };
+            const bindDynamicEvents = () => {
+                adminList.querySelectorAll('[data-admin-id]').forEach(input => input.addEventListener('change', () => {
+                    const id = input.dataset.adminId;
+                    if (input.checked) draft.adminIds = [...new Set([...(draft.adminIds || []), id])];
+                    else draft.adminIds = (draft.adminIds || []).filter(adminId => adminId !== id);
+                    render();
+                }));
+                activityList.querySelectorAll('[data-activity-id]').forEach(input => input.addEventListener('input', () => {
+                    draft.memberActivity[input.dataset.activityId] = Number(input.value);
+                    const num = activityList.querySelector(`[data-activity-number-id="${cssEscapeValue(input.dataset.activityId)}"]`);
+                    if (num) num.value = input.value;
+                }));
+                activityList.querySelectorAll('[data-activity-number-id]').forEach(input => input.addEventListener('input', () => {
+                    const value = Math.min(1, Math.max(0, Number(input.value) || 0));
+                    draft.memberActivity[input.dataset.activityNumberId] = value;
+                    const range = activityList.querySelector(`[data-activity-id="${cssEscapeValue(input.dataset.activityNumberId)}"]`);
+                    if (range) range.value = String(value);
+                }));
+                actions.querySelector('#group-action-mute')?.addEventListener('click', () => {
+                    const targetId = actions.querySelector('#group-action-target')?.value;
+                    const minutes = Number(actions.querySelector('#group-action-minutes')?.value || GROUP_MUTE_MAX_MINUTES);
+                    if (!targetId) return showToast('请选择普通 AI 目标', 'ri-error-warning-line');
+                    draft.mutedUntil[targetId] = Date.now() + Math.min(GROUP_MUTE_MAX_MINUTES, Math.max(1, minutes)) * 60 * 1000;
+                    showToast(`${getFriendDisplayName(targetId)} 已被禁言`, 'ri-volume-mute-line');
+                    pendingNotices.push(`群主 ${myUserName} 禁言了 ${getFriendDisplayName(targetId)} ${Math.min(GROUP_MUTE_MAX_MINUTES, Math.max(1, minutes))} 分钟`);
+                    render();
+                });
+                actions.querySelector('#group-action-kick')?.addEventListener('click', () => {
+                    const targetId = actions.querySelector('#group-action-target')?.value;
+                    if (!targetId || draft.memberIds.length <= 2) return showToast('群聊至少保留 2 名 AI', 'ri-error-warning-line');
+                    draft.memberIds = draft.memberIds.filter(id => id !== targetId);
+                    draft.adminIds = draft.adminIds.filter(id => id !== targetId);
+                    delete draft.memberActivity[targetId];
+                    delete draft.mutedUntil[targetId];
+                    showToast(`${getFriendDisplayName(targetId)} 已移出群聊`, 'ri-user-unfollow-line');
+                    pendingNotices.push(`群主 ${myUserName} 踢出了 ${getFriendDisplayName(targetId)}`);
+                    render();
+                });
+            };
+
+            return new Promise(resolve => {
+                let settled = false;
+                const cleanup = (saved) => {
+                    if (settled) return;
+                    settled = true;
+                    modal.classList.remove('show');
+                    closeBtn.removeEventListener('click', onCancel);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    saveBtn.removeEventListener('click', onSave);
+                    disbandBtn.removeEventListener('click', onDisband);
+                    membersBtn.removeEventListener('click', onMembers);
+                    nameInput.removeEventListener('input', onNameInput);
+                    modal.removeEventListener('click', onBackdropClick);
+                    resolve(saved);
+                };
+                const onCancel = () => cleanup(false);
+                const onSave = () => {
+                    const nextName = nameInput.value.trim();
+                    if (!nextName) return showToast('群名不能为空', 'ri-error-warning-line');
+                    if (draft.memberIds.length < 2) return showToast('群聊至少需要 2 个成员', 'ri-error-warning-line');
+                    group.name = nextName.slice(0, 40);
+                    group.memberIds = draft.memberIds;
+                    group.adminIds = draft.adminIds;
+                    group.mutedUntil = draft.mutedUntil;
+                    group.memberActivity = draft.memberActivity;
+                    ensureGroupThreadData(group);
+                    registerGroupFriend(group);
+                    saveGroupManager();
+                    renderFriendList();
+                    if (currentFriendId === group.id) currentFriendNameElement.textContent = getFriendDisplayName(group.id);
+                    showToast('群聊设置已更新', 'ri-group-settings-line');
+                    const noticesToSend = pendingNotices.splice(0);
+                    cleanup(true);
+                    noticesToSend.forEach(notice => appendGroupManagementNotice(group.id, notice));
+                };
+                const onDisband = () => {
+                    if (!confirm(`确定要解散群聊「${group.name || '多角色群聊'}」吗？此操作会移除群聊入口和聊天记录。`)) return;
+                    delete groupManager[group.id];
+                    delete friendsData[group.id];
+                    delete threadManager[group.id];
+                    saveGroupManager();
+                    saveThreadManager();
+                    renderFriendList();
+                    const nextFriendId = Object.keys(friendsData).find(id => !friendsData[id].isGroup) || Object.keys(friendsData)[0];
+                    if (nextFriendId) switchFriend(nextFriendId);
+                    showToast('群聊已解散', 'ri-delete-bin-line');
+                    cleanup(true);
+                };
+                const onMembers = async () => {
+                    const temp = { ...group, memberIds: draft.memberIds };
+                    const memberIds = await selectGroupMembersDialog(temp);
+                    if (!memberIds) return;
+                    draft.memberIds = memberIds;
+                    memberIds.forEach(id => { if (!Number.isFinite(Number(draft.memberActivity[id]))) draft.memberActivity[id] = 0.5; });
+                    draft.adminIds = draft.adminIds.filter(id => memberIds.includes(id));
+                    Object.keys(draft.memberActivity).forEach(id => { if (!memberIds.includes(id)) delete draft.memberActivity[id]; });
+                    Object.keys(draft.mutedUntil).forEach(id => { if (!memberIds.includes(id)) delete draft.mutedUntil[id]; });
+                    render();
+                };
+                const onNameInput = () => { draft.name = nameInput.value; };
+                const onBackdropClick = (e) => { if (e.target === modal) onCancel(); };
+                closeBtn.addEventListener('click', onCancel);
+                cancelBtn.addEventListener('click', onCancel);
+                saveBtn.addEventListener('click', onSave);
+                disbandBtn.addEventListener('click', onDisband);
+                membersBtn.addEventListener('click', onMembers);
+                nameInput.addEventListener('input', onNameInput);
+                modal.addEventListener('click', onBackdropClick);
+                render();
+                modal.classList.add('show');
+            });
+        }
+
+        async function appendGroupManagementNotice(groupId, noticeText) {
+            const group = groupManager[groupId];
+            if (!group) return;
+            addMessageToFriendThread(groupId, 'system', noticeText, 'text', false, { groupId, isManagementNotice: true });
             saveGroupManager();
-            renderFriendList();
-            showToast('群聊设置已更新', 'ri-group-settings-line');
+            if (currentFriendId === groupId) renderMessages(groupId);
+            const responders = pickGroupSpeakers(group, '').filter(id => !isGroupMemberMuted(group, id));
+            for (const responderId of responders.slice(0, 2)) {
+                if (Math.random() < Number(group.memberActivity?.[responderId] ?? 0.5)) {
+                    await callGroupMemberAI(`群内通报：${noticeText}。你可以自主选择是否简短回应这条通报；如果不想回应，请回复“（不回应）”。`, groupId, responderId);
+                }
+            }
         }
 
         async function enqueueGroupAIResponses(userMessage, groupId = currentFriendId) {
@@ -3332,6 +3790,7 @@ ${available}`, (group.memberIds || []).join(','));
                 appendMessageToDOM('other', '⚠️ 当前离线，群聊回复已加入离线队列。', 'text', friendsData[groupId].avatar, getFriendDisplayName(groupId));
                 return;
             }
+            normalizeGroupState(group);
             const orderedMembers = pickGroupSpeakers(group, userMessage);
             for (const memberId of orderedMembers) {
                 await callGroupMemberAI(userMessage, groupId, memberId);
@@ -3355,7 +3814,7 @@ ${available}`, (group.memberIds || []).join(','));
             }
             const group = groupManager[groupId];
             const member = friendsData[memberId];
-            if (!group || !member) return;
+            if (!group || !member || isGroupMemberMuted(group, memberId)) return;
             ensureGroupThreadData(group);
             const memberHistory = group.memberThreads[memberId].messages;
             memberHistory.push({ role: 'user', content: userMessage });
@@ -3365,21 +3824,23 @@ ${available}`, (group.memberIds || []).join(','));
             const messagesContext = [
                 { role: 'system', content: '你正在参加一个多角色群聊。请保持你的角色设定，只代表自己发言，不要代替其他角色说话。' },
                 { role: 'system', content: member.systemPrompt || '' },
-                { role: 'system', content: `群聊名称：${group.name}。群成员：${group.memberIds.map(id => getFriendDisplayName(id)).join('、')}。当前用户名字：${myUserName}。${group.allowMentions ? '你可以偶尔 @ 其他 AI 成员互动（比如 @名字），但不要太频繁，大部分时间正常聊天就好。' : '不要 @ 或点名其他 AI 成员。'}` },
+                { role: 'system', content: `群聊名称：${group.name}。群成员：${group.memberIds.map(id => getGroupMemberLabel(group, id)).join('、')}。当前用户名字：${myUserName}。${group.adminIds?.includes(memberId) ? '你是 AI 群管，可以基于群聊情况自主判断是否需要建议禁言或踢出成员，但不要假装用户下达了手动命令。' : ''}${group.allowMentions ? '你可以偶尔 @ 其他 AI 成员互动（比如 @名字），但不要太频繁，大部分时间正常聊天就好。' : '不要 @ 或点名其他 AI 成员。'}` },
                 ...contextHistory
             ];
             const loadingId = `group-loading-${memberId}-${Date.now()}`;
-            appendMessageToDOM('other', `${getFriendDisplayName(memberId)} 正在思考...`, 'text', member.avatar, getFriendDisplayName(memberId), false, loadingId);
+            appendMessageToDOM('other', `${getGroupMemberLabel(group, memberId)} 正在思考...`, 'text', member.avatar, getGroupMemberLabel(group, memberId), false, loadingId, { friendId: memberId, groupId });
             try {
-                const response = await fetch(ApiModule.buildChatUrl(apiSettings.apiUrl), ApiModule.createChatFetchOptions(apiSettings, messagesContext, {
-                    temperature: 0.85,
-                    top_p: 0.9,
+                const response = await ApiModule.fetchChat(apiSettings, messagesContext, {
                     max_tokens: chatSettings.maxTokens,
                     stream: false
-                }));
+                });
                 if (!response.ok) throw new Error(`API Error: ${response.status}`);
                 const data = await response.json();
                 const aiResponse = data.choices?.[0]?.message?.content || '（无回复）';
+                if (aiResponse.trim() === '（不回应）') {
+                    chatMessages.querySelector(`[data-message-id="${loadingId}"]`)?.remove();
+                    return;
+                }
                 memberHistory.push({ role: 'assistant', content: aiResponse });
                 const saved = addMessageToFriendThread(groupId, 'other', aiResponse, 'text', false, { friendId: memberId, groupId });
                 saveGroupManager();
@@ -3746,13 +4207,48 @@ ${available}`, (group.memberIds || []).join(','));
             URL.revokeObjectURL(url);
         }
 
+        function getExportMessageSpeaker(friendId, msg) {
+            const isMine = msg.role === 'mine';
+            const isSystem = msg.role === 'system';
+            const speakerId = msg.friendId || friendId;
+            const friend = friendsData[friendId];
+            const speaker = friendsData[speakerId] || friend;
+            return {
+                isMine,
+                isSystem,
+                name: isMine ? myUserName : (isSystem ? '群内通报' : (isGroupChat(friendId) ? getGroupMemberLabel(groupManager[friendId], speakerId) : getFriendDisplayName(speakerId))),
+                avatar: isMine ? inputAvatar.src : (isSystem ? (friend?.avatar || speaker?.avatar || '') : (speaker?.avatar || friend?.avatar || ''))
+            };
+        }
+
+        function renderMarkdownForExport(markdownText) {
+            const text = String(markdownText || '');
+            const escaped = escapeHtml(text);
+            return escaped
+                .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/^###### (.*)$/gm, '<h6>$1</h6>')
+                .replace(/^##### (.*)$/gm, '<h5>$1</h5>')
+                .replace(/^#### (.*)$/gm, '<h4>$1</h4>')
+                .replace(/^### (.*)$/gm, '<h3>$1</h3>')
+                .replace(/^## (.*)$/gm, '<h2>$1</h2>')
+                .replace(/^# (.*)$/gm, '<h1>$1</h1>')
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+                .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img class="md-img" src="$2" alt="$1">')
+                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+                .replace(/^(?:- |\* )(.*)$/gm, '<li>$1</li>')
+                .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+                .replace(/\n/g, '<br>');
+        }
+
         function formatReadableMessages(format = 'txt') {
             const thread = getCurrentThread();
             const friend = friendsData[currentFriendId];
             if (!thread || !friend) return '';
             const title = `${friend.name} / ${thread.name || '当前对话'}`;
             const lines = thread.messages.map(msg => {
-                const name = msg.role === 'mine' ? myUserName : getFriendDisplayName(currentFriendId);
+                const { name } = getExportMessageSpeaker(currentFriendId, msg);
                 const time = msg.timestamp ? new Date(msg.timestamp).toLocaleString() : '';
                 const content = msg.type === 'image' ? `[图片] ${msg.content}` : msg.content;
                 return `[${name}] ${time}: ${content}`;
@@ -3789,9 +4285,7 @@ ${available}`, (group.memberIds || []).join(','));
             const friend = friendsData[currentFriendId];
             if (!thread || !friend) return '';
             const rows = thread.messages.map(msg => {
-                const isMine = msg.role === 'mine';
-                const name = isMine ? myUserName : getFriendDisplayName(currentFriendId);
-                const avatar = isMine ? inputAvatar.src : friend.avatar;
+                const { isMine, isSystem, name, avatar } = getExportMessageSpeaker(currentFriendId, msg);
                 const time = msg.timestamp ? new Date(msg.timestamp).toLocaleString() : '';
                 let body = '';
                 if (msg.type === 'image') {
@@ -3799,11 +4293,11 @@ ${available}`, (group.memberIds || []).join(','));
                 } else if (msg.type === 'audio') {
                     body = `<audio controls src="${escapeHtml(msg.content)}"></audio>`;
                 } else {
-                    body = escapeHtml(msg.content || '').replace(/\n/g, '<br>');
+                    body = renderMarkdownForExport(msg.content || '');
                 }
-                return `<article class="msg ${isMine ? 'mine' : 'other'}"><img src="${escapeHtml(avatar)}" alt=""><div><div class="name">${escapeHtml(name)} <span>${escapeHtml(time)}</span></div><div class="bubble">${body}</div></div></article>`;
+                return `<article class="msg ${isMine ? 'mine' : (isSystem ? 'system' : 'other')}"><img src="${escapeHtml(avatar)}" alt=""><div><div class="name">${escapeHtml(name)} <span>${escapeHtml(time)}</span></div><div class="bubble">${body}</div></div></article>`;
             }).join('\n');
-            return `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>${escapeHtml(friend.name)} 对话导出</title><style>body{margin:0;background:#1a1c23;color:#eee;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{max-width:860px;margin:0 auto;padding:32px}.msg{display:flex;gap:12px;margin:16px 0;align-items:flex-start}.msg.mine{flex-direction:row-reverse}.msg img{width:42px;height:42px;border-radius:50%;object-fit:cover}.name{font-size:13px;color:#aaa;margin-bottom:4px}.name span{font-size:12px;color:#777}.bubble{background:${getAccentColor()};color:#222;border-radius:16px;padding:12px 14px;max-width:640px;white-space:normal;word-break:break-word}.mine .bubble{border-top-right-radius:4px}.other .bubble{border-top-left-radius:4px}.msg-img{max-width:260px!important;width:auto!important;height:auto!important;border-radius:10px!important}audio{max-width:260px}</style><body><main class="wrap"><h1>${escapeHtml(friend.name)} / ${escapeHtml(thread.name || '当前对话')}</h1><p>导出时间：${new Date().toLocaleString()}</p>${rows}</main></body></html>`;
+            return `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>${escapeHtml(friend.name)} 对话导出</title><style>body{margin:0;background:#1a1c23;color:#eee;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{max-width:860px;margin:0 auto;padding:32px}.msg{display:flex;gap:12px;margin:16px 0;align-items:flex-start}.msg.mine{flex-direction:row-reverse}.msg img{width:42px;height:42px;border-radius:50%;object-fit:cover}.name{font-size:13px;color:#aaa;margin-bottom:4px}.name span{font-size:12px;color:#777}.bubble{background:${getAccentColor()};color:#222;border-radius:16px;padding:12px 14px;max-width:640px;white-space:normal;word-break:break-word}.mine .bubble{border-top-right-radius:4px}.other .bubble{border-top-left-radius:4px}.msg-img,.md-img{max-width:260px!important;width:auto!important;height:auto!important;border-radius:10px!important}pre{background:#11141a;padding:12px;border-radius:8px;overflow:auto}code{background:#11141a;padding:2px 4px;border-radius:4px}a{color:#e6c78a}.system{justify-content:center}.system img{display:none}.system .bubble{background:rgba(230,199,138,.14);color:#f0e6c8;border:1px solid rgba(230,199,138,.35)}audio{max-width:260px}</style><body><main class="wrap"><h1>${escapeHtml(friend.name)} / ${escapeHtml(thread.name || '当前对话')}</h1><p>导出时间：${new Date().toLocaleString()}</p>${rows}</main></body></html>`;
         }
 
         function exportChatHtml() {
@@ -3960,8 +4454,63 @@ ${available}`, (group.memberIds || []).join(','));
         function initVoiceInput() {
             if (!voiceInputBtn) return;
 
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'zh-CN';
+                recognition.interimResults = true;
+                recognition.continuous = false;
+                let isRecognizing = false;
+                let finalTranscript = '';
+
+                voiceInputBtn.title = '语音输入（再次点击停止）';
+                voiceInputBtn.addEventListener('click', () => {
+                    if (isRecognizing) {
+                        recognition.stop();
+                        return;
+                    }
+                    finalTranscript = '';
+                    voiceInputBtn.classList.add('recording');
+                    try {
+                        recognition.start();
+                        isRecognizing = true;
+                        showToast('正在语音输入，再次点击停止', 'ri-mic-line');
+                    } catch (error) {
+                        isRecognizing = false;
+                        voiceInputBtn.classList.remove('recording');
+                        showToast(`语音输入启动失败：${error.message}`, 'ri-mic-off-line');
+                    }
+                });
+
+                recognition.onresult = event => {
+                    let interimTranscript = '';
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const transcript = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) finalTranscript += transcript;
+                        else interimTranscript += transcript;
+                    }
+                    const text = (finalTranscript + interimTranscript).trim();
+                    if (text) {
+                        messageInput.value = text;
+                        autoResizeMessageInput();
+                        messageInput.focus();
+                        saveMessageDraft();
+                    }
+                };
+                recognition.onend = () => {
+                    isRecognizing = false;
+                    voiceInputBtn.classList.remove('recording');
+                };
+                recognition.onerror = event => {
+                    isRecognizing = false;
+                    voiceInputBtn.classList.remove('recording');
+                    showToast(`语音输入失败：${event.error || '请重试'}`, 'ri-mic-off-line');
+                };
+                return;
+            }
+
             if (navigator.mediaDevices?.getUserMedia && window.MediaRecorder) {
-                voiceInputBtn.title = '录制语音消息';
+                voiceInputBtn.title = '当前浏览器不支持语音转文字，仅支持录音发送';
                 voiceInputBtn.addEventListener('click', async () => {
                     if (mediaRecorder && mediaRecorder.state === 'recording') {
                         mediaRecorder.stop();
@@ -3994,34 +4543,8 @@ ${available}`, (group.memberIds || []).join(','));
                 return;
             }
 
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                voiceInputBtn.title = '当前浏览器不支持语音录制或语音输入';
-                voiceInputBtn.style.opacity = '0.45';
-                return;
-            }
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'zh-CN';
-            recognition.interimResults = false;
-            recognition.continuous = false;
-            voiceInputBtn.addEventListener('click', () => {
-                voiceInputBtn.classList.add('recording');
-                recognition.start();
-            });
-            recognition.onresult = event => {
-                const text = Array.from(event.results).map(result => result[0].transcript).join('').trim();
-                if (text) {
-                    messageInput.value = text;
-                    autoResizeMessageInput();
-                    messageInput.focus();
-                    saveMessageDraft();
-                }
-            };
-            recognition.onend = () => voiceInputBtn.classList.remove('recording');
-            recognition.onerror = () => {
-                voiceInputBtn.classList.remove('recording');
-                showToast('语音输入失败，请重试', 'ri-mic-off-line');
-            };
+            voiceInputBtn.title = '当前浏览器不支持语音输入';
+            voiceInputBtn.style.opacity = '0.45';
         }
 
         const commandCards = [
@@ -4042,8 +4565,18 @@ ${available}`, (group.memberIds || []).join(','));
             commandPanel.addEventListener('click', (e) => {
                 const card = e.target.closest('.command-card');
                 if (!card) return;
-                messageInput.value = card.dataset.command;
-                messageInput.focus();
+                const command = card.dataset.command;
+                if (command.trim() === '/switch' || command.startsWith('/switch ')) {
+                    messageInput.value = command;
+                    messageInput.focus();
+                    autoResizeMessageInput();
+                    saveMessageDraft();
+                } else {
+                    handleCommand(command.trim());
+                    messageInput.value = '';
+                    autoResizeMessageInput();
+                    saveMessageDraft();
+                }
                 commandPanel.hidden = true;
                 commandPanel.classList.remove('show');
             });
@@ -4245,116 +4778,168 @@ ${available}`, (group.memberIds || []).join(','));
             showToast(`角色配置已导出`, "ri-download-line");
         }
 
-        function importCharacterFile(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const rawData = JSON.parse(e.target.result);
-                    let data = rawData;
-                    let isTavernCard = false;
+        function createCharacterFromImportData(rawData) {
+            let data = rawData;
+            let isTavernCard = false;
 
-                    // 检测并处理酒馆角色卡格式 (chara_card_v2/v3)
-                    // 酒馆格式：{"spec": "chara_card_v3", "spec_version": "3.0", "data": {...}}
-                    if (rawData.spec && rawData.spec.startsWith('chara_card_') && rawData.data) {
-                        isTavernCard = true;
-                        data = rawData.data;
-                    }
+            // 检测并处理酒馆角色卡格式 (chara_card_v2/v3)
+            // 酒馆格式：{"spec": "chara_card_v3", "spec_version": "3.0", "data": {...}}
+            if (rawData.spec && rawData.spec.startsWith('chara_card_') && rawData.data) {
+                isTavernCard = true;
+                data = rawData.data;
+            }
 
-                    // 兼容 AIAW 角色导出格式
-                    // AIAW 格式：{"name": "...", "avatar": {"type":"text","text":"AI","hue":208}, "prompt": "..."}
-                    // MySW 格式：{"name": "...", "avatar": "url_or_dataURL", "systemPrompt": "..."}
-                    // 酒馆格式：{"name": "...", "description": "...", "personality": "...", "scenario": "...", "first_mes": "...", "mes_example": "...", ...}
+            // 兼容 AIAW 角色导出格式
+            // AIAW 格式：{"name": "...", "avatar": {"type":"text","text":"AI","hue":208}, "prompt": "..."}
+            // MySW 格式：{"name": "...", "avatar": "url_or_dataURL", "systemPrompt": "..."}
+            // 酒馆格式：{"name": "...", "description": "...", "personality": "...", "scenario": "...", "first_mes": "...", "mes_example": "...", ...}
 
-                    // 提取角色名称（必需字段）
-                    let charName = data.name;
-                    if (!charName) {
-                        throw new Error('文件格式不正确，缺少角色名称。');
-                    }
+            // 提取角色名称（必需字段）
+            let charName = data.name;
+            if (!charName) {
+                throw new Error('文件格式不正确，缺少角色名称。');
+            }
 
-                    // 提取角色提示词/系统指令，根据不同格式兼容
-                    let charPrompt = '';
-                    if (isTavernCard) {
-                        // 酒馆角色卡格式：组合多个字段形成完整的角色设定
-                        const parts = [];
-                        if (data.description) parts.push(`【外貌与身世】${data.description}`);
-                        if (data.personality) parts.push(`【性格特征】${data.personality}`);
-                        if (data.scenario) parts.push(`【场景设定】${data.scenario}`);
-                        if (data.mes_example) parts.push(`【对话示例】${data.mes_example}`);
-                        if (data.post_history_instructions) parts.push(`【追加指令】${data.post_history_instructions}`);
-                        if (data.system_prompt) parts.push(`【系统指令】${data.system_prompt}`);
-                        charPrompt = parts.join('\n\n') || data.first_mes || `扮演${charName}这个角色`;
-                    } else {
-                        // AIAW/MySW 格式
-                        charPrompt = data.systemPrompt || data.prompt;
-                    }
+            // 提取角色提示词/系统指令，根据不同格式兼容
+            let charPrompt = '';
+            if (isTavernCard) {
+                // 酒馆角色卡格式：组合多个字段形成完整的角色设定
+                const parts = [];
+                if (data.description) parts.push(`【外貌与身世】${data.description}`);
+                if (data.personality) parts.push(`【性格特征】${data.personality}`);
+                if (data.scenario) parts.push(`【场景设定】${data.scenario}`);
+                if (data.mes_example) parts.push(`【对话示例】${data.mes_example}`);
+                if (data.post_history_instructions) parts.push(`【追加指令】${data.post_history_instructions}`);
+                if (data.system_prompt) parts.push(`【系统指令】${data.system_prompt}`);
+                charPrompt = parts.join('\n\n') || data.first_mes || `扮演${charName}这个角色`;
+            } else {
+                // AIAW/MySW 格式
+                charPrompt = data.systemPrompt || data.prompt;
+            }
 
-                    if (!charPrompt && !isTavernCard) {
-                        throw new Error('文件格式不正确，缺少角色提示词（systemPrompt 或 prompt）。');
-                    }
+            if (!charPrompt && !isTavernCard) {
+                throw new Error('文件格式不正确，缺少角色提示词（systemPrompt 或 prompt）。');
+            }
 
-                    // 处理头像，兼容 AIAW 的 avatar 对象格式、酒馆卡的 avatar 字段和 avatar_url 字段
-                    let charAvatar = DEFAULT_AVATAR_ASSISTANT;
-                    if (data.avatar) {
-                        if (typeof data.avatar === 'string') {
-                            // MySW 格式或酒馆卡 base64 字符串：直接是 URL 或 DataURL
-                            charAvatar = data.avatar;
-                        } else if (typeof data.avatar === 'object' && data.avatar.type === 'text') {
-                            // AIAW 格式：{"type":"text","text":"AI","hue":208}
-                            // 生成一个带颜色的文本头像 DataURL
-                            charAvatar = generateTextAvatarDataURL(data.avatar.text || 'AI', data.avatar.hue || 0);
-                        } else if (data.avatar.url) {
-                            // 其他可能的格式：包含 url 属性
-                            charAvatar = data.avatar.url;
-                        }
-                    } else if (data.avatar_url) {
-                        // 酒馆 V3 格式：使用 avatar_url 字段（可能是 HTTP URL 或 base64）
-                        charAvatar = data.avatar_url.trim();
-                    }
-
-                    // 提取欢迎消息
-                    let charWelcome = '';
-                    if (isTavernCard) {
-                        // 酒馆角色卡使用 first_mes 作为开场白
-                        charWelcome = data.first_mes || data.alternate_greetings?.[0] || `你好，我是${charName}。很高兴认识你！`;
-                    } else {
-                        charWelcome = data.welcomeMessage || data.welcome || `你好，我是${charName}。很高兴认识你！`;
-                    }
-
-                    const newId = 'custom_' + Date.now();
-                    const newChar = {
-                        id: newId,
-                        name: charName,
-                        avatar: charAvatar,
-                        systemPrompt: charPrompt,
-                        welcomeMessage: charWelcome,
-                        isCustom: true,
-                        // 保存酒馆角色卡的额外元数据（可选）
-                        originalFormat: isTavernCard ? 'tavern' : (data.prompt ? 'aiaw' : 'mysw')
-                    };
-
-                    friendsData[newId] = newChar;
-                    saveCustomFriendsData();
-
-                    threadManager[newId] = {
-                        threads: [{ id: 1, name: '初始对话', messages: [] }],
-                        currentThreadId: 1,
-                        longTermMemory: []
-                    };
-                    saveThreadManager();
-
-                    alert(`✅ 角色 "${charName}" 导入成功！`);
-                    renderFriendOptions();
-                    renderFriendList();
-
-                    switchFriend(newId);
-                    addFriendModal.classList.remove('show');
-
-                } catch (error) {
-                    alert(`❌ 导入失败：${error.message}`);
-                    console.error('导入错误:', error);
+            // 处理头像，兼容 AIAW 的 avatar 对象格式、酒馆卡的 avatar 字段和 avatar_url 字段
+            let charAvatar = DEFAULT_AVATAR_ASSISTANT;
+            if (data.avatar) {
+                if (typeof data.avatar === 'string') {
+                    // MySW 格式或酒馆卡 base64 字符串：直接是 URL 或 DataURL
+                    charAvatar = data.avatar;
+                } else if (typeof data.avatar === 'object' && data.avatar.type === 'text') {
+                    // AIAW 格式：{"type":"text","text":"AI","hue":208}
+                    // 生成一个带颜色的文本头像 DataURL
+                    charAvatar = generateTextAvatarDataURL(data.avatar.text || 'AI', data.avatar.hue || 0);
+                } else if (data.avatar.url) {
+                    // 其他可能的格式：包含 url 属性
+                    charAvatar = data.avatar.url;
                 }
+            } else if (data.avatar_url) {
+                // 酒馆 V3 格式：使用 avatar_url 字段（可能是 HTTP URL 或 base64）
+                charAvatar = data.avatar_url.trim();
+            }
+
+            // 提取欢迎消息
+            let charWelcome = '';
+            if (isTavernCard) {
+                // 酒馆角色卡使用 first_mes 作为开场白
+                charWelcome = data.first_mes || data.alternate_greetings?.[0] || `你好，我是${charName}。很高兴认识你！`;
+            } else {
+                charWelcome = data.welcomeMessage || data.welcome || `你好，我是${charName}。很高兴认识你！`;
+            }
+
+            const newId = 'custom_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+            const newChar = {
+                id: newId,
+                name: charName,
+                avatar: charAvatar,
+                systemPrompt: charPrompt,
+                welcomeMessage: charWelcome,
+                isCustom: true,
+                // 保存酒馆角色卡的额外元数据（可选）
+                originalFormat: isTavernCard ? 'tavern' : (data.prompt ? 'aiaw' : 'mysw')
             };
-            reader.readAsText(file);
+
+            friendsData[newId] = newChar;
+            threadManager[newId] = {
+                threads: [{ id: 1, name: '初始对话', messages: [] }],
+                currentThreadId: 1,
+                longTermMemory: []
+            };
+
+            return newChar;
+        }
+
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = () => reject(new Error('文件读取失败。'));
+                reader.readAsText(file);
+            });
+        }
+
+        async function importCharacterFile(file) {
+            try {
+                const fileName = file.name || '';
+                const isZip = fileName.toLowerCase().endsWith('.zip') || file.type === 'application/zip' || file.type === 'application/x-zip-compressed';
+                let importedCharacters = [];
+                const failedFiles = [];
+
+                if (isZip) {
+                    if (typeof JSZip === 'undefined') {
+                        throw new Error('ZIP 解压组件未加载，请刷新页面后重试。');
+                    }
+
+                    const zip = await JSZip.loadAsync(file);
+                    const jsonEntries = Object.values(zip.files)
+                        .filter(entry => !entry.dir && entry.name.toLowerCase().endsWith('.json'));
+
+                    if (jsonEntries.length === 0) {
+                        throw new Error('压缩包内没有找到 JSON 文件。');
+                    }
+
+                    for (const entry of jsonEntries) {
+                        try {
+                            const text = await entry.async('string');
+                            const rawData = JSON.parse(text);
+                            importedCharacters.push(createCharacterFromImportData(rawData));
+                        } catch (error) {
+                            failedFiles.push(`${entry.name}：${error.message}`);
+                            console.error('导入 ZIP 内角色失败:', entry.name, error);
+                        }
+                    }
+                } else {
+                    const text = await readFileAsText(file);
+                    const rawData = JSON.parse(text);
+                    importedCharacters.push(createCharacterFromImportData(rawData));
+                }
+
+                if (importedCharacters.length === 0) {
+                    throw new Error(failedFiles.length ? `没有成功导入任何角色。\n${failedFiles.join('\n')}` : '没有成功导入任何角色。');
+                }
+
+                saveCustomFriendsData();
+                saveThreadManager();
+                renderFriendOptions();
+                renderFriendList();
+
+                const lastImported = importedCharacters[importedCharacters.length - 1];
+                switchFriend(lastImported.id);
+                addFriendModal.classList.remove('show');
+
+                if (failedFiles.length) {
+                    alert(`⚠️ 已成功导入 ${importedCharacters.length} 个角色，但有 ${failedFiles.length} 个 JSON 文件失败：\n${failedFiles.join('\n')}`);
+                } else if (isZip) {
+                    alert(`✅ 已从 ZIP 成功导入 ${importedCharacters.length} 个角色！`);
+                } else {
+                    alert(`✅ 角色 "${lastImported.name}" 导入成功！`);
+                }
+            } catch (error) {
+                alert(`❌ 导入失败：${error.message}`);
+                console.error('导入错误:', error);
+            }
         }
 
         // 导出单个角色聊天记录功能
@@ -4407,6 +4992,19 @@ ${available}`, (group.memberIds || []).join(','));
                         throw new Error('文件格式不正确，缺少角色信息。');
                     }
 
+                    const normalizeImportedThread = (thread, index = 0) => {
+                        const safeId = Number.isFinite(Number(thread?.id)) ? Number(thread.id) : Date.now() + index;
+                        const messages = Array.isArray(thread?.messages) ? thread.messages.map(msg => ({
+                            id: msg.id || getNextMessageId(),
+                            role: ['mine', 'other', 'system'].includes(msg.role) ? msg.role : 'other',
+                            content: String(msg.content ?? ''),
+                            type: msg.type || 'text',
+                            timestamp: Number(msg.timestamp) || Date.now(),
+                            ...msg
+                        })) : [];
+                        return { id: safeId, name: thread?.name || `导入对话 ${index + 1}`, messages };
+                    };
+                    const importedThreads = Array.isArray(data.threads) ? data.threads.map(normalizeImportedThread) : [];
                     const charData = data.character;
 
                     // 如果指定了目标角色 ID，则强制使用该 ID
@@ -4450,7 +5048,7 @@ ${available}`, (group.memberIds || []).join(','));
                             // 智能合并线程：根据线程ID匹配，消息根据时间戳+发送者判断是否相同
                             const existingThreadsMap = new Map(threadManager[existingCharId].threads.map(t => [t.id, t]));
 
-                            data.threads.forEach(importThread => {
+                            importedThreads.forEach(importThread => {
                                 const existingThread = existingThreadsMap.get(importThread.id);
 
                                 if (existingThread) {
@@ -4579,8 +5177,8 @@ ${available}`, (group.memberIds || []).join(','));
                         saveCustomFriendsData();
 
                         threadManager[charId] = {
-                            threads: data.threads || [{ id: 1, name: '初始对话', messages: [] }],
-                            currentThreadId: data.threads && data.threads.length > 0 ? data.threads[0].id : 1,
+                            threads: importedThreads.length ? importedThreads : [{ id: 1, name: '初始对话', messages: [] }],
+                            currentThreadId: importedThreads.length ? importedThreads[0].id : 1,
                             longTermMemory: data.longTermMemory || []
                         };
                         saveThreadManager();
@@ -4690,7 +5288,7 @@ ${available}`, (group.memberIds || []).join(','));
 
                 option.addEventListener('click', () => {
                     if (friend.isCustom) {
-                        startEditCharacter(friend.id);
+                        openCharacterEditModal(friend.id);
                     } else {
                         switchFriend(friend.id);
                         addFriendModal.classList.remove('show');
@@ -5430,7 +6028,17 @@ ${available}`, (group.memberIds || []).join(','));
         batchExportBtn?.addEventListener('click', exportSelectedCustomFriends);
         batchDeleteBtn?.addEventListener('click', deleteSelectedCustomFriends);
         createGroupBtn?.addEventListener('click', createGroupChat);
+        function showGroupNameActionMenu(e) {
+            if (!isGroupChat()) return;
+            e?.preventDefault?.();
+            manageCurrentGroupChat();
+        }
         currentFriendNameElement?.addEventListener('dblclick', () => { if (isGroupChat()) manageCurrentGroupChat(); });
+        currentFriendNameElement?.addEventListener('contextmenu', showGroupNameActionMenu);
+        let groupNamePressTimer;
+        currentFriendNameElement?.addEventListener('touchstart', (e) => { if (isGroupChat()) groupNamePressTimer = setTimeout(() => showGroupNameActionMenu(e), 650); }, { passive: false });
+        currentFriendNameElement?.addEventListener('touchend', () => clearTimeout(groupNamePressTimer));
+        currentFriendNameElement?.addEventListener('touchmove', () => clearTimeout(groupNamePressTimer));
 
         function ensureMarkdownPreview() {
             if (markdownPreviewEl) return markdownPreviewEl;
@@ -5456,7 +6064,10 @@ ${available}`, (group.memberIds || []).join(','));
         myDisplayNameElement.addEventListener('click', enableEditUserName);
         sendBtn.addEventListener('click', () => sendMessage(messageInput.value));
         messageInput.addEventListener('keydown', (e) => {
-            if (normalizeShortcutEvent(e) === getShortcutSettings().send) {
+            if (e.isComposing) return;
+            const sendShortcut = getShortcutSettings().send;
+            if (normalizeShortcutEvent(e) === sendShortcut) {
+                if (sendShortcut === 'Enter' && e.shiftKey) return;
                 e.preventDefault();
                 sendMessage(messageInput.value);
             }
@@ -5572,7 +6183,7 @@ ${available}`, (group.memberIds || []).join(','));
 
 
         const defaultShortcuts = {
-            send: 'Ctrl+Enter',
+            send: 'Enter',
             focusCommand: '/',
             help: '?',
             clearChat: 'Ctrl+L',
@@ -5984,6 +6595,7 @@ ${available}`, (group.memberIds || []).join(','));
             loadChatSettings();
             loadVisionSettings();
             renderContextEditList();
+            applySettingsSearch();
         });
         closeSettingsBtn.addEventListener('click', () => aiSettingsModal.classList.remove('show'));
         aiSettingsModal.addEventListener('click', (e) => { if (e.target === aiSettingsModal) aiSettingsModal.classList.remove('show'); });
@@ -6017,6 +6629,28 @@ ${available}`, (group.memberIds || []).join(','));
             setLocalStorageSafely('disclaimerHidden', 'true');
         });
 
+        function applySettingsSearch() {
+            if (!settingsSearchInput) return;
+            const keyword = settingsSearchInput.value.trim().toLowerCase();
+            document.querySelectorAll('.settings-no-results').forEach(el => el.remove());
+            tabContents.forEach(tab => {
+                tab.style.display = keyword ? 'block' : '';
+                tab.querySelectorAll('.form-group, section, h3, p, #shortcut-settings-list').forEach(el => el.style.display = '');
+                if (!keyword) return;
+                let visibleCount = 0;
+                const items = tab.querySelectorAll('.form-group, section, #shortcut-settings-list > .form-group');
+                items.forEach(item => {
+                    const matched = item.textContent.toLowerCase().includes(keyword) || [...item.querySelectorAll('input, textarea, select')].some(input => String(input.placeholder || input.value || '').toLowerCase().includes(keyword));
+                    item.style.display = matched ? '' : 'none';
+                    if (matched) visibleCount++;
+                });
+                tab.style.display = visibleCount ? 'block' : 'none';
+            });
+            if (keyword && ![...tabContents].some(tab => tab.style.display !== 'none')) {
+                document.querySelector('.modal-body')?.insertAdjacentHTML('beforeend', '<div class="settings-no-results">没有找到匹配的设置项</div>');
+            }
+        }
+
         tabButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 tabButtons.forEach(b => b.classList.remove('active'));
@@ -6036,8 +6670,10 @@ ${available}`, (group.memberIds || []).join(','));
                 } else if (btn.dataset.tab === 'shortcuts') {
                     renderShortcutSettings();
                 }
+                applySettingsSearch();
             });
         });
+        settingsSearchInput?.addEventListener('input', applySettingsSearch);
 
 
 
@@ -6100,6 +6736,13 @@ ${available}`, (group.memberIds || []).join(','));
             const activeTab = document.querySelector('.tab-button.active').dataset.tab;
             if (activeTab === 'api') {
                 apiUrlInput.value = ''; apiKeyInput.value = ''; modelNameInput.value = '';
+                if (apiTemperatureInput) apiTemperatureInput.value = 0.85;
+                if (apiTopPInput) apiTopPInput.value = 0.9;
+                if (apiPresencePenaltyInput) apiPresencePenaltyInput.value = 0.5;
+                if (apiFrequencyPenaltyInput) apiFrequencyPenaltyInput.value = 0.3;
+                if (apiStopSequencesInput) apiStopSequencesInput.value = '';
+                if (apiSeedInput) apiSeedInput.value = '';
+                if (apiTimeoutSecondsInput) apiTimeoutSecondsInput.value = 60;
                 localStorage.removeItem('aiChatSettings');
                 localStorage.removeItem('visionSettings');
                 localStorage.removeItem('ttsSettings');
@@ -6127,6 +6770,8 @@ ${available}`, (group.memberIds || []).join(','));
                 applyBubbleBackground();
                 updateBubbleTextInputs();
                 applyBubbleTextStyleToAll();
+                setLocalStorageSafely('accentColor', '#e6c78a');
+                applyAccentColor('#e6c78a');
             } else if (activeTab === 'chat') {
                 maxContextRoundsInput.value = 0;
                 maxTokensInput.value = 1024;
@@ -6140,8 +6785,18 @@ ${available}`, (group.memberIds || []).join(','));
                 enableMessageSegmentationCheckbox.checked = false;
                 bubbleWidthSlider.value = 85;
                 bubbleWidthPercentInput.value = 85;
-                charsPerLineInput.value = 32;
+                enableDisplayLimitCheckbox.checked = false;
+                displayLimitRoundsInput.value = 20;
+                const defaults = getDefaultFeatureToggles();
+                Object.entries(featureToggleInputs).forEach(([key, input]) => { if (input) input.checked = defaults[key]; });
             }
+            saveApiSettings();
+            saveVisionSettings();
+            saveChatSettings();
+            saveKnowledgeSettings();
+            saveMemorySettings();
+            applyFeatureToggles();
+            showToast('已恢复当前页默认设置', 'ri-refresh-line');
         });
 
         testConnectionBtn.addEventListener('click', async () => {
@@ -6665,10 +7320,6 @@ ${available}`, (group.memberIds || []).join(','));
                 aiSettingsModal.classList.add('show');
             }
 
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && messageInput === document.activeElement) {
-                e.preventDefault();
-                sendBtn.click();
-            }
 
             if (e.key === 'Escape') {
                 document.querySelectorAll('.modal-overlay.show').forEach(modal => {

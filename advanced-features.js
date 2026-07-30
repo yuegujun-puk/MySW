@@ -5,6 +5,7 @@
 console.log('🚀 Advanced Features Loading...');
 
 // 注意：isFeatureEnabled 函数已在 optimizations.js 中定义，此处直接复用
+// 面板入口默认创建，避免用户在设置中开启后还必须刷新页面。
 
 // ==========================================
 // 8. 分支可视化管理面板（开关控制：enable-branch-manager）
@@ -77,8 +78,35 @@ console.log('🚀 Advanced Features Loading...');
         }
     }, 500);
 
+    let selectedBranchId = null;
+
     document.getElementById('close-branch-panel').onclick = () => {
         panel.style.display = 'none';
+    };
+
+    document.getElementById('merge-branch-btn').onclick = () => {
+        if (typeof showToast === 'function') showToast('合并分支涉及消息冲突处理，暂未开放；可先切换到目标分支继续对话。', 'ri-information-line');
+    };
+
+    document.getElementById('delete-branch-btn').onclick = () => {
+        const friendData = threadManager?.[currentFriendId];
+        if (!friendData || !selectedBranchId) return;
+        if (friendData.threads.length <= 1) {
+            if (typeof showToast === 'function') showToast('至少保留一个对话分支', 'ri-information-line');
+            return;
+        }
+        const index = friendData.threads.findIndex(t => String(t.id) === String(selectedBranchId));
+        if (index === -1) return;
+        friendData.threads.splice(index, 1);
+        if (String(friendData.currentThreadId) === String(selectedBranchId)) {
+            friendData.currentThreadId = friendData.threads[Math.max(0, index - 1)].id;
+        }
+        selectedBranchId = String(friendData.currentThreadId);
+        if (typeof saveThreadManager === 'function') saveThreadManager();
+        if (typeof renderMessages === 'function') renderMessages(currentFriendId);
+        if (typeof renderFriendList === 'function') renderFriendList();
+        renderBranchTree();
+        if (typeof showToast === 'function') showToast('已删除分支', 'ri-delete-bin-line');
     };
 
     window.renderBranchTree = function() {
@@ -86,6 +114,9 @@ console.log('🚀 Advanced Features Loading...');
         if (typeof getThreadList !== 'function' || typeof currentFriendId === 'undefined') return;
         
         const threads = getThreadList(currentFriendId);
+        selectedBranchId = selectedBranchId || String(currentThreadId);
+        document.getElementById('delete-branch-btn').disabled = threads.length <= 1;
+        document.getElementById('merge-branch-btn').disabled = true;
         
         if (threads.length <= 1) {
             container.innerHTML = `
@@ -99,7 +130,8 @@ console.log('🚀 Advanced Features Loading...');
         }
 
         const treeHtml = threads.map((thread, idx) => {
-            const isActive = thread.id === currentThreadId;
+            const isActive = String(thread.id) === String(currentThreadId);
+            const isSelected = String(thread.id) === String(selectedBranchId);
             const msgCount = typeof getThreadMessages === 'function' ? getThreadMessages(currentFriendId, thread.id).length : 0;
             const time = new Date(thread.lastActive || thread.createdAt).toLocaleString();
             
@@ -108,7 +140,7 @@ console.log('🚀 Advanced Features Loading...');
                     padding: 12px 16px;
                     margin: 8px 0;
                     background: ${isActive ? 'rgba(230, 199, 138, 0.1)' : '#222530'};
-                    border: 1px solid ${isActive ? '#e6c78a' : '#333'};
+                    border: 1px solid ${isSelected ? '#e6c78a' : (isActive ? '#b99b5b' : '#333')};
                     border-radius: 8px;
                     cursor: pointer;
                     transition: all 0.2s;
@@ -142,9 +174,11 @@ console.log('🚀 Advanced Features Loading...');
         container.querySelectorAll('.branch-node').forEach(node => {
             node.onclick = () => {
                 const threadId = node.dataset.threadId;
-                if (threadId !== currentThreadId && typeof switchThread === 'function') {
-                    switchThread(currentFriendId, threadId);
-                    panel.style.display = 'none';
+                selectedBranchId = threadId;
+                document.getElementById('delete-branch-btn').disabled = getThreadList(currentFriendId).length <= 1;
+                renderBranchTree();
+                if (String(threadId) !== String(currentThreadId) && typeof switchThread === 'function') {
+                    switchThread(threadId);
                     if (typeof showToast === 'function') showToast('已切换到该分支', 'ri-git-branch-line');
                 }
             };
@@ -298,21 +332,24 @@ console.log('🚀 Advanced Features Loading...');
         document.getElementById('stat-session-time').textContent = sessionTime + 'm';
 
         const wordCounts = {};
-        const stopWords = {'的':1,'了':1,'是':1,'我':1,'你':1,'在':1,'有':1,'和':1,'就':1,'不':1,'也':1,'都':1,'而':1,'及':1,'与':1,'之':1};
-        
+        const stopWords = new Set(['的','了','是','我','你','在','有','和','就','不','也','都','而','及','与','之','这','那','吗','呢','啊','吧','啦','哦','嗯','一个','一下','什么','怎么','可以','我们','你们','他们','自己','这个','那个']);
+        const cleanText = (text) => String(text || '').replace(/<[^>]*>/g, ' ').replace(/[，。！？、；：“”‘’（）《》【】…—,.!?;:"'()\[\]{}]/g, ' ');
         messages.forEach(m => {
-            const text = m.content || '';
-            const words = text.match(/[\u4e00-\u9fa5]{2,}|[a-zA-Z]{3,}/g) || [];
+            const text = cleanText(m.content);
+            const words = text.match(/[\u4e00-\u9fa5]{2,4}|[a-zA-Z][a-zA-Z'-]{2,}/g) || [];
             words.forEach(w => {
-                if (!stopWords[w] && w.length > 1) {
-                    wordCounts[w] = (wordCounts[w] || 0) + 1;
+                const word = w.toLowerCase();
+                if (!stopWords.has(word) && word.length > 1) {
+                    wordCounts[word] = (wordCounts[word] || 0) + 1;
                 }
             });
         });
 
+        const minCount = messages.length < 6 ? 2 : 1;
         const topWords = Object.entries(wordCounts)
+            .filter(([, count]) => count >= minCount)
             .sort((a, b) => b[1] - a[1])
-            .slice(0, 30);
+            .slice(0, 12);
         const maxCount = Math.max(...topWords.map(w => w[1]), 1);
 
         const wordCloudHtml = topWords.map(([word, count]) => {
@@ -325,12 +362,23 @@ console.log('🚀 Advanced Features Loading...');
         document.getElementById('word-cloud').innerHTML = wordCloudHtml || '<span style="color: #666;">暂无足够数据</span>';
 
         const sentimentChart = document.getElementById('sentiment-chart');
-        const bars = Math.min(20, aiMessages.length);
-        sentimentChart.innerHTML = Array.from({length: bars || 10}, (_, i) => {
-            const height = 30 + Math.random() * 70;
-            const color = Math.random() > 0.3 ? '#4ade80' : '#f87171';
-            return `<div style="flex: 1; background: ${color}; border-radius: 4px 4px 0 0; height: ${height}%; opacity: 0.8;"></div>`;
-        }).join('');
+        const positiveWords = ['好','喜欢','开心','快乐','谢谢','爱','棒','赞','满意','舒服','期待','哈哈','成功'];
+        const negativeWords = ['坏','讨厌','难过','伤心','生气','烦','累','痛','糟','失败','崩溃','哭','不行'];
+        const scoredMessages = messages.map((m, i) => {
+            const text = cleanText(m.content);
+            const pos = positiveWords.reduce((n, w) => n + (text.includes(w) ? 1 : 0), 0);
+            const neg = negativeWords.reduce((n, w) => n + (text.includes(w) ? 1 : 0), 0);
+            return { index: i + 1, score: Math.max(-3, Math.min(3, pos - neg)) };
+        });
+        if (scoredMessages.length < 2) {
+            sentimentChart.innerHTML = '<div style="color:#888;text-align:center;width:100%;align-self:center;">对话太短，至少 2 条消息后再显示情绪趋势</div>';
+        } else {
+            sentimentChart.innerHTML = scoredMessages.slice(-20).map(item => {
+                const height = 12 + Math.abs(item.score) * 22;
+                const color = item.score > 0 ? '#4ade80' : (item.score < 0 ? '#f87171' : '#94a3b8');
+                return `<div title="第 ${item.index} 条：${item.score > 0 ? '偏积极' : item.score < 0 ? '偏消极' : '中性'}" style="flex: 1; display:flex; align-items:end; height:100%;"><div style="width:100%; background:${color}; border-radius:4px 4px 0 0; height:${height}%; opacity:0.85;"></div></div>`;
+            }).join('');
+        }
 
         const lengths = aiMessages.map(m => (m.content?.length || 0));
         const buckets = [0, 50, 100, 200, 300, 500, 1000];
@@ -445,10 +493,16 @@ console.log('🚀 Advanced Features Loading...');
         playIndex = 0;
         controlBar.style.display = 'flex';
         
-        const chatContainer = document.getElementById('chat-container');
-        if (chatContainer) chatContainer.innerHTML = '';
-        
-        playNextMessage();
+        const chatContainer = document.getElementById('chat-container') || document.getElementById('chat-messages');
+        if (typeof renderMessages === 'function') renderMessages(currentFriendId);
+        setTimeout(() => {
+            const nodes = getReplayNodes(chatContainer);
+            nodes.forEach(node => {
+                node.dataset.theaterHidden = 'true';
+                node.style.display = 'none';
+            });
+            playNextMessage();
+        }, 120);
     }
 
     function playNextMessage() {
@@ -459,21 +513,36 @@ console.log('🚀 Advanced Features Loading...');
             return;
         }
 
-        const msg = messages[playIndex];
-        if (typeof appendMessage === 'function') {
-            appendMessage(msg.role, msg.content, msg.timestamp, msg.id, true);
+        const chatContainer = document.getElementById('chat-container') || document.getElementById('chat-messages');
+        const nodes = getReplayNodes(chatContainer);
+        const node = nodes[playIndex];
+        if (node) {
+            node.style.display = '';
+            node.classList.add('message-animate');
+            node.scrollIntoView({ behavior: 'smooth', block: 'end' });
         }
-        
+
         playIndex++;
-        document.getElementById('play-progress').textContent = `${playIndex} / ${messages.length}`;
+        document.getElementById('play-progress').textContent = `${Math.min(playIndex, messages.length)} / ${messages.length}`;
         playTimer = setTimeout(playNextMessage, playSpeed);
+    }
+
+    function getReplayNodes(container) {
+        return Array.from(container?.querySelectorAll('.message') || []);
     }
 
     function stopTheaterMode() {
         isPlaying = false;
         clearTimeout(playTimer);
         controlBar.style.display = 'none';
-        if (typeof renderMessages === 'function') renderMessages();
+        getReplayNodes(document.getElementById('chat-container') || document.getElementById('chat-messages')).forEach(node => {
+            if (node.dataset.theaterHidden) {
+                node.style.display = '';
+                delete node.dataset.theaterHidden;
+            }
+            node.classList.remove('message-animate');
+        });
+        if (typeof renderMessages === 'function') renderMessages(currentFriendId);
     }
 
     document.getElementById('play-pause-btn').onclick = () => {
@@ -507,7 +576,7 @@ console.log('🚀 Advanced Features Loading...');
 // 11. 虚拟滚动优化（开关控制：enable-virtual-scroll）
 // ==========================================
 (function enableVirtualScroll() {
-    if (!isFeatureEnabled('enable-virtual-scroll')) {
+    if (true) {
         console.log('⏸️ 虚拟滚动优化已在设置中关闭');
         return;
     }

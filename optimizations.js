@@ -9,8 +9,9 @@ function isFeatureEnabled(featureId) {
     try {
         const settings = JSON.parse(localStorage.getItem('chatSettings') || '{}');
         const toggles = settings.featureToggles || {};
-        // 默认全部关闭
-        return toggles[featureId] === true;
+        const camelId = featureId.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+        if (featureId === 'enable-latex-mermaid' || featureId === 'enable-virtual-scroll' || featureId === 'enable-performance-fix') return toggles[featureId] !== false && toggles[camelId] !== false;
+        return toggles[featureId] === true || toggles[camelId] === true;
     } catch(e) {
         return false;
     }

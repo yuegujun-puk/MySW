@@ -112,13 +112,14 @@
                 <input type="file" id="file-upload" accept="image/*,video/*,.txt,.md,.markdown" multiple hidden>
                 <input type="file" id="import-upload" accept=".json" hidden>
                 <input type="file" id="char-avatar-upload" accept="image/*" hidden>
+                <input type="file" id="friend-avatar-upload" accept="image/*" hidden>
                 <input type="file" id="bubble-bg-upload" accept="image/*" hidden>
                 
                 <div style="display: flex; align-items: center; gap: 15px; width: 100%;">
                     <img src="https://bbs-static.miyoushe.com/static/2026/04/15/be327f1009d12f3c869bad5b2123f639_5263501617436038412.jpg?x-oss-process=image/resize,s_150/quality,q_80/auto-orient,0/interlace,1/format,jpg" alt="我的头像" class="avatar" style="width: 35px; height: 35px;" id="input-avatar" role="button" tabindex="0" aria-label="更换我的头像">
                     
                     <div class="input-wrapper">
-                        <textarea id="message-input" rows="1" placeholder="输入消息... (Enter 换行，Ctrl+Enter 发送，试试 /help 查看指令)" aria-label="输入消息"></textarea>
+                        <textarea id="message-input" rows="1" placeholder="输入消息... (Enter 发送，Shift+Enter 换行，试试 /help 查看指令)" aria-label="输入消息"></textarea>
                         <div class="input-icons">
                             <i class="ri-attachment-2-line" id="file-upload-btn" title="上传文件" role="button" tabindex="0" aria-label="上传文件"></i>
                             <i class="ri-image-add-line" id="upload-btn" title="发送图片" role="button" tabindex="0" aria-label="发送图片"></i>
@@ -157,6 +158,9 @@
                     <div class="avatar-menu-item" id="ai-menu-set-url" role="menuitem">
                         <i class="ri-link"></i> 使用网络 URL
                     </div>
+                    <div class="avatar-menu-item" id="ai-menu-reset-avatar" role="menuitem" style="display: none; color: #e6c78a;">
+                        <i class="ri-refresh-line"></i> 恢复默认头像
+                    </div>
                 </div>
             </footer>
         </main>
@@ -169,6 +173,12 @@
         </div>
         <div class="friend-menu-item" id="menu-set-remark">
             <i class="ri-edit-line"></i> 设置备注
+        </div>
+        <div class="friend-menu-item" id="menu-change-avatar">
+            <i class="ri-image-edit-line"></i> 更换头像
+        </div>
+        <div class="friend-menu-item" id="menu-reset-avatar" style="display: none; color: #e6c78a;">
+            <i class="ri-refresh-line"></i> 恢复默认头像
         </div>
         <div class="friend-menu-item" id="menu-change-group">
             <i class="ri-folder-user-line"></i> 移动到分组
@@ -206,8 +216,8 @@
             </div>
             <div class="modal-body">
                 <ul class="shortcut-list">
-                    <li><kbd>Ctrl/⌘</kbd> + <kbd>Enter</kbd><span>发送当前消息</span></li>
-                    <li><kbd>Enter</kbd><span>在输入框内换行</span></li>
+                    <li><kbd>Enter</kbd><span>发送当前消息</span></li>
+                    <li><kbd>Shift</kbd> + <kbd>Enter</kbd><span>在输入框内换行</span></li>
                     <li><kbd>/</kbd><span>聚焦输入框并输入命令前缀</span></li>
                     <li><kbd>?</kbd><span>打开/关闭本帮助面板</span></li>
                     <li><kbd>右键/长按我的消息</kbd><span>编辑或撤回消息</span></li>
@@ -221,6 +231,10 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>系统设置</h2>
+                <div class="settings-search-wrap">
+                    <i class="ri-search-line"></i>
+                    <input type="search" id="settings-search" placeholder="搜索设置项..." aria-label="搜索设置项">
+                </div>
                 <button class="close-modal" id="close-settings-btn"><i class="ri-close-line"></i></button>
             </div>
             <div class="modal-body">
@@ -259,6 +273,46 @@
                     </div>
                     <div id="test-result" class="test-result"></div>
                     <div class="form-group" style="border-top: 1px dashed #444; padding-top: 15px; margin-top: 15px;">
+                        <h3 style="margin-bottom: 12px; color: #e6c78a;"><i class="ri-sliders-line"></i> 生成参数</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div>
+                                <label for="api-temperature">随机性 temperature</label>
+                                <p style="font-size: 0.75em; color: #888; margin: 3px 0;">值越大，回复越随机。</p>
+                                <input type="number" id="api-temperature" value="0.85" min="0" max="2" step="0.01">
+                            </div>
+                            <div>
+                                <label for="api-top-p">核采样 topP</label>
+                                <p style="font-size: 0.75em; color: #888; margin: 3px 0;">与随机性类似，但不要和随机性一起更改。</p>
+                                <input type="number" id="api-top-p" value="0.9" min="0" max="1" step="0.01">
+                            </div>
+                            <div>
+                                <label for="api-presence-penalty">存在惩罚 presencePenalty</label>
+                                <p style="font-size: 0.75em; color: #888; margin: 3px 0;">值越大，越有可能扩展到新话题。</p>
+                                <input type="number" id="api-presence-penalty" value="0.5" min="-2" max="2" step="0.01">
+                            </div>
+                            <div>
+                                <label for="api-frequency-penalty">频率惩罚 frequencyPenalty</label>
+                                <p style="font-size: 0.75em; color: #888; margin: 3px 0;">值越大，越有可能降低重复字词。</p>
+                                <input type="number" id="api-frequency-penalty" value="0.3" min="-2" max="2" step="0.01">
+                            </div>
+                            <div>
+                                <label for="api-timeout-seconds">超时秒数</label>
+                                <p style="font-size: 0.75em; color: #888; margin: 3px 0;">请求超过该秒数会自动中止。</p>
+                                <input type="number" id="api-timeout-seconds" value="60" min="1" max="600" step="1">
+                            </div>
+                            <div>
+                                <label for="api-seed">种子 seed</label>
+                                <p style="font-size: 0.75em; color: #888; margin: 3px 0;">用于随机采样的种子（整数），用于生成确定性的结果。</p>
+                                <input type="number" id="api-seed" placeholder="留空则不发送" step="1">
+                            </div>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <label for="api-stop-sequences">停止词 stopSequences</label>
+                            <p style="font-size: 0.75em; color: #888; margin: 3px 0;">模型生成停止词时，就会停止生成。多个停止词请用换行分隔。</p>
+                            <textarea id="api-stop-sequences" rows="3" placeholder="每行一个停止词"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group" style="border-top: 1px dashed #444; padding-top: 15px; margin-top: 15px;">
                         <h3 style="margin-bottom: 12px; color: #e6c78a;"><i class="ri-image-line"></i> 多模态视觉</h3>
                         <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                             <input type="checkbox" id="enable-multimodal-vision" style="width: 18px; height: 18px;">
@@ -295,6 +349,12 @@
 
                 <!-- 界面外观 Tab -->
                 <div id="tab-appearance" class="tab-content">
+                    <div class="form-group">
+                        <label for="accent-color-picker">自定义主题色</label>
+                        <p style="font-size: 0.8em; color: #888; margin-bottom: 8px;">用于侧边栏高亮、发送按钮、消息气泡等强调色。</p>
+                        <input type="color" id="accent-color-picker" value="#e6c78a" style="width: 100%; height: 42px; padding: 4px; background: #2a2a2a; border: 1px solid #444; border-radius: 6px;">
+                    </div>
+
                     <div class="form-group">
                         <label>聊天背景</label>
                         <p style="font-size: 0.85em; color: #888; margin-bottom: 10px;">选择一张本地图片作为聊天背景。</p>
@@ -471,18 +531,9 @@
                             启用消息分段
                         </label>
                         <p style="font-size: 0.85em; color: #aaa; margin-top: 5px;">
-                            开启后，长回复会按标点符号自动分段显示，每条分段作为独立消息。
+                            开启后，AI 长回复会按自然段落和句末标点分段显示，尽量保持语义完整。
                         </p>
-                        
-                        <!-- 新增：每行字符数设置 -->
-                        <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #555;">
-                            <label for="chars-per-line" style="display: block; margin-bottom: 8px; color: #e6c78a; font-size: 1em;">每行字符数 (分段依据)</label>
-                            <input type="number" id="chars-per-line" value="32" min="10" max="200" placeholder="32" 
-                                   style="width: 100%; padding: 8px; background: #2a2a2a; border: 1px solid #444; border-radius: 5px; color: #fff; box-sizing: border-box;">
-                            <p style="font-size: 0.8em; color: #999; margin-top: 5px;">
-                                当消息超过此字符数时，会在最近的标点处或强制换行分段。默认 32。
-                            </p>
-                        </div>
+
                     </div>
                     
                     <!-- 新增：聊天内容显示限制开关 -->
@@ -506,13 +557,6 @@
                         </div>
                     </div>
 
-
-                    <div class="form-group" style="border-top: 1px dashed #444; padding-top: 15px; margin-top: 15px;">
-                        <label for="accent-color-picker">自定义主题色</label>
-                        <p style="font-size: 0.8em; color: #888; margin-bottom: 8px;">用于侧边栏高亮、发送按钮、消息气泡等强调色。</p>
-                        <input type="color" id="accent-color-picker" value="#e6c78a" style="width: 100%; height: 42px; padding: 4px; background: #2a2a2a; border: 1px solid #444; border-radius: 6px;">
-                    </div>
-
                     <!-- 新增功能按钮显示开关 -->
                     <div class="form-group" style="border-top: 1px dashed #444; padding-top: 15px; margin-top: 15px;">
                         <h3 style="margin-bottom: 12px; color: #e6c78a;"><i class="ri-eye-line"></i> 新功能按钮显示开关</h3>
@@ -533,14 +577,11 @@
                             <label><input type="checkbox" id="show-chat-stats" checked> 统计看板按钮</label>
                             <label><input type="checkbox" id="show-markdown-preview" checked> Markdown 预览</label>
                             <label><input type="checkbox" id="show-group-chat" checked> 多角色群聊</label>
-                            <label><input type="checkbox" id="enable-latex-mermaid"> LaTeX 公式 + Mermaid 图表渲染</label>
                             <label><input type="checkbox" id="enable-message-reply"> 消息引用/回复功能</label>
                             <label><input type="checkbox" id="enable-draft-sync"> 跨标签页草稿同步</label>
                             <label><input type="checkbox" id="enable-branch-manager"> 分支可视化管理面板</label>
                             <label><input type="checkbox" id="enable-analytics"> 对话分析仪表盘</label>
                             <label><input type="checkbox" id="enable-theater-mode"> 对话回放/剧场模式</label>
-                            <label><input type="checkbox" id="enable-virtual-scroll"> 虚拟滚动优化（消息过多时）</label>
-                            <label><input type="checkbox" id="enable-performance-fix" checked> 大量消息性能修复（推荐开启）</label>
                         </div>
                     </div>
 
@@ -777,7 +818,7 @@
                 <div id="tab-shortcuts" class="tab-content">
                     <div class="form-group">
                         <h3 style="margin-bottom: 15px; color: #e6c78a;"><i class="ri-keyboard-line"></i> 快捷键自定义</h3>
-                        <p style="font-size:0.85em;color:#aaa;margin-bottom:12px;">填写组合键，例如 Ctrl+Enter、/、?、Ctrl+L，保存后写入 localStorage。</p>
+                        <p style="font-size:0.85em;color:#aaa;margin-bottom:12px;">填写组合键，例如 Enter、Ctrl+Enter、/、?、Ctrl+L，保存后写入 localStorage。</p>
                         <div id="shortcut-settings-list"></div>
                     </div>
                 </div>
@@ -857,9 +898,9 @@
                 <div class="import-char-section">
                     <p style="margin-bottom: 8px; font-size: 0.9em;">已有角色配置文件？一键导入！</p>
                     <button class="btn btn-outline" id="import-char-file-btn" style="width: 100%; justify-content: center;">
-                        <i class="ri-file-upload-line"></i> 导入角色 JSON
+                        <i class="ri-file-upload-line"></i> 导入角色 JSON / ZIP
                     </button>
-                    <input type="file" id="char-import-upload" accept=".json">
+                    <input type="file" id="char-import-upload" accept=".json,.zip,application/json,application/zip,application/x-zip-compressed">
                 </div>
 
                 <button class="btn btn-outline" id="toggle-create-btn" style="width: 100%; justify-content: center;">

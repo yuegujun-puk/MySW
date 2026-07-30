@@ -41,6 +41,27 @@
         return response.json();
     }
 
+    function getFiniteNumber(value, fallback) {
+        const numericValue = Number(value);
+        return Number.isFinite(numericValue) ? numericValue : fallback;
+    }
+
+    function getGenerationParameters(apiSettings = {}) {
+        const params = {
+            temperature: getFiniteNumber(apiSettings.temperature, 0.85),
+            top_p: getFiniteNumber(apiSettings.topP, 0.9),
+            presence_penalty: getFiniteNumber(apiSettings.presencePenalty, 0.5),
+            frequency_penalty: getFiniteNumber(apiSettings.frequencyPenalty, 0.3)
+        };
+        if (Array.isArray(apiSettings.stopSequences) && apiSettings.stopSequences.length > 0) {
+            params.stop = apiSettings.stopSequences;
+        }
+        if (Number.isInteger(apiSettings.seed)) {
+            params.seed = apiSettings.seed;
+        }
+        return params;
+    }
+
     function createChatFetchOptions(apiSettings, messages, overrides = {}) {
         return {
             method: 'POST',
@@ -48,9 +69,24 @@
             body: JSON.stringify({
                 model: apiSettings.modelName,
                 messages,
+                ...getGenerationParameters(apiSettings),
                 ...overrides
             })
         };
+    }
+
+    async function fetchChat(apiSettings, messages, overrides = {}) {
+        const controller = new AbortController();
+        const timeoutSeconds = getFiniteNumber(apiSettings.timeoutSeconds, 60);
+        const timeoutId = setTimeout(() => controller.abort(), Math.max(1, timeoutSeconds) * 1000);
+        try {
+            return await fetch(buildChatUrl(apiSettings.apiUrl), {
+                ...createChatFetchOptions(apiSettings, messages, overrides),
+                signal: controller.signal
+            });
+        } finally {
+            clearTimeout(timeoutId);
+        }
     }
 
     async function chatCompletion(apiSettings, messages, overrides = {}) {
@@ -63,7 +99,9 @@
         console.error(`${context}失败:`, error);
         const errorMsg = error.message || String(error);
         // 区分常见错误类型并提供友好提示
-        if (errorMsg.includes('401') || errorMsg.toLowerCase().includes('unauthorized') || errorMsg.toLowerCase().includes('api key')) {
+        if (error?.name === 'AbortError') {
+            return '⚠️ 请求超时，请检查网络或调大 AI 配置中的超时秒数';
+        } else if (errorMsg.includes('401') || errorMsg.toLowerCase().includes('unauthorized') || errorMsg.toLowerCase().includes('api key')) {
             return '❌ API Key 无效或已过期，请检查设置';
         } else if (errorMsg.includes('429')) {
             return '⚠️ 请求过于频繁，请稍后再试';
@@ -83,7 +121,9 @@
         buildChatUrl,
         buildEmbeddingsUrl,
         requestJson,
+        getGenerationParameters,
         createChatFetchOptions,
+        fetchChat,
         chatCompletion,
         handleApiError
     };

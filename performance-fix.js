@@ -8,8 +8,7 @@ function isPerfFixEnabled() {
     try {
         const settings = JSON.parse(localStorage.getItem('chatSettings') || '{}');
         const toggles = settings.featureToggles || {};
-        // 默认开启（推荐）
-        return toggles['enable-performance-fix'] !== false;
+        return toggles['enable-performance-fix'] !== false && toggles.enablePerformanceFix !== false;
     } catch(e) {
         return true;
     }
@@ -25,7 +24,7 @@ function isPerfFixEnabled() {
     // ========== 配置项 ==========
     const PERF_CONFIG = {
         MAX_MESSAGES_BEFORE_WARNING: 300,      // 超过此数量显示性能警告
-        MAX_MESSAGES_FOR_FULL_RENDER: 150,     // 超过此数量只渲染最新N条
+        MAX_MESSAGES_FOR_FULL_RENDER: Infinity, // 默认完整渲染，避免误删/隐藏早期消息
         RENDER_DEBOUNCE: 150,                  // 渲染防抖(ms)
         MAX_CONTEXT_ROUNDS: 20,                // ✅ Prompt 最大对话轮数（防止Token爆炸）
         MAX_CONTEXT_MESSAGES: 40,              // ✅ Prompt 最大消息数（兜底保护）
@@ -81,25 +80,10 @@ function isPerfFixEnabled() {
 
     // ========== 1. 禁用有冲突的虚拟滚动 ==========
     setTimeout(() => {
-        // 禁用 advanced-features.js 中的旧版虚拟滚动实现（与 performance-fix 冲突）
-        if (typeof window.renderMessages === 'function' && typeof window._originalRenderMessagesForVirtual === 'undefined') {
-            // advanced-features.js 可能已经包装了 renderMessages，我们需要获取最原始的
-            // 通过检查函数是否包含 virtual-scroll-banner 相关代码来判断
-            const renderMsgStr = window.renderMessages.toString();
-            if (renderMsgStr.includes('virtual-scroll-banner') || renderMsgStr.includes('MESSAGE_THRESHOLD')) {
-                // 这是 advanced-features.js 的虚拟滚动实现，需要恢复原始函数
-                console.log('✅ 检测到冲突的虚拟滚动实现，正在禁用...');
-                // 由于 advanced-features.js 直接修改了 window.renderMessages，我们无法直接获取原始函数
-                // 需要通过 main.js 中的 _renderMessagesImpl 来间接调用
-            }
+        if (window.VIRTUAL_SCROLL_CONFIG) {
+            window.VIRTUAL_SCROLL_CONFIG.enabled = false;
+            console.log('✅ 已禁用冲突的虚拟滚动实现');
         }
-        
-        // 禁用 main.js 中的虚拟滚动配置（与 performance-fix 的智能渲染冲突）
-        if (typeof window !== 'undefined') {
-            // 标记已禁用，让 main.js 中的逻辑知道不要使用虚拟滚动
-            window._perfFixDisabledVirtualScroll = true;
-        }
-        console.log('✅ 已禁用冲突的虚拟滚动实现');
     }, 0);
 
     // ========== 2. 重写 renderMessages - 智能分批渲染 ==========
@@ -123,22 +107,9 @@ function isPerfFixEnabled() {
 
     function smartRenderMessages(friendId) {
         // 使用真正的原始 getMessages 获取完整消息列表（不截断）
-        const realGetMessages = window._realGetMessages || (typeof window.getMessages === 'function' ? window.getMessages : null);
+        const realGetMessages = window._realGetMessages || window.getMessages;
         const messages = typeof realGetMessages === 'function' ? realGetMessages() : [];
         const msgCount = messages.length;
-
-        // 检查是否开启了"显示限制"设置
-        let displayLimitEnabled = false;
-        let displayLimitMaxMessages = Infinity;
-        try {
-            const chatSettings = typeof window.getChatSettings === 'function' ? window.getChatSettings() : {};
-            displayLimitEnabled = chatSettings.enableDisplayLimit && chatSettings.displayLimitRounds > 0;
-            if (displayLimitEnabled) {
-                displayLimitMaxMessages = Math.max(1, chatSettings.displayLimitRounds) * 2;
-            }
-        } catch(e) {
-            console.warn('无法读取聊天设置:', e);
-        }
         
         // 情况1：消息较少 - 正常完整渲染
         if (msgCount <= PERF_CONFIG.MAX_MESSAGES_FOR_FULL_RENDER) {
@@ -149,34 +120,13 @@ function isPerfFixEnabled() {
             return;
         }
 
-        // 情况2：消息较多 - 智能截断渲染（只渲染最新N条）
-        console.log(`⚡ 渲染消息 ${msgCount} 条，启用智能截断`);
+        // 情况2：保留完整消息渲染，避免早期消息被误判为丢失
+        console.log(`⚡ 渲染消息 ${msgCount} 条，保持完整渲染`);
         
-        // 计算最终渲染的消息数量：取性能修复阈值和显示限制两者的较小值
-        let renderLimit = PERF_CONFIG.MAX_MESSAGES_FOR_FULL_RENDER;
-        if (displayLimitEnabled && displayLimitMaxMessages < renderLimit) {
-            renderLimit = displayLimitMaxMessages;
-            console.log(`   📌 显示限制生效：最多显示 ${displayLimitMaxMessages} 条（${Math.floor(displayLimitMaxMessages / 2)} 轮）`);
-        }
+        removePerformanceBanner();
+        if (window._originalRenderMessages) window._originalRenderMessages(friendId);
+        return;
 
-        // 临时替换 getMessages，只给渲染函数返回最新的N条
-        // 使用 try-finally 确保即使渲染异常也能恢复
-        const originalGetMessages = window.getMessages;
-        try {
-            window.getMessages = function() {
-                return messages.slice(-renderLimit);
-            };
-            
-            if (window._originalRenderMessages) {
-                window._originalRenderMessages(friendId);
-            }
-        } finally {
-            // 确保无论渲染是否成功，都恢复原始的 getMessages
-            window.getMessages = originalGetMessages;
-        }
-        
-        // 显示性能优化提示条
-        showPerformanceBanner(msgCount - renderLimit, msgCount);
     }
 
     // ========== 3. 性能优化提示条 ==========

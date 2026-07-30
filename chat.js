@@ -223,18 +223,12 @@ const LocalStorageCache = {
             ];
 
             try {
-                const fetchOptions = ApiModule.createChatFetchOptions(apiSettings, messagesContext, {
-                    temperature: 0.85,
-                    top_p: 0.9,
-                    frequency_penalty: 0.3,
-                    presence_penalty: 0.5,
-                    max_tokens: chatSettings.maxTokens,
-                    stream: chatSettings.enableStreamingInput !== false
-                });
-
                 if (chatSettings.enableStreamingInput !== false) {
                     // 流式响应模式
-                    const response = await fetch(ApiModule.buildChatUrl(apiSettings.apiUrl), fetchOptions);
+                    const response = await ApiModule.fetchChat(apiSettings, messagesContext, {
+                        max_tokens: chatSettings.maxTokens,
+                        stream: chatSettings.enableStreamingInput !== false
+                    });
 
                     if (!response.ok) {
                         const errData = await response.json();
@@ -427,7 +421,10 @@ const LocalStorageCache = {
                     }
                 } else {
                     // 非流式响应模式
-                    const response = await fetch(ApiModule.buildChatUrl(apiSettings.apiUrl), fetchOptions);
+                    const response = await ApiModule.fetchChat(apiSettings, messagesContext, {
+                        max_tokens: chatSettings.maxTokens,
+                        stream: false
+                    });
 
                     if (!response.ok) {
                         const errData = await response.json();
@@ -469,9 +466,10 @@ const LocalStorageCache = {
                 document.getElementById(loadingId)?.remove();
                 // 使用统一的错误处理函数提供友好的错误提示
                 const friendlyError = ApiModule.handleApiError(error, 'AI 请求');
-                appendMessageToDOM('other', friendlyError, 'text', friend.avatar, getFriendDisplayName(currentFriendId));
+                const savedErrorMessage = addMessageToThread('other', friendlyError, 'text', false, { failed: true });
+                appendMessageToDOM('other', friendlyError, 'text', friend.avatar, getFriendDisplayName(currentFriendId), false, savedErrorMessage?.id || Date.now().toString(), { failed: true });
 
-                // 请求出错时，仅清理 AI 错误占位，保留用户已发送内容，方便重新回答。
+                // 请求出错时，保留带消息 ID 的 AI 错误回复，方便点击重新回答。
                 cleanupFailedContext();
             }
         }
