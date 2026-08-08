@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     
     <!-- SEO 优化 -->
-    <title>My SW - AI 角色聊天 | 崩坏：星穹铁道二次创作</title>
+    <title>My SW - AI 角色聊天</title>
     <meta name="description" content="与 AI 角色进行沉浸式对话的聊天应用，支持自定义角色、个性化设置。崩坏：星穹铁道等游戏玩家/动漫作品观众二次创作的非官方网站。">
     <meta name="keywords" content="AI 聊天，角色扮演，崩坏星穹铁道，银狼，二次创作，虚拟助手，智能对话">
     <meta name="author" content="My SW">
@@ -36,7 +36,7 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     
     <!-- Content Security Policy (CSP) - 安全加固 -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https: blob:; font-src 'self' https: data:; connect-src 'self' https:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https: blob:; font-src 'self' https: data:; connect-src 'self' https:; frame-src https:; object-src 'none'; base-uri 'self'; form-action 'self';">
     
     <link rel="icon" type="image/jpeg" href="https://bbs-static.miyoushe.com/static/2026/03/10/5d88c416c7e2588575a518c3eb5899b9_5125423398751524747.jpg?x-oss-process=image/resize,s_150/quality,q_80/auto-orient,0/interlace,1/format,jpg">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
@@ -118,13 +118,16 @@
                 <div style="display: flex; align-items: center; gap: 15px; width: 100%;">
                     <img src="https://bbs-static.miyoushe.com/static/2026/04/15/be327f1009d12f3c869bad5b2123f639_5263501617436038412.jpg?x-oss-process=image/resize,s_150/quality,q_80/auto-orient,0/interlace,1/format,jpg" alt="我的头像" class="avatar" style="width: 35px; height: 35px;" id="input-avatar" role="button" tabindex="0" aria-label="更换我的头像">
                     
-                    <div class="input-wrapper">
+                    <div class="input-stack">
+                        <div class="pending-attachments" id="pending-attachments" aria-live="polite" hidden></div>
+                        <div class="input-wrapper">
                         <textarea id="message-input" rows="1" placeholder="输入消息... (Enter 发送，Shift+Enter 换行，试试 /help 查看指令)" aria-label="输入消息"></textarea>
                         <div class="input-icons">
                             <i class="ri-attachment-2-line" id="file-upload-btn" title="上传文件" role="button" tabindex="0" aria-label="上传文件"></i>
                             <i class="ri-image-add-line" id="upload-btn" title="发送图片" role="button" tabindex="0" aria-label="发送图片"></i>
                             <i class="ri-emotion-line" id="emoji-btn" title="表情" role="button" tabindex="0" aria-label="选择表情"></i>
                             <i class="ri-mic-line" id="voice-input-btn" title="语音输入" role="button" tabindex="0" aria-label="语音输入"></i>
+                        </div>
                         </div>
                     </div>
                     <i class="ri-command-line" id="command-panel-btn" style="font-size: 1.35em; color: #aaa; cursor: pointer;" title="快捷指令" aria-label="快捷指令" role="button" tabindex="0"></i>
@@ -246,6 +249,7 @@
                     <button class="tab-button" data-tab="knowledge">知识库</button>
                     <button class="tab-button" data-tab="longterm-memory">长期记忆</button>
                     <button class="tab-button" data-tab="shortcuts">快捷键</button>
+                    <button class="tab-button" data-tab="plugins">插件</button>
                 </div>
                 
                 <!-- API 配置 Tab -->
@@ -822,6 +826,17 @@
                         <div id="shortcut-settings-list"></div>
                     </div>
                 </div>
+                <div id="tab-plugins" class="tab-content">
+                    <div class="form-group">
+                        <h3 style="margin-bottom: 15px; color: #e6c78a;"><i class="ri-plug-line"></i> 插件</h3>
+                        <p style="font-size:0.85em;color:#aaa;margin-bottom:12px;">管理插件启停和参数，也可以导入符合 <code>MySWPlugins.register(...)</code> 格式的 JS 插件。</p>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+                            <label class="btn btn-outline" for="plugin-import-input" style="cursor:pointer;"><i class="ri-upload-2-line"></i> 导入 JS 插件</label>
+                            <input type="file" id="plugin-import-input" accept=".js,text/javascript" hidden>
+                        </div>
+                        <div id="plugin-settings-list" class="plugin-settings-list"></div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer" style="flex-wrap: wrap; gap: 15px;">
                 <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -1031,6 +1046,7 @@
     <script src="knowledge-ui.js"></script>
     <script src="main.js"></script>
     <script src="chat.js"></script>
+    <script src="plugins.js"></script>
     <script src="optimizations.js"></script>
     <script src="advanced-features.js"></script>
     <script src="performance-fix.js"></script>

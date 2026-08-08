@@ -748,6 +748,15 @@
             background-color: #2d303a; position: relative;
             flex-direction: column;
         }
+        .input-stack { flex-grow: 1; width: 100%; display: flex; flex-direction: column; gap: 8px; }
+        .pending-attachments { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; background: rgba(0,0,0,0.18); }
+        .pending-attachments[hidden] { display: none; }
+        .pending-attachment-item { position: relative; width: 74px; height: 74px; border-radius: 10px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #ddd; overflow: visible; }
+        .pending-attachment-item img, .pending-attachment-item video { width: 100%; height: 100%; object-fit: cover; border-radius: 9px; }
+        .pending-attachment-icon { font-size: 1.8em; color: var(--accent-gold); }
+        .pending-attachment-name { width: 100%; padding: 0 5px; margin-top: 3px; font-size: 0.68em; color: #ccc; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pending-attachment-remove { position: absolute; top: -7px; right: -7px; width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.35); background: #2d303a; color: #fff; display: grid; place-items: center; cursor: pointer; z-index: 2; }
+        .pending-attachment-remove:hover { background: #ff5757; }
         .input-wrapper { flex-grow: 1; position: relative; display: flex; align-items: center; width: 100%; }
         .input-wrapper input, .input-wrapper textarea {
             width: 100%; padding: 12px 15px; border-radius: 20px;
@@ -2080,3 +2089,19 @@ body.light-theme .search-result-item:hover {
     background: rgba(var(--accent-gold-rgb), 0.18);
     color: var(--text-primary);
 }
+
+        .plugin-settings-list { display: flex; flex-direction: column; gap: 14px; }
+        .plugin-card { border: 1px solid #3a3d47; border-radius: 12px; padding: 14px; background: rgba(255,255,255,0.03); }
+        .plugin-card-header { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+        .plugin-card-header strong { color: #f0e6c8; font-size: 1.05em; }
+        .plugin-card-header p { color: #aaa; font-size: 0.85em; margin-top: 5px; }
+        .plugin-switch { color: #ddd; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .plugin-params { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 12px; }
+        .plugin-params label { color: #bbb; font-size: 0.9em; }
+        .plugin-actions { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+        .plugin-builtin-badge { color: var(--accent-gold); font-size: 0.85em; }
+        .chat-plugin-window { position: absolute; right: 18px; bottom: 96px; z-index: 35; min-width: 120px; min-height: 120px; max-width: calc(100% - 36px); max-height: calc(100% - 128px); background: #15171d; border: 1px solid rgba(230,199,138,0.55); border-radius: 12px; overflow: hidden; box-shadow: 0 14px 40px rgba(0,0,0,0.45); }
+        .chat-plugin-window.dragging { user-select: none; }
+        .chat-plugin-window-header { height: 36px; cursor: move; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; color: #f0e6c8; background: rgba(230,199,138,0.12); border-bottom: 1px solid rgba(230,199,138,0.25); }
+        .chat-plugin-window-close { background: transparent; border: none; color: #ddd; cursor: pointer; font-size: 1.1em; }
+        .chat-plugin-window iframe { width: 100%; height: calc(100% - 36px); border: 0; background: #fff; }

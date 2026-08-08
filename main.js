@@ -208,6 +208,7 @@
         const uploadBtn = document.getElementById('upload-btn');
         const fileUploadBtn = document.getElementById('file-upload-btn');
         const fileUpload = document.getElementById('file-upload');
+        const pendingAttachmentsEl = document.getElementById('pending-attachments');
         const avatarUpload = document.getElementById('avatar-upload');
         const charAvatarUpload = document.getElementById('char-avatar-upload');
         const friendAvatarUpload = document.getElementById('friend-avatar-upload');
@@ -226,6 +227,7 @@
         const currentFriendNameElement = document.getElementById('current-friend-name');
         const importUpload = document.getElementById('import-upload');
         const charImportUpload = document.getElementById('char-import-upload');
+        const pendingAttachments = [];
 
         const openSettingsBtn = document.getElementById('open-settings-btn');
         const closeSettingsBtn = document.getElementById('close-settings-btn');
@@ -1002,7 +1004,12 @@
 
         function addMessageToFriendThread(friendId, role, content, type, isProactive = false, extra = {}) {
             const friendData = threadManager[friendId];
-            const thread = friendData?.threads?.find(t => t.id === friendData.currentThreadId);
+            return addMessageToSpecificThread(friendId, friendData?.currentThreadId, role, content, type, isProactive, extra);
+        }
+
+        function addMessageToSpecificThread(friendId, threadId, role, content, type, isProactive = false, extra = {}) {
+            const friendData = threadManager[friendId];
+            const thread = friendData?.threads?.find(t => t.id === threadId);
             if (thread) {
                 const message = { id: getNextMessageId(), role, content, type, timestamp: Date.now(), isProactive, ...extra };
                 thread.messages.push(message);
@@ -3791,13 +3798,15 @@ ${memoryText}
                 return;
             }
             normalizeGroupState(group);
+            const sourceThreadId = threadManager[groupId]?.currentThreadId;
             const orderedMembers = pickGroupSpeakers(group, userMessage);
             for (const memberId of orderedMembers) {
-                await callGroupMemberAI(userMessage, groupId, memberId);
+                if (threadManager[groupId]?.currentThreadId !== sourceThreadId) break;
+                await callGroupMemberAI(userMessage, groupId, memberId, sourceThreadId);
             }
-            if (group.allowProactive && Math.random() < 0.35) {
+            if (threadManager[groupId]?.currentThreadId === sourceThreadId && group.allowProactive && Math.random() < 0.35) {
                 const proactive = pickGroupSpeakers(group, '').find(id => !orderedMembers.includes(id));
-                if (proactive) await callGroupMemberAI('（请你主动接一句，延续群聊气氛。）', groupId, proactive);
+                if (proactive) await callGroupMemberAI('（请你主动接一句，延续群聊气氛。）', groupId, proactive, sourceThreadId);
             }
             saveGroupManager();
         }
@@ -3806,7 +3815,7 @@ ${memoryText}
         let aiReplyRecursionDepth = 0;
         const MAX_AI_REPLY_DEPTH = 2;
 
-        async function callGroupMemberAI(userMessage, groupId, memberId) {
+        async function callGroupMemberAI(userMessage, groupId, memberId, sourceThreadId = threadManager[groupId]?.currentThreadId) {
             const apiSettings = JSON.parse(localStorage.getItem('aiChatSettings'));
             if (!apiSettings || !apiSettings.apiUrl || !apiSettings.apiKey) {
                 appendMessageToDOM('other', '❌ 请先在设置中配置 API 地址和 Key！', 'text', friendsData[groupId].avatar, getFriendDisplayName(groupId));
@@ -3828,7 +3837,10 @@ ${memoryText}
                 ...contextHistory
             ];
             const loadingId = `group-loading-${memberId}-${Date.now()}`;
-            appendMessageToDOM('other', `${getGroupMemberLabel(group, memberId)} 正在思考...`, 'text', member.avatar, getGroupMemberLabel(group, memberId), false, loadingId, { friendId: memberId, groupId });
+            const shouldShowInCurrentThread = () => currentFriendId === groupId && threadManager[groupId]?.currentThreadId === sourceThreadId;
+            if (shouldShowInCurrentThread()) {
+                appendMessageToDOM('other', `${getGroupMemberLabel(group, memberId)} 正在思考...`, 'text', member.avatar, getGroupMemberLabel(group, memberId), false, loadingId, { friendId: memberId, groupId });
+            }
             try {
                 const response = await ApiModule.fetchChat(apiSettings, messagesContext, {
                     max_tokens: chatSettings.maxTokens,
@@ -3842,10 +3854,13 @@ ${memoryText}
                     return;
                 }
                 memberHistory.push({ role: 'assistant', content: aiResponse });
-                const saved = addMessageToFriendThread(groupId, 'other', aiResponse, 'text', false, { friendId: memberId, groupId });
+                const saved = addMessageToSpecificThread(groupId, sourceThreadId, 'other', aiResponse, 'text', false, { friendId: memberId, groupId });
                 saveGroupManager();
-                if (currentFriendId === groupId) renderMessages(groupId);
-                if (currentFriendId === groupId && saved) chatMessages.querySelector(`[data-message-id="${saved.id}"]`)?.scrollIntoView({ block: 'end' });
+                chatMessages.querySelector(`[data-message-id="${loadingId}"]`)?.remove();
+                if (shouldShowInCurrentThread() && saved) {
+                    appendMessageToDOM('other', aiResponse, 'text', member.avatar, getGroupMemberLabel(group, memberId), false, saved.id, { friendId: memberId, groupId });
+                    chatMessages.querySelector(`[data-message-id="${saved.id}"]`)?.scrollIntoView({ block: 'end' });
+                }
 
                 // ========== AI @ AI 触发回复 ==========
                 // 检查这条 AI 回复是否 @ 了其他 AI，如果 @ 了，被 @ 的每个 AI 都独立判断是否回复
@@ -3876,9 +3891,13 @@ ${memoryText}
             } catch (error) {
                 const friendlyError = ApiModule.handleApiError(error, `${getFriendDisplayName(memberId)} 回复`);
                 const errorMsg = `❌ ${friendlyError}`;
-                addMessageToFriendThread(groupId, 'other', errorMsg, 'text', false, { friendId: memberId, groupId });
+                const saved = addMessageToSpecificThread(groupId, sourceThreadId, 'other', errorMsg, 'text', false, { friendId: memberId, groupId });
                 saveGroupManager();
-                if (currentFriendId === groupId) renderMessages(groupId);
+                chatMessages.querySelector(`[data-message-id="${loadingId}"]`)?.remove();
+                if (shouldShowInCurrentThread() && saved) {
+                    appendMessageToDOM('other', errorMsg, 'text', member.avatar, getGroupMemberLabel(group, memberId), false, saved.id, { friendId: memberId, groupId });
+                    chatMessages.querySelector(`[data-message-id="${saved.id}"]`)?.scrollIntoView({ block: 'end' });
+                }
             }
         }
 
@@ -4088,6 +4107,10 @@ ${memoryText}
         }
 
         function sendMessage(content, type = 'text') {
+            if (type === 'text' && pendingAttachments.length > 0) {
+                sendMessageWithPendingAttachments(content);
+                return;
+            }
             if (!content || (typeof content === 'string' && content.trim() === '')) return;
 
             // 更新用户活动时间，重置主动冒泡倒计时
@@ -4783,8 +4806,8 @@ ${memoryText}
             let isTavernCard = false;
 
             // 检测并处理酒馆角色卡格式 (chara_card_v2/v3)
-            // 酒馆格式：{"spec": "chara_card_v3", "spec_version": "3.0", "data": {...}}
-            if (rawData.spec && rawData.spec.startsWith('chara_card_') && rawData.data) {
+            // 酒馆 V2/V3 规范格式：{"spec": "chara_card_v2", "spec_version": "2.0", "data": {...}}
+            if (rawData.spec && /^chara_card_v\d+$/i.test(rawData.spec) && rawData.data && typeof rawData.data === 'object') {
                 isTavernCard = true;
                 data = rawData.data;
             }
@@ -4792,7 +4815,7 @@ ${memoryText}
             // 兼容 AIAW 角色导出格式
             // AIAW 格式：{"name": "...", "avatar": {"type":"text","text":"AI","hue":208}, "prompt": "..."}
             // MySW 格式：{"name": "...", "avatar": "url_or_dataURL", "systemPrompt": "..."}
-            // 酒馆格式：{"name": "...", "description": "...", "personality": "...", "scenario": "...", "first_mes": "...", "mes_example": "...", ...}
+            // 酒馆 V2/V3 格式：{"spec": "chara_card_v2", "spec_version": "2.0", "data": {"name": "...", "description": "...", "personality": "...", "scenario": "...", "first_mes": "...", ...}}
 
             // 提取角色名称（必需字段）
             let charName = data.name;
@@ -4809,6 +4832,11 @@ ${memoryText}
                 if (data.personality) parts.push(`【性格特征】${data.personality}`);
                 if (data.scenario) parts.push(`【场景设定】${data.scenario}`);
                 if (data.mes_example) parts.push(`【对话示例】${data.mes_example}`);
+                if (data.creator_notes) parts.push(`【作者备注】${data.creator_notes}`);
+                if (Array.isArray(data.tags) && data.tags.length) parts.push(`【标签】${data.tags.join('、')}`);
+                if (data.character_book && typeof data.character_book === 'object' && Object.keys(data.character_book).length) {
+                    parts.push(`【角色知识书】${JSON.stringify(data.character_book, null, 2)}`);
+                }
                 if (data.post_history_instructions) parts.push(`【追加指令】${data.post_history_instructions}`);
                 if (data.system_prompt) parts.push(`【系统指令】${data.system_prompt}`);
                 charPrompt = parts.join('\n\n') || data.first_mes || `扮演${charName}这个角色`;
@@ -4858,7 +4886,11 @@ ${memoryText}
                 welcomeMessage: charWelcome,
                 isCustom: true,
                 // 保存酒馆角色卡的额外元数据（可选）
-                originalFormat: isTavernCard ? 'tavern' : (data.prompt ? 'aiaw' : 'mysw')
+                originalFormat: isTavernCard ? (rawData.spec || 'tavern') : (data.prompt ? 'aiaw' : 'mysw'),
+                tavernSpecVersion: isTavernCard ? (rawData.spec_version || '') : undefined,
+                tavernAlternateGreetings: isTavernCard && Array.isArray(data.alternate_greetings) ? data.alternate_greetings : undefined,
+                tavernCreator: isTavernCard ? (data.creator || '') : undefined,
+                tavernCharacterVersion: isTavernCard ? (data.character_version || '') : undefined
             };
 
             friendsData[newId] = newChar;
@@ -6078,7 +6110,7 @@ ${memoryText}
             const file = [...(e.clipboardData?.files || [])].find(item => item.type?.startsWith('image/'));
             if (file) {
                 e.preventDefault();
-                sendImageFile(file);
+                queueFileForSending(file);
                 return;
             }
             const text = e.clipboardData?.getData('text/plain');
@@ -6096,7 +6128,7 @@ ${memoryText}
             const file = [...(e.dataTransfer?.files || [])].find(item => item.type?.startsWith('image/'));
             if (file) {
                 e.preventDefault();
-                sendImageFile(file);
+                queueFileForSending(file);
             }
         });
 
@@ -6471,55 +6503,76 @@ ${memoryText}
             });
         }
 
-        async function sendFile(file) {
-            if (!file) return;
+        function renderPendingAttachments() {
+            if (!pendingAttachmentsEl) return;
+            pendingAttachmentsEl.hidden = pendingAttachments.length === 0;
+            pendingAttachmentsEl.innerHTML = pendingAttachments.map(item => `
+                <div class="pending-attachment-item" data-attachment-id="${escapeHtml(item.id)}" title="${escapeHtml(item.name)}">
+                    <button type="button" class="pending-attachment-remove" aria-label="移除 ${escapeHtml(item.name)}"><i class="ri-close-line"></i></button>
+                    ${item.type === 'image' ? `<img src="${escapeHtml(item.content)}" alt="${escapeHtml(item.name)}">` : item.type === 'video' ? `<video src="${escapeHtml(item.content)}" muted></video>` : '<i class="ri-file-text-line pending-attachment-icon"></i>'}
+                    ${item.type !== 'image' ? `<span class="pending-attachment-name">${escapeHtml(item.name)}</span>` : ''}
+                </div>
+            `).join('');
+        }
 
-            // 图片文件
+        function addPendingAttachment(attachment) {
+            pendingAttachments.push({ ...attachment, id: `att-${Date.now()}-${Math.random().toString(36).slice(2)}` });
+            renderPendingAttachments();
+        }
+
+        async function queueFileForSending(file) {
+            if (!file) return;
             if (file.type?.startsWith('image/')) {
                 const settings = getVisionSettings();
                 try {
                     const maxEdge = Math.max(320, parseInt(settings.maxWidth, 10) || 1280);
                     const quality = Math.min(1, Math.max(0.1, Number(settings.quality) || 0.82));
-                    const dataUrl = await compressImageDataUrl(file, maxEdge, quality);
-                    sendMessage(dataUrl, 'image');
-                    return;
-                } catch (error) {
-                    showToast(`图片处理失败：${error.message}`, 'ri-error-warning-line');
-                    return;
-                }
+                    addPendingAttachment({ type: 'image', name: file.name || '图片', content: await compressImageDataUrl(file, maxEdge, quality) });
+                } catch (error) { showToast(`图片处理失败：${error.message}`, 'ri-error-warning-line'); }
+                return;
             }
-
-            // 视频文件
             if (file.type?.startsWith('video/')) {
-                const vision = getVisionSettings();
-                if (vision.enabled !== true) {
-                    showToast('请先开启「多模态视觉」功能', 'ri-error-warning-line');
-                    return;
-                }
-                // 视频转 base64 发送（注意：大文件可能会有性能问题）
                 const reader = new FileReader();
-                reader.onload = () => {
-                    sendMessage(reader.result, 'video');
-                    showToast(`已发送视频：${file.name}`, 'ri-video-line');
-                };
+                reader.onload = () => addPendingAttachment({ type: 'video', name: file.name || '视频', content: reader.result });
+                reader.onerror = () => showToast(`视频读取失败：${file.name}`, 'ri-error-warning-line');
                 reader.readAsDataURL(file);
                 return;
             }
-
-            // 文本文件 (.txt, .md, .markdown)
             if (file.type?.startsWith('text/') || /\.(txt|md|markdown)$/i.test(file.name)) {
-                try {
-                    const content = await readTextFile(file);
-                    const fileContent = `[文件：${file.name}]\n\n${content}`;
-                    sendMessage(fileContent, 'text');
-                    showToast(`已发送文件：${file.name}`, 'ri-file-text-line');
-                } catch (error) {
-                    showToast(`文件读取失败：${error.message}`, 'ri-error-warning-line');
-                }
+                try { addPendingAttachment({ type: 'text', name: file.name, content: `[文件：${file.name}]\n\n${await readTextFile(file)}` }); }
+                catch (error) { showToast(`文件读取失败：${error.message}`, 'ri-error-warning-line'); }
                 return;
             }
-
             showToast(`不支持的文件类型：${file.name}`, 'ri-error-warning-line');
+        }
+
+        async function sendFile(file) { return queueFileForSending(file); }
+
+        function sendMessageWithPendingAttachments(text = '') {
+            const attachments = pendingAttachments.splice(0, pendingAttachments.length);
+            const note = String(text || '').trim();
+            if (attachments.length === 0 && !note) return;
+            renderPendingAttachments();
+            const promptParts = [];
+            attachments.forEach(item => {
+                const extra = pendingReplyTo ? { replyTo: pendingReplyTo } : {};
+                const saved = addMessageToThread('mine', item.content, item.type, false, extra);
+                appendMessageToDOM('mine', item.content, item.type, inputAvatar.src, myUserName, false, saved?.id || Date.now().toString(), extra);
+                promptParts.push(item.type === 'image' ? `[已附加图片：${item.name}]` : item.type === 'video' ? `[已附加视频：${item.name}]` : item.content);
+            });
+            if (note) {
+                const extra = pendingReplyTo ? { replyTo: pendingReplyTo } : {};
+                const saved = addMessageToThread('mine', note, 'text', false, extra);
+                appendMessageToDOM('mine', note, 'text', inputAvatar.src, myUserName, false, saved?.id || Date.now().toString(), extra);
+                promptParts.push(note);
+            }
+            pendingReplyTo = null;
+            messageInput.value = '';
+            autoResizeMessageInput();
+            clearMessageDraft();
+            scrollToBottom();
+            const imageAttachment = attachments.find(item => item.type === 'image');
+            enqueueAIResponse(promptParts.join('\n\n') || '请查看我刚刚发送的附件，并结合上下文回复。', imageAttachment ? { imageUrl: imageAttachment.content } : {});
         }
 
         uploadBtn.addEventListener('click', () => fileUpload.click());
@@ -6528,9 +6581,18 @@ ${memoryText}
             const files = e.target.files;
             if (files && files.length > 0) {
                 // 支持多文件上传，逐个发送
-                Array.from(files).forEach(file => sendFile(file));
+                Array.from(files).forEach(file => queueFileForSending(file));
             }
             fileUpload.value = '';
+        });
+
+
+        pendingAttachmentsEl?.addEventListener('click', (e) => {
+            const item = e.target.closest('.pending-attachment-item');
+            if (!item || !e.target.closest('.pending-attachment-remove')) return;
+            const index = pendingAttachments.findIndex(attachment => attachment.id === item.dataset.attachmentId);
+            if (index >= 0) pendingAttachments.splice(index, 1);
+            renderPendingAttachments();
         });
 
         avatarUpload.addEventListener('change', (e) => {
@@ -6669,6 +6731,8 @@ ${memoryText}
                     renderMemoryProfileList();
                 } else if (btn.dataset.tab === 'shortcuts') {
                     renderShortcutSettings();
+                } else if (btn.dataset.tab === 'plugins') {
+                    window.MySWPlugins?.renderPluginSettings();
                 }
                 applySettingsSearch();
             });
