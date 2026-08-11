@@ -1,13 +1,26 @@
 // 从 main.js 拆分出的功能模块，保持全局函数声明以兼容现有非模块脚本架构。
 
-        function loadKnowledgeSettings() {
+        async function loadKnowledgeSettings() {
             const s = JSON.parse(localStorage.getItem('knowledgeSettings')) || {};
             kbApiUrlInput.value = s.apiUrl || '';
             kbApiKeyInput.value = s.apiKey || '';
             kbEmbeddingModelInput.value = s.embeddingModel || '';
             kbRerankModelInput.value = s.rerankModel || '';
             kbEnabledCheckbox.checked = s.enabled || false;
-            renderKnowledgeFileList(s.files || []);
+            renderKnowledgeFileList(await getKnowledgeSourceList(s));
+        }
+
+        async function getKnowledgeSourceList(settings = null) {
+            try {
+                if (window.KnowledgeModule?.listKnowledgeSources) {
+                    const indexedSources = await KnowledgeModule.listKnowledgeSources();
+                    if (indexedSources.length > 0) return indexedSources;
+                }
+            } catch (error) {
+                console.warn('读取 IndexedDB 知识库列表失败，降级显示旧配置:', error);
+            }
+            const s = settings || JSON.parse(localStorage.getItem('knowledgeSettings')) || {};
+            return s.files || [];
         }
 
         function renderKnowledgeFileList(files) {
@@ -20,6 +33,8 @@
                     <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
                         <i class="ri-file-text-line" style="color: #e6c78a;"></i>
                         <span style="font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(f.name)}</span>
+                        ${f.chunkTotal > 1 ? `<span style="font-size:0.75em;color:#888;">${f.chunkTotal} chunks</span>` : ''}
+                        ${f.embeddingModel ? '<span style="font-size:0.75em;color:#72d572;">已向量化</span>' : '<span style="font-size:0.75em;color:#d9a441;">关键词</span>'}
                     </div>
                     <button class="btn btn-danger btn-sm" onclick="removeKnowledgeFile('${f.id}')" style="padding: 4px 8px; font-size: 0.8em;">
                         <i class="ri-delete-bin-line"></i>
@@ -28,15 +43,20 @@
             `).join('');
         }
 
-        window.removeKnowledgeFile = function(fileId) {
+        window.removeKnowledgeFile = async function(fileId) {
             let s;
             try {
                 s = JSON.parse(localStorage.getItem('knowledgeSettings')) || {};
             } catch (e) {
                 s = {};
             }
-            s.files = (s.files || []).filter(f => f.id !== fileId);
+            s.files = (s.files || []).filter(f => f.id !== fileId && f.sourceId !== fileId);
+            try {
+                if (window.KnowledgeModule?.deleteKnowledgeBySource) await KnowledgeModule.deleteKnowledgeBySource(fileId);
+            } catch (error) {
+                console.warn('删除 IndexedDB 知识库文档失败:', error);
+            }
             setLocalStorageSafely('knowledgeSettings', JSON.stringify(s), '知识库设置');
-            renderKnowledgeFileList(s.files);
+            renderKnowledgeFileList(await getKnowledgeSourceList(s));
         };
 

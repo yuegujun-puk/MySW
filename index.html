@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     
     <!-- SEO 优化 -->
-    <title>My SW - AI 角色聊天</title>
+    <title>My SW - AI 角色聊天 | 崩坏：星穹铁道二次创作</title>
     <meta name="description" content="与 AI 角色进行沉浸式对话的聊天应用，支持自定义角色、个性化设置。崩坏：星穹铁道等游戏玩家/动漫作品观众二次创作的非官方网站。">
     <meta name="keywords" content="AI 聊天，角色扮演，崩坏星穹铁道，银狼，二次创作，虚拟助手，智能对话">
     <meta name="author" content="My SW">
@@ -694,7 +694,7 @@
                             <h3 style="margin-bottom: 15px; color: #e6c78a;"><i class="ri-database-2-line"></i> 知识库配置</h3>
                             <div class="form-group">
                                 <label for="kb-api-url">知识库 API 地址</label>
-                                <p style="font-size: 0.8em; color: #888; margin-bottom: 5px;">独立的向量数据库 API 地址</p>
+                                <p style="font-size: 0.8em; color: #888; margin-bottom: 5px;">Embedding API 地址（默认复用聊天 API；向量库保存在浏览器 IndexedDB）</p>
                                 <input type="text" id="kb-api-url" placeholder="https://api.your-kb.com">
                             </div>
                             <div class="form-group">
@@ -725,7 +725,7 @@
                         
                         <div class="form-group" style="border-top: 1px dashed #444; padding-top: 15px; margin-top: 15px;">
                             <h3 style="margin-bottom: 12px; color: #e6c78a;"><i class="ri-folder-upload-line"></i> 上传文档</h3>
-                            <p style="font-size: 0.85em; color: #888; margin-bottom: 10px;">上传文本、PDF、Word 等文档到知识库</p>
+                            <p style="font-size: 0.85em; color: #888; margin-bottom: 10px;">上传文档后前端会提取文本、分块并写入 IndexedDB；配置 Embedding 后会同时生成向量用于相似度检索</p>
                             <button class="btn btn-outline" id="kb-upload-btn" style="width: 100%; justify-content: center;">
                                 <i class="ri-file-add-line"></i> 选择并上传文档
                             </button>

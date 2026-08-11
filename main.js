@@ -2832,76 +2832,77 @@ AI：${aiResponse}
 
         async function queryKnowledgeBase(query, maxResults = 3) {
             const kbSettings = JSON.parse(localStorage.getItem('knowledgeSettings')) || {};
-            if (!kbSettings.enabled || !kbSettings.files || kbSettings.files.length === 0) {
+            const indexedChunks = window.KnowledgeModule?.getKnowledgeChunks ? await KnowledgeModule.getKnowledgeChunks() : [];
+            const legacyFiles = kbSettings.files || [];
+            const allChunks = indexedChunks.length > 0 ? indexedChunks : legacyFiles;
+            if (!kbSettings.enabled || allChunks.length === 0) {
                 return [];
             }
 
-            // 获取知识库 API 配置
             const mainApiSettings = JSON.parse(localStorage.getItem('aiChatSettings')) || {};
             const apiUrl = kbSettings.apiUrl || mainApiSettings.apiUrl;
             const apiKey = kbSettings.apiKey || mainApiSettings.apiKey;
             const embeddingModel = kbSettings.embeddingModel || 'text-embedding-3-small';
             const rerankModel = kbSettings.enableRerank === true ? kbSettings.rerankModel : '';
 
-            // 如果没有 API 配置，降级为简单的文件名匹配
             if (!apiUrl || !apiKey) {
-                console.warn('知识库检索：缺少 API 配置，降级为文件名匹配');
-                return fallbackKeywordSearchKB(query, kbSettings.files, maxResults);
+                console.warn('知识库检索：缺少 API 配置，降级为 IndexedDB/本地关键词检索');
+                return fallbackKeywordSearchKB(query, allChunks, maxResults);
             }
 
             try {
-                // 1. 获取查询的嵌入向量
                 const queryEmbedding = await fetchEmbeddingCached(query, embeddingModel, apiUrl, apiKey);
                 if (!queryEmbedding) {
-                    console.warn('知识库检索：嵌入向量获取失败，降级为文件名匹配');
-                    return fallbackKeywordSearchKB(query, kbSettings.files, maxResults);
+                    console.warn('知识库检索：查询向量获取失败，降级为关键词检索');
+                    return fallbackKeywordSearchKB(query, allChunks, maxResults);
                 }
 
-                // 2. 计算每个文档内容与查询的相似度（假设文件内容已存储在 content 字段）
-                const scoredFiles = [];
-                for (const file of kbSettings.files) {
-                    const fileContent = file.content || file.name; // 如果有 content 字段则使用，否则用文件名
-                    const textEmbedding = await fetchEmbedding(fileContent, embeddingModel, apiUrl, apiKey);
-                    if (textEmbedding) {
-                        const score = calculateCosineSimilarity(queryEmbedding, textEmbedding);
-                        scoredFiles.push({
-                            ...file,
-                            content: file.content ? `📄 ${file.name}: ${file.content.substring(0, 200)}...` : `📄 文件：${file.name} (大小：${(file.size / 1024).toFixed(1)} KB)`,
-                            source: file.name,
-                            score: score
-                        });
+                let vectorReadyChunks = allChunks.filter(chunk => Array.isArray(chunk.embedding) && chunk.embeddingModel === embeddingModel);
+
+                // 兼容旧数据或未联网导入的数据：检索时补齐缺失的 chunk 向量并回写 IndexedDB。
+                if (vectorReadyChunks.length < allChunks.length && window.KnowledgeModule?.putKnowledgeChunks) {
+                    const hydrated = [];
+                    for (const chunk of allChunks) {
+                        if (Array.isArray(chunk.embedding) && chunk.embeddingModel === embeddingModel) {
+                            hydrated.push(chunk);
+                            continue;
+                        }
+                        const embedding = await fetchEmbeddingCached(chunk.content || chunk.name || '', embeddingModel, apiUrl, apiKey);
+                        if (embedding) {
+                            const nextChunk = { ...chunk, embedding, embeddingModel, embeddedAt: new Date().toISOString() };
+                            hydrated.push(nextChunk);
+                            if (indexedChunks.length > 0) await KnowledgeModule.putKnowledgeChunks([nextChunk]);
+                        }
                     }
+                    vectorReadyChunks = hydrated.filter(chunk => Array.isArray(chunk.embedding) && chunk.embeddingModel === embeddingModel);
                 }
 
-                // 3. 重排序端点不是通用 OpenAI API，默认仅使用向量相似度；只有显式 enableRerank 才尝试。
-                let finalFiles = scoredFiles;
-                if (rerankModel && scoredFiles.length > 0) {
+                let finalFiles = KnowledgeModule.scoreKnowledgeChunks(queryEmbedding, vectorReadyChunks, maxResults, 0.03);
+                if (rerankModel && finalFiles.length > 0) {
                     try {
-                        finalFiles = await rerankKnowledgeBase(query, scoredFiles, rerankModel, apiUrl, apiKey, maxResults);
+                        finalFiles = await rerankKnowledgeBase(query, finalFiles, rerankModel, apiUrl, apiKey, maxResults);
                     } catch (rerankError) {
-                        console.warn('知识库检索：重排序失败，使用相似度排序', rerankError);
-                        finalFiles = scoredFiles;
+                        console.warn('知识库检索：重排序失败，使用本地向量相似度排序', rerankError);
                     }
                 }
 
-                // 4. 按分数降序排序并取前 N 条
-                if (!rerankModel) {
-                    finalFiles = scoredFiles.sort((a, b) => b.score - a.score).slice(0, maxResults);
+                if (finalFiles.length === 0) {
+                    console.log('知识库检索：未找到高相关度向量结果，降级为关键词检索');
+                    return fallbackKeywordSearchKB(query, allChunks, maxResults);
                 }
 
-                const matchedFiles = finalFiles.filter(f => f.score > 0);
-
-                if (matchedFiles.length === 0) {
-                    console.log('知识库检索：未找到高相关度文档，降级为文件名匹配');
-                    return fallbackKeywordSearchKB(query, kbSettings.files, maxResults);
-                }
-
-                console.log(`知识库检索：找到 ${matchedFiles.length} 个相关文档（向量检索）`);
-                return matchedFiles;
+                console.log(`知识库检索：找到 ${finalFiles.length} 个相关片段（IndexedDB 向量检索）`);
+                return finalFiles.map(f => ({
+                    content: `📄 ${f.sourceName || f.name}: ${String(f.content || '').substring(0, 900)}${String(f.content || '').length > 900 ? '...' : ''}`,
+                    source: f.sourceName || f.name,
+                    score: f.score || 0,
+                    chunkIndex: f.chunkIndex,
+                    chunkTotal: f.chunkTotal
+                }));
 
             } catch (error) {
-                console.warn('知识库向量检索失败，降级为文件名匹配:', error);
-                return fallbackKeywordSearchKB(query, kbSettings.files, maxResults);
+                console.warn('知识库向量检索失败，降级为关键词检索:', error);
+                return fallbackKeywordSearchKB(query, allChunks, maxResults);
             }
         }
 
@@ -2909,7 +2910,7 @@ AI：${aiResponse}
         function fallbackKeywordSearchKB(query, files, maxResults) {
             return KnowledgeModule.searchFilesByKeyword(query, files, maxResults)
                 .map(f => ({
-                    content: f.content ? `📄 ${f.name}: ${f.content.substring(0, 200)}...` : `📄 文件：${f.name} (大小：${((f.size || 0) / 1024).toFixed(1)} KB)`,
+                    content: f.content ? `📄 ${f.sourceName || f.name}: ${String(f.content).substring(0, 900)}${String(f.content).length > 900 ? '...' : ''}` : `📄 文件：${f.name} (大小：${((f.size || 0) / 1024).toFixed(1)} KB)`,
                     source: f.name,
                     score: f.score || 0.5
                 }));
@@ -5819,38 +5820,81 @@ ${memoryText}
             });
         }
 
+        async function buildKnowledgeChunkRecords({ baseId, sourceName, sourceType, content, size, url = '' }) {
+            const kbSettings = JSON.parse(localStorage.getItem('knowledgeSettings')) || {};
+            const mainApiSettings = JSON.parse(localStorage.getItem('aiChatSettings')) || {};
+            const apiUrl = kbSettings.apiUrl || mainApiSettings.apiUrl;
+            const apiKey = kbSettings.apiKey || mainApiSettings.apiKey;
+            const embeddingModel = kbSettings.embeddingModel || 'text-embedding-3-small';
+            const chunks = chunkKnowledgeContent(content);
+            const records = [];
+            for (let index = 0; index < chunks.length; index++) {
+                const chunk = chunks[index];
+                const record = {
+                    id: chunks.length > 1 ? `${baseId}_${index + 1}` : baseId,
+                    sourceId: baseId,
+                    sourceName,
+                    sourceType,
+                    name: chunks.length > 1 ? `${sourceName}（分块 ${index + 1}/${chunks.length}）` : sourceName,
+                    size: new Blob([chunk]).size,
+                    originalSize: size,
+                    chunkIndex: index + 1,
+                    chunkTotal: chunks.length,
+                    uploadDate: new Date().toISOString(),
+                    url,
+                    content: chunk
+                };
+                if (apiUrl && apiKey) {
+                    const embedding = await fetchEmbeddingCached(chunk, embeddingModel, apiUrl, apiKey);
+                    if (embedding) {
+                        record.embedding = embedding;
+                        record.embeddingModel = embeddingModel;
+                        record.embeddedAt = new Date().toISOString();
+                    }
+                }
+                records.push(record);
+            }
+            return records;
+        }
+
         kbFileUploadInput.addEventListener('change', async (e) => {
             const files = Array.from(e.target.files);
             if (files.length > 0) {
                 const s = JSON.parse(localStorage.getItem('knowledgeSettings')) || {};
                 s.files = s.files || [];
-
-                for (const file of files) {
-                    const baseFileId = 'kb_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                    const content = await readFileAsText(file);
-                    const chunks = chunkKnowledgeContent(content);
-                    chunks.forEach((chunk, index) => {
-                        s.files.push({
-                            id: chunks.length > 1 ? `${baseFileId}_${index + 1}` : baseFileId,
-                            sourceId: baseFileId,
-                            name: chunks.length > 1 ? `${file.name}（分块 ${index + 1}/${chunks.length}）` : file.name,
-                            size: new Blob([chunk]).size,
-                            originalSize: file.size,
-                            chunkIndex: index + 1,
-                            chunkTotal: chunks.length,
-                            uploadDate: new Date().toISOString(),
-                            content: chunk
-                        });
-                    });
-                }
+                let storedChunkCount = 0;
 
                 try {
+                    for (const file of files) {
+                        const baseFileId = 'kb_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                        const content = await readFileAsText(file);
+                        const records = await buildKnowledgeChunkRecords({
+                            baseId: baseFileId,
+                            sourceName: file.name,
+                            sourceType: 'file',
+                            content,
+                            size: file.size
+                        });
+                        if (window.KnowledgeModule?.putKnowledgeChunks) {
+                            await KnowledgeModule.putKnowledgeChunks(records);
+                        }
+                        storedChunkCount += records.length;
+                        s.files.push({
+                            id: baseFileId,
+                            name: file.name,
+                            size: file.size,
+                            chunkTotal: records.length,
+                            uploadDate: new Date().toISOString(),
+                            embeddingModel: records.some(r => r.embedding) ? (records.find(r => r.embedding)?.embeddingModel || '') : ''
+                        });
+                    }
+
                     setLocalStorageSafely('knowledgeSettings', JSON.stringify(s));
-                    renderKnowledgeFileList(s.files);
-                    alert(`✅ 已读取并添加 ${files.length} 个文档到知识库列表`);
+                    renderKnowledgeFileList(await getKnowledgeSourceList(s));
+                    alert(`✅ 已解析 ${files.length} 个文档，写入 ${storedChunkCount} 个知识片段${s.files.some(f => f.embeddingModel) ? '并完成向量化' : '（未配置 Embedding 时将使用关键词检索）'}`);
                 } catch (err) {
                     console.error('知识库文档保存失败:', err);
-                    alert('❌ 文档内容过大，保存到 localStorage 失败。请减少文件大小或数量后重试。');
+                    alert(`❌ 文档保存失败：${err.message}`);
                 }
             }
             kbFileUploadInput.value = '';
@@ -6262,10 +6306,13 @@ ${memoryText}
                 const text = (doc.body?.innerText || '').replace(/\s+/g, ' ').trim();
                 const s = JSON.parse(localStorage.getItem('knowledgeSettings')) || {};
                 s.files = s.files || [];
-                chunkKnowledgeContent(text).forEach((chunk, index, chunks) => s.files.push({ id: `kb_web_${Date.now()}_${index}`, sourceId: url, name: `${title}${chunks.length > 1 ? `（网页分块 ${index + 1}/${chunks.length}）` : ''}`, size: chunk.length, uploadDate: new Date().toISOString(), url, content: chunk }));
+                const baseId = 'kb_web_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                const records = await buildKnowledgeChunkRecords({ baseId, sourceName: title, sourceType: 'web', content: text, size: text.length, url });
+                if (window.KnowledgeModule?.putKnowledgeChunks) await KnowledgeModule.putKnowledgeChunks(records);
+                s.files.push({ id: baseId, name: title, size: text.length, chunkTotal: records.length, uploadDate: new Date().toISOString(), url, embeddingModel: records.some(r => r.embedding) ? (records.find(r => r.embedding)?.embeddingModel || '') : '' });
                 setLocalStorageSafely('knowledgeSettings', JSON.stringify(s));
-                renderKnowledgeFileList(s.files);
-                showToast('网页正文已加入知识库', 'ri-global-line');
+                renderKnowledgeFileList(await getKnowledgeSourceList(s));
+                showToast(`网页正文已加入知识库（${records.length} 个片段）`, 'ri-global-line');
             } catch (err) {
                 showToast(`网页抓取失败：${err.message}`, 'ri-error-warning-line');
             }
