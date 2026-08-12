@@ -1,5 +1,7 @@
 My SW - AI 角色聊天
 
+应仓库所有者要求，提前声明，本README由AI生成。
+
 一个沉浸式的 AI 角色扮演聊天应用，专为《崩坏：星穹铁道》等游戏的玩家和二次创作爱好者打造。
 
 https://img.shields.io/badge/PWA-Enabled-5A0FC8?style=flat&logo=pwa
