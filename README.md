@@ -1,8 +1,3 @@
-作者B站：月蛊菌
-
-网页版：https://mysw-yg.pages.dev
-
-个人主页：https://yg-studio.pages.dev
 My SW - AI 角色聊天
 
 一个沉浸式的 AI 角色扮演聊天应用，专为《崩坏：星穹铁道》等游戏的玩家和二次创作爱好者打造。
