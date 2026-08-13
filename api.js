@@ -48,7 +48,7 @@
 
     function getGenerationParameters(apiSettings = {}) {
         const params = {
-            temperature: getFiniteNumber(apiSettings.temperature, 0.85),
+            ...(apiSettings.temperature === undefined || apiSettings.temperature === null || apiSettings.temperature === '' ? {} : { temperature: getFiniteNumber(apiSettings.temperature, 0.85) }),
             top_p: getFiniteNumber(apiSettings.topP, 0.9),
             presence_penalty: getFiniteNumber(apiSettings.presencePenalty, 0.5),
             frequency_penalty: getFiniteNumber(apiSettings.frequencyPenalty, 0.3)
@@ -75,22 +75,52 @@
         };
     }
 
-    async function fetchChat(apiSettings, messages, overrides = {}) {
-        const controller = new AbortController();
-        const timeoutSeconds = getFiniteNumber(apiSettings.timeoutSeconds, 60);
-        const timeoutId = setTimeout(() => controller.abort(), Math.max(1, timeoutSeconds) * 1000);
-        try {
-            return await fetch(buildChatUrl(apiSettings.apiUrl), {
-                ...createChatFetchOptions(apiSettings, messages, overrides),
-                signal: controller.signal
-            });
-        } finally {
-            clearTimeout(timeoutId);
+    function isRetryableError(error) {
+        const message = String(error?.message || error || '').toLowerCase();
+        if (error?.name === 'AbortError') return true;
+        if (/\b(400|401|403|404)\b/.test(message)) return false;
+        if (message.includes('api key') || message.includes('unauthorized') || message.includes('model') && message.includes('not found')) return false;
+        return /\b(408|409|425|429|500|502|503|504)\b/.test(message) || message.includes('timeout') || message.includes('network') || message.includes('failed to fetch');
+    }
+
+    async function withAutoRetry(apiSettings, operation) {
+        const maxRetries = Math.min(5, Math.max(0, parseInt(apiSettings?.maxAutoRetries, 10) || 0));
+        let lastError;
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                return await operation(attempt);
+            } catch (error) {
+                lastError = error;
+                if (attempt >= maxRetries || !isRetryableError(error)) break;
+                await new Promise(resolve => setTimeout(resolve, Math.min(4000, 500 * (2 ** attempt))));
+            }
         }
+        throw lastError;
+    }
+
+    async function fetchChat(apiSettings, messages, overrides = {}) {
+        return withAutoRetry(apiSettings, async () => {
+            const controller = new AbortController();
+            const timeoutSeconds = getFiniteNumber(apiSettings.timeoutSeconds, 60);
+            const timeoutId = setTimeout(() => controller.abort(), Math.max(1, timeoutSeconds) * 1000);
+            try {
+                const response = await fetch(buildChatUrl(apiSettings.apiUrl), {
+                    ...createChatFetchOptions(apiSettings, messages, overrides),
+                    signal: controller.signal
+                });
+                if (!response.ok && isRetryableError(new Error(`API Error: ${response.status}`))) {
+                    try { await response.clone().json(); } catch (e) {}
+                    throw new Error(`API Error: ${response.status}`);
+                }
+                return response;
+            } finally {
+                clearTimeout(timeoutId);
+            }
+        });
     }
 
     async function chatCompletion(apiSettings, messages, overrides = {}) {
-        const data = await requestJson(buildChatUrl(apiSettings.apiUrl), createChatFetchOptions(apiSettings, messages, overrides));
+        const data = await withAutoRetry(apiSettings, () => requestJson(buildChatUrl(apiSettings.apiUrl), createChatFetchOptions(apiSettings, messages, overrides)));
         return data.choices?.[0]?.message?.content || '';
     }
 
@@ -125,6 +155,8 @@
         createChatFetchOptions,
         fetchChat,
         chatCompletion,
+        isRetryableError,
+        withAutoRetry,
         handleApiError
     };
 })();

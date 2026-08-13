@@ -4,7 +4,7 @@
             return threadManager[currentFriendId]?.longTermMemory || [];
         }
 
-        function updateLongTermMemory(newMemories, friendId = currentFriendId) {
+        async function updateLongTermMemory(newMemories, friendId = currentFriendId) {
             if (!enableLongTermMemoryCheckbox.checked) return;
 
             const friendData = threadManager[friendId];
@@ -14,13 +14,19 @@
             let memoryChanged = false;
             const normalizeMemoryKey = key => String(key || '').trim().replace(/\s+/g, ' ').toLowerCase();
             const seenKeys = new Set();
-            newMemories.forEach(newMem => {
+            for (const newMem of newMemories) {
                 const normalizedKey = normalizeMemoryKey(newMem?.key);
                 const value = String(newMem?.value || '').trim();
-                if (!normalizedKey || !value || seenKeys.has(normalizedKey)) return;
+                if (!normalizedKey || !value || seenKeys.has(normalizedKey)) continue;
                 seenKeys.add(normalizedKey);
 
-                const sanitizedMemory = normalizeMemoryRecord({ key: String(newMem.key).trim(), value, tags: newMem.tags || [], importance: newMem.importance || 1, permanent: newMem.permanent || false });
+                const sanitizedMemory = normalizeMemoryRecord({ key: String(newMem.key).trim(), value, category: newMem.category || newMem.type || '用户偏好', tags: newMem.tags || [], importance: newMem.importance || 1, permanent: newMem.permanent || false });
+                const embedding = await buildLongTermMemoryEmbedding(sanitizedMemory);
+                if (embedding) {
+                    sanitizedMemory.embedding = embedding.vector;
+                    sanitizedMemory.embeddingModel = embedding.model;
+                    sanitizedMemory.embeddedAt = new Date().toISOString();
+                }
                 const existingIndex = friendData.longTermMemory.findIndex(m => normalizeMemoryKey(m.key) === normalizedKey);
                 if (existingIndex >= 0) {
                     if (friendData.longTermMemory[existingIndex].value !== sanitizedMemory.value) {
@@ -31,7 +37,7 @@
                     friendData.longTermMemory.push(sanitizedMemory);
                     memoryChanged = true;
                 }
-            });
+            }
 
             if (memoryChanged) {
                 saveThreadManager();
@@ -53,7 +59,7 @@
             container.innerHTML = memories.map(({ mem, index }) => `
                 <div class="memory-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background-color: #383b45; border-radius: 8px; border: 1px solid transparent; transition: all 0.2s;" onmouseenter="this.style.borderColor='#e6c78a'" onmouseleave="this.style.borderColor='transparent'">
                     <div style="flex: 1; min-width: 0;">
-                        <div style="font-weight: 600; color: #e6c78a; margin-bottom: 4px; font-size: 0.95em;">${escapeHtml(mem.key)}</div>
+                        <div style="font-weight: 600; color: #e6c78a; margin-bottom: 4px; font-size: 0.95em;">${escapeHtml(mem.key)} <span style="color:#999;font-size:0.8em;">${escapeHtml(mem.category || '记忆')}</span></div>
                         <div style="color: #ccc; font-size: 0.9em; word-break: break-word;">${escapeHtml(mem.value)}</div>
                         <div style="margin-top:6px; color:#999; font-size:0.78em;">${mem.permanent ? '📌 永久 · ' : ''}权重 ${escapeHtml(mem.importance || 1)} · ${(mem.tags || []).map(t => `<span class="memory-tag">#${escapeHtml(t)}</span>`).join(' ')} · ${escapeHtml((mem.updatedAt || mem.createdAt || '').slice(0,10))}</div>
                     </div>
@@ -128,10 +134,26 @@
         }
 
 
+        async function buildLongTermMemoryEmbedding(mem) {
+            if (!window.fetchEmbeddingCached) return null;
+            let ltmSettings = {};
+            let mainApiSettings = {};
+            try { ltmSettings = JSON.parse(localStorage.getItem('longTermMemorySettings')) || {}; } catch (e) {}
+            try { mainApiSettings = JSON.parse(localStorage.getItem('aiChatSettings')) || {}; } catch (e) {}
+            const apiUrl = ltmSettings.apiUrl || mainApiSettings.apiUrl;
+            const apiKey = ltmSettings.apiKey || mainApiSettings.apiKey;
+            const model = ltmSettings.embeddingModel || 'text-embedding-3-small';
+            if (!apiUrl || !apiKey || !model) return null;
+            const text = `${mem.category || '记忆'} | ${mem.key}: ${mem.value} | 标签:${(mem.tags || []).join(',')}`;
+            const vector = await fetchEmbeddingCached(text, model, apiUrl, apiKey);
+            return Array.isArray(vector) ? { vector, model } : null;
+        }
+
         function normalizeMemoryRecord(mem) {
             const now = new Date().toISOString();
             return {
                 ...mem,
+                category: mem.category || '记忆',
                 tags: Array.isArray(mem.tags) ? mem.tags : String(mem.tags || '').split(',').map(t => t.trim()).filter(Boolean),
                 importance: Number(mem.importance || 1),
                 permanent: Boolean(mem.permanent),

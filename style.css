@@ -2105,3 +2105,39 @@ body.light-theme .search-result-item:hover {
         .chat-plugin-window-header { height: 36px; cursor: move; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; color: #f0e6c8; background: rgba(230,199,138,0.12); border-bottom: 1px solid rgba(230,199,138,0.25); }
         .chat-plugin-window-close { background: transparent; border: none; color: #ddd; cursor: pointer; font-size: 1.1em; }
         .chat-plugin-window iframe { width: 100%; height: calc(100% - 36px); border: 0; background: #fff; }
+
+.search-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: var(--accent-gold);
+    font-size: 0.86em;
+    font-weight: 700;
+    margin: 6px 0 8px;
+    padding: 6px 4px;
+    border-bottom: 1px solid rgba(var(--accent-gold-rgb), 0.22);
+}
+
+.search-section-toggle {
+    width: 26px;
+    height: 26px;
+    border: 1px solid rgba(var(--accent-gold-rgb), 0.35);
+    border-radius: 50%;
+    background: rgba(var(--accent-gold-rgb), 0.08);
+    color: var(--accent-gold);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.search-section-toggle:hover {
+    background: rgba(var(--accent-gold-rgb), 0.18);
+    transform: scale(1.06);
+}
+
+body.light-theme .search-section-header {
+    border-bottom-color: rgba(var(--accent-gold-rgb), 0.28);
+}

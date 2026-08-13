@@ -265,6 +265,8 @@
         const apiStopSequencesInput = document.getElementById('api-stop-sequences');
         const apiSeedInput = document.getElementById('api-seed');
         const apiTimeoutSecondsInput = document.getElementById('api-timeout-seconds');
+        const apiMaxAutoRetriesInput = document.getElementById('api-max-auto-retries');
+        const exportApiKeysEnabledCheckbox = document.getElementById('export-api-keys-enabled');
         const enableMultimodalVisionCheckbox = document.getElementById('enable-multimodal-vision');
         const imageCompressionMaxWidthInput = document.getElementById('image-compression-max-width');
         const imageCompressionQualityInput = document.getElementById('image-compression-quality');
@@ -1171,28 +1173,14 @@
 
             let filteredFriends = allFriends;
             if (searchTerm) {
-                filteredFriends = allFriends.filter(friend => {
-
-                    if (friend.name.toLowerCase().includes(searchTerm)) {
-                        return true;
-                    }
-
-
-                    const friendData = threadManager[friend.id];
-                    if (friendData && friendData.threads) {
-                        for (const thread of friendData.threads) {
-                            if (thread.messages) {
-                                for (const msg of thread.messages) {
-                                    if (msg.content && msg.content.toLowerCase().includes(searchTerm)) {
-                                        return true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    return false;
-                });
+                filteredFriends = allFriends.filter(friend => friend.name.toLowerCase().includes(searchTerm));
+                const header = document.createElement('div');
+                header.innerHTML = createSearchSectionHeader('角色结果', filteredFriends.length, 'characters', { icon: 'ri-user-search-line' }).trim();
+                fragment.appendChild(header.firstElementChild);
+                if (isSearchSectionCollapsed('characters')) {
+                    friendList.appendChild(fragment);
+                    return;
+                }
             }
 
 
@@ -2719,17 +2707,29 @@ AI：${aiResponse}
                     return fallbackKeywordSearch(query, memories, maxResults);
                 }
 
-                // 2. 计算每条记忆与查询的余弦相似度（并行处理所有记忆）
+                // 2. 优先使用记忆入库时保存的向量；旧记忆缺失向量时即时补齐并回写。
+                let hydratedMemoryChanged = false;
                 const scoredMemoriesPromises = memories.map(async (mem) => {
-                    const memoryText = `${mem.key}: ${mem.value}`;
-                    const score = await calculateCosineSimilarityFromText(memoryText, queryEmbedding, embeddingModel, apiUrl, apiKey);
+                    const memoryText = `${mem.category || '记忆'} | ${mem.key}: ${mem.value} | 标签:${(mem.tags || []).join(',')}`;
+                    let memoryEmbedding = Array.isArray(mem.embedding) && mem.embeddingModel === embeddingModel ? mem.embedding : null;
+                    if (!memoryEmbedding) {
+                        memoryEmbedding = await fetchEmbeddingCached(memoryText, embeddingModel, apiUrl, apiKey);
+                        if (memoryEmbedding) {
+                            mem.embedding = memoryEmbedding;
+                            mem.embeddingModel = embeddingModel;
+                            mem.embeddedAt = new Date().toISOString();
+                            hydratedMemoryChanged = true;
+                        }
+                    }
+                    const score = memoryEmbedding ? calculateCosineSimilarity(queryEmbedding, memoryEmbedding) : 0;
                     return {
                         ...mem,
-                        score: score
+                        score: score * Math.max(1, Math.min(5, Number(mem.importance || 1)))
                     };
                 });
 
                 let scoredMemories = await Promise.all(scoredMemoriesPromises);
+                if (hydratedMemoryChanged) saveThreadManager();
 
                 // 3. 重排序端点不是通用 OpenAI API，默认仅使用向量相似度；只有显式 enableRerank 才尝试。
                 let finalMemories = scoredMemories;
@@ -3030,7 +3030,7 @@ ${friend.systemPrompt.substring(0, 1500)}
             const extractionPrompt = `
 你是一个记忆提取助手。请先参考当前角色设定，区分真实用户信息、角色扮演剧情和虚构设定；只提取适合该角色长期记住的用户事实、喜好、习惯或重要事件。
 只返回 JSON 格式的数组，不要包含其他文字。如果没有需要记忆的内容，返回空数组 []。
-格式示例：[{"key": "喜欢的食物", "value": "折纸小鸟饼干"}, {"key": "生日", "value": "下个月"}]
+格式示例：[{"key":"喜欢的食物","value":"折纸小鸟饼干","category":"用户偏好","tags":["食物"],"importance":3,"permanent":false},{"key":"生日","value":"下个月","category":"重要事实","tags":["日期"],"importance":4,"permanent":true}]
 ${rolePrompt}
 对话内容：
 用户：${userMsg}
@@ -4606,14 +4606,28 @@ ${memoryText}
             });
         }
 
-        function renderGlobalSearchResults(query) {
-            if (!globalSearchResults || !getFeatureToggles().showGlobalSearch) return;
-            const keyword = (query || '').trim().toLowerCase();
-            if (!keyword) {
-                globalSearchResults.hidden = true;
-                globalSearchResults.innerHTML = '';
-                return;
-            }
+        function isSearchSectionCollapsed(section) {
+            return localStorage.getItem(`searchSectionCollapsed:${section}`) === 'true';
+        }
+
+        function setSearchSectionCollapsed(section, collapsed) {
+            setLocalStorageSafely(`searchSectionCollapsed:${section}`, String(collapsed));
+        }
+
+        function createSearchSectionHeader(title, count, section, options = {}) {
+            const collapsed = isSearchSectionCollapsed(section);
+            const countText = Number.isFinite(count) ? `（${count}）` : '';
+            return `
+                <div class="search-section-header" data-search-section="${section}">
+                    <span>${options.icon ? `<i class="${options.icon}"></i> ` : ''}${escapeHtml(title)}${countText}</span>
+                    <button type="button" class="search-section-toggle" data-search-section="${section}" aria-label="${collapsed ? '展开' : '折叠'}${escapeHtml(title)}" title="${collapsed ? '展开' : '折叠'}${escapeHtml(title)}">
+                        <i class="${collapsed ? 'ri-arrow-down-s-line' : 'ri-arrow-up-s-line'}"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function getGlobalSearchGroups(keyword) {
             const grouped = [];
             Object.values(friendsData).forEach(friend => {
                 const matches = [];
@@ -4626,11 +4640,33 @@ ${memoryText}
                 });
                 if (matches.length) grouped.push({ friend, matches });
             });
-            globalSearchResults.hidden = grouped.length === 0;
-            globalSearchResults.innerHTML = grouped.length ? grouped.map(group => `
-                <div class="search-result-group-title">${escapeHtml(group.friend.name)}</div>
-                ${group.matches.slice(0, 5).map(item => `<div class="search-result-item" data-friend-id="${group.friend.id}" data-thread-id="${item.thread.id}" data-message-id="${item.msg.id || item.msg.timestamp}">${escapeHtml(String(item.msg.content || '').slice(0, 80))}</div>`).join('')}
-            `).join('') : '';
+            return grouped;
+        }
+
+        function renderGlobalSearchResults(query) {
+            if (!globalSearchResults || !getFeatureToggles().showGlobalSearch) return;
+            const keyword = (query || '').trim().toLowerCase();
+            if (!keyword) {
+                globalSearchResults.hidden = true;
+                globalSearchResults.innerHTML = '';
+                return;
+            }
+            const grouped = getGlobalSearchGroups(keyword);
+            const matchCount = grouped.reduce((sum, group) => sum + group.matches.length, 0);
+            const collapsed = isSearchSectionCollapsed('messages');
+            globalSearchResults.hidden = matchCount === 0 && collapsed;
+            if (!matchCount && !collapsed) {
+                globalSearchResults.hidden = true;
+                globalSearchResults.innerHTML = '';
+                return;
+            }
+            globalSearchResults.innerHTML = `
+                ${createSearchSectionHeader('聊天记录结果', matchCount, 'messages', { icon: 'ri-chat-search-line' })}
+                ${collapsed ? '' : grouped.map(group => `
+                    <div class="search-result-group-title">${escapeHtml(group.friend.name)}</div>
+                    ${group.matches.slice(0, 5).map(item => `<div class="search-result-item" data-friend-id="${group.friend.id}" data-thread-id="${item.thread.id}" data-message-id="${item.msg.id || item.msg.timestamp}">${escapeHtml(String(item.msg.content || '').slice(0, 80))}</div>`).join('')}
+                `).join('')}
+            `;
         }
 
         function jumpToSearchResult(friendId, threadId, messageId) {
@@ -6403,7 +6439,21 @@ ${memoryText}
                 renderGlobalSearchResults(friendSearchInput.value);
             });
         }
+        function handleSearchSectionToggle(e) {
+            const button = e.target.closest('.search-section-toggle');
+            if (!button) return false;
+            e.preventDefault();
+            e.stopPropagation();
+            const section = button.dataset.searchSection;
+            setSearchSectionCollapsed(section, !isSearchSectionCollapsed(section));
+            renderFriendList();
+            renderGlobalSearchResults(friendSearchInput?.value || '');
+            return true;
+        }
+
+        friendList?.addEventListener('click', handleSearchSectionToggle);
         globalSearchResults?.addEventListener('click', (e) => {
+            if (handleSearchSectionToggle(e)) return;
             const item = e.target.closest('.search-result-item');
             if (!item) return;
             jumpToSearchResult(item.dataset.friendId, item.dataset.threadId, item.dataset.messageId);
@@ -6847,13 +6897,14 @@ ${memoryText}
             const activeTab = document.querySelector('.tab-button.active').dataset.tab;
             if (activeTab === 'api') {
                 apiUrlInput.value = ''; apiKeyInput.value = ''; modelNameInput.value = '';
-                if (apiTemperatureInput) apiTemperatureInput.value = 0.85;
+                if (apiTemperatureInput) apiTemperatureInput.value = '';
                 if (apiTopPInput) apiTopPInput.value = 0.9;
                 if (apiPresencePenaltyInput) apiPresencePenaltyInput.value = 0.5;
                 if (apiFrequencyPenaltyInput) apiFrequencyPenaltyInput.value = 0.3;
                 if (apiStopSequencesInput) apiStopSequencesInput.value = '';
                 if (apiSeedInput) apiSeedInput.value = '';
                 if (apiTimeoutSecondsInput) apiTimeoutSecondsInput.value = 60;
+                if (apiMaxAutoRetriesInput) apiMaxAutoRetriesInput.value = 0;
                 localStorage.removeItem('aiChatSettings');
                 localStorage.removeItem('visionSettings');
                 localStorage.removeItem('ttsSettings');
@@ -7079,10 +7130,14 @@ ${memoryText}
         }
 
         function redactSensitiveValue(key, value) {
-            if (isSensitiveSettingsKey(key)) {
+            if (!shouldExportApiKeys() && isSensitiveSettingsKey(key)) {
                 return undefined;
             }
             return value;
+        }
+
+        function shouldExportApiKeys() {
+            return exportApiKeysEnabledCheckbox?.checked === true;
         }
 
         function redactSensitiveDataForExport(value) {
@@ -7123,7 +7178,7 @@ ${memoryText}
             const config = {
                 version: '1.0',
                 exportDate: new Date().toISOString(),
-                securityNote: 'API 密钥及其他敏感凭据已从导出文件中省略。',
+                securityNote: shouldExportApiKeys() ? '用户已选择导出 API Key，请妥善保管此配置文件。' : 'API 密钥及其他敏感凭据已从导出文件中省略。',
                 aiChatSettings: readExportableSettings('aiChatSettings'),
                 longTermMemorySettings: readExportableSettings('longTermMemorySettings'),
                 knowledgeSettings: readExportableSettings('knowledgeSettings'),
@@ -7253,7 +7308,7 @@ ${memoryText}
                 version: '2.0',
                 exportType: 'full',
                 exportDate: new Date().toISOString(),
-                securityNote: excludeEmbeddedMedia ? 'API 密钥及其他敏感凭据已从导出文件中省略；本次导出已排除 DataURL 图片/头像以减小文件体积。' : 'API 密钥及其他敏感凭据已从导出文件中省略。',
+                securityNote: `${shouldExportApiKeys() ? '用户已选择导出 API Key，请妥善保管此备份文件。' : 'API 密钥及其他敏感凭据已从导出文件中省略。'}${excludeEmbeddedMedia ? ' 本次导出已排除 DataURL 图片/头像以减小文件体积。' : ''}`,
 
                 aiChatSettings: readExportableSettings('aiChatSettings'),
                 longTermMemorySettings: readExportableSettings('longTermMemorySettings'),

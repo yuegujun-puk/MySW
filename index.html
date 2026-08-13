@@ -282,7 +282,7 @@
                             <div>
                                 <label for="api-temperature">随机性 temperature</label>
                                 <p style="font-size: 0.75em; color: #888; margin: 3px 0;">值越大，回复越随机。</p>
-                                <input type="number" id="api-temperature" value="0.85" min="0" max="2" step="0.01">
+                                <input type="number" id="api-temperature" placeholder="留空使用模型默认值" min="0" max="2" step="0.01">
                             </div>
                             <div>
                                 <label for="api-top-p">核采样 topP</label>
@@ -303,6 +303,11 @@
                                 <label for="api-timeout-seconds">超时秒数</label>
                                 <p style="font-size: 0.75em; color: #888; margin: 3px 0;">请求超过该秒数会自动中止。</p>
                                 <input type="number" id="api-timeout-seconds" value="60" min="1" max="600" step="1">
+                            </div>
+                            <div>
+                                <label for="api-max-auto-retries">最大自动重试次数</label>
+                                <p style="font-size: 0.75em; color: #888; margin: 3px 0;">临时网络/服务错误会自动重试；鉴权、模型或地址错误不会重试。</p>
+                                <input type="number" id="api-max-auto-retries" value="0" min="0" max="5" step="1">
                             </div>
                             <div>
                                 <label for="api-seed">种子 seed</label>
@@ -444,8 +449,8 @@
                 <div id="tab-chat" class="tab-content">
                     <div class="form-group">
                         <label for="max-context-rounds">最大上下文轮数</label>
-                        <p style="font-size: 0.8em; color: #888; margin-bottom: 5px;">限制发送给 AI 的历史消息对数。设为 0 则不限制。</p>
-                        <input type="number" id="max-context-rounds" value="0" min="0" max="100">
+                        <p style="font-size: 0.8em; color: #888; margin-bottom: 5px;">限制发送给 AI 的历史消息对数。设为 0 则不限制；不会被固定锁定为 20 轮。</p>
+                        <input type="number" id="max-context-rounds" value="0" min="0" step="1">
                     </div>
                     <div class="form-group">
                         <label for="max-tokens">最大回复 Token 限制</label>
@@ -623,6 +628,10 @@
                     <div style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #444;">
                         <h3 style="margin-bottom: 15px; color: #e6c78a;"><i class="ri-settings-3-line"></i> 配置管理</h3>
                         <p style="font-size: 0.9em; color: #888; margin-bottom: 15px;">导出或导入所有设置项（包括 AI 配置、界面设置、长期记忆、知识库等）。</p>
+                        <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: #aaa; cursor: pointer;">
+                            <input type="checkbox" id="export-api-keys-enabled" style="width: 18px; height: 18px;">
+                            <span>是否导出我的 API Key（默认关闭，开启后配置和完整备份都会包含密钥）</span>
+                        </label>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                             <button class="config-export-btn" id="export-config-btn">
                                 <i class="ri-download-line"></i> 导出配置

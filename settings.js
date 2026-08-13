@@ -48,9 +48,20 @@
             renderContextEditList();
         }
 
+
+        function parseNonNegativeIntegerInput(input, fallback = 0) {
+            const value = parseInt(input?.value, 10);
+            return Number.isNaN(value) ? fallback : Math.max(0, value);
+        }
+
+        function parsePositiveIntegerInput(input, fallback = 1) {
+            const value = parseInt(input?.value, 10);
+            return Number.isNaN(value) ? fallback : Math.max(1, value);
+        }
+
         function saveChatSettings() {
             const settings = {
-                maxContextRounds: parseInt(maxContextRoundsInput.value) || 0,
+                maxContextRounds: parseNonNegativeIntegerInput(maxContextRoundsInput, 0),
                 maxTokens: parseInt(maxTokensInput.value) || 1024,
                 enableLongTermMemory: enableLongTermMemoryCheckbox.checked,
                 enableProactiveCare: enableProactiveCareCheckbox.checked,
@@ -65,7 +76,7 @@
                 bubbleImage: currentBubbleImage,
                 bubbleTextStyle: currentBubbleTextStyle,
                 enableDisplayLimit: enableDisplayLimitCheckbox.checked,
-                displayLimitRounds: parseInt(displayLimitRoundsInput.value) || 20,
+                displayLimitRounds: parsePositiveIntegerInput(displayLimitRoundsInput, 20),
                 featureToggles: Object.fromEntries(
                     Object.entries(featureToggleInputs).map(([key, input]) => [key, input ? input.checked : true])
                 )
@@ -123,13 +134,14 @@
                 apiUrlInput.value = s.apiUrl||'';
                 apiKeyInput.value = s.apiKey||'';
                 modelNameInput.value = s.modelName||'';
-                if (apiTemperatureInput) apiTemperatureInput.value = s.temperature ?? 0.85;
+                if (apiTemperatureInput) apiTemperatureInput.value = s.temperature ?? '';
                 if (apiTopPInput) apiTopPInput.value = s.topP ?? 0.9;
                 if (apiPresencePenaltyInput) apiPresencePenaltyInput.value = s.presencePenalty ?? 0.5;
                 if (apiFrequencyPenaltyInput) apiFrequencyPenaltyInput.value = s.frequencyPenalty ?? 0.3;
                 if (apiStopSequencesInput) apiStopSequencesInput.value = Array.isArray(s.stopSequences) ? s.stopSequences.join('\n') : '';
                 if (apiSeedInput) apiSeedInput.value = Number.isInteger(s.seed) ? s.seed : '';
                 if (apiTimeoutSecondsInput) apiTimeoutSecondsInput.value = s.timeoutSeconds ?? 60;
+                if (apiMaxAutoRetriesInput) apiMaxAutoRetriesInput.value = s.maxAutoRetries ?? 0;
             }
 
             let vision;
@@ -185,13 +197,14 @@
                 apiUrl: normalizedUrl,
                 apiKey: apiKeyInput.value.trim(),
                 modelName: modelNameInput.value.trim(),
-                temperature: numberOrDefault(apiTemperatureInput, 0.85),
+                temperature: apiTemperatureInput?.value === '' ? undefined : numberOrDefault(apiTemperatureInput, undefined),
                 topP: numberOrDefault(apiTopPInput, 0.9),
                 presencePenalty: numberOrDefault(apiPresencePenaltyInput, 0.5),
                 frequencyPenalty: numberOrDefault(apiFrequencyPenaltyInput, 0.3),
                 stopSequences: (apiStopSequencesInput?.value || '').split(/\r?\n/).map(v => v.trim()).filter(Boolean),
                 seed: apiSeedInput?.value ? parseInt(apiSeedInput.value, 10) : undefined,
-                timeoutSeconds: numberOrDefault(apiTimeoutSecondsInput, 60)
+                timeoutSeconds: numberOrDefault(apiTimeoutSecondsInput, 60),
+                maxAutoRetries: Math.min(5, Math.max(0, parseInt(apiMaxAutoRetriesInput?.value, 10) || 0))
             };
             setLocalStorageSafely('aiChatSettings', JSON.stringify(s), 'API设置');
 
