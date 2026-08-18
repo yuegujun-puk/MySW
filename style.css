@@ -2141,3 +2141,106 @@ body.light-theme .search-result-item:hover {
 body.light-theme .search-section-header {
     border-bottom-color: rgba(var(--accent-gold-rgb), 0.28);
 }
+
+/* ========================================
+   动效模式：兼容模式 / ？？？模式
+   ======================================== */
+body.compatibility-mode,
+body.compatibility-mode *,
+body.compatibility-mode *::before,
+body.compatibility-mode *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+}
+
+body.mystery-mode {
+    background:
+        radial-gradient(circle at 15% 20%, rgba(0, 245, 255, 0.22), transparent 28%),
+        radial-gradient(circle at 85% 15%, rgba(255, 0, 204, 0.2), transparent 30%),
+        linear-gradient(135deg, #080a18 0%, #17121f 45%, #071b27 100%);
+    animation: mysteryAurora 10s ease-in-out infinite alternate;
+}
+
+body.mystery-mode .app-container {
+    border: 1px solid rgba(0, 245, 255, 0.35);
+    box-shadow: 0 0 28px rgba(0, 245, 255, 0.22), 0 0 70px rgba(255, 0, 204, 0.14), var(--shadow-lg);
+    animation: mysteryFloat 5s ease-in-out infinite, mysteryGlow 3.6s ease-in-out infinite alternate;
+}
+
+body.mystery-mode .sidebar,
+body.mystery-mode .chat-header,
+body.mystery-mode .chat-input-area,
+body.mystery-mode .modal-content {
+    backdrop-filter: blur(12px) saturate(1.25);
+    box-shadow: inset 0 0 24px rgba(0, 245, 255, 0.05);
+}
+
+body.mystery-mode .friend-item:hover,
+body.mystery-mode .friend-item.active,
+body.mystery-mode .icon-btn:hover,
+body.mystery-mode .btn:hover,
+body.mystery-mode .tab-button.active {
+    animation: mysteryPulse 1.35s ease-in-out infinite alternate;
+}
+
+body.mystery-mode .avatar,
+body.mystery-mode .friend-avatar {
+    animation: mysteryAvatarOrbit 4s linear infinite;
+}
+
+body.mystery-mode .message {
+    animation: mysteryMessageIn 0.55s cubic-bezier(0.2, 1.4, 0.3, 1) both;
+}
+
+body.mystery-mode .bubble {
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 18px rgba(0, 245, 255, 0.14), 0 0 24px rgba(255, 0, 204, 0.08);
+}
+
+body.mystery-mode .bubble::after {
+    content: '';
+    position: absolute;
+    inset: -60% -25%;
+    background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.28) 50%, transparent 65%);
+    transform: translateX(-120%) rotate(8deg);
+    animation: mysteryShine 2.8s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes mysteryAurora {
+    from { background-position: 0% 50%; filter: hue-rotate(0deg); }
+    to { background-position: 100% 50%; filter: hue-rotate(18deg); }
+}
+
+@keyframes mysteryFloat {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-6px) scale(1.004); }
+}
+
+@keyframes mysteryGlow {
+    from { box-shadow: 0 0 22px rgba(0, 245, 255, 0.2), 0 0 58px rgba(255, 0, 204, 0.12), var(--shadow-lg); }
+    to { box-shadow: 0 0 36px rgba(0, 245, 255, 0.34), 0 0 86px rgba(255, 0, 204, 0.22), var(--shadow-lg); }
+}
+
+@keyframes mysteryPulse {
+    from { box-shadow: 0 0 0 rgba(0, 245, 255, 0); transform: translateY(0) scale(1); }
+    to { box-shadow: 0 0 18px rgba(0, 245, 255, 0.3); transform: translateY(-1px) scale(1.025); }
+}
+
+@keyframes mysteryAvatarOrbit {
+    0% { box-shadow: 0 0 0 0 rgba(0, 245, 255, 0.15); filter: saturate(1); }
+    50% { box-shadow: 0 0 0 4px rgba(255, 0, 204, 0.16), 0 0 16px rgba(0, 245, 255, 0.28); filter: saturate(1.35); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 245, 255, 0.15); filter: saturate(1); }
+}
+
+@keyframes mysteryMessageIn {
+    from { opacity: 0; transform: translateY(18px) scale(0.96) rotateX(12deg); filter: blur(6px); }
+    to { opacity: 1; transform: translateY(0) scale(1) rotateX(0); filter: blur(0); }
+}
+
+@keyframes mysteryShine {
+    0%, 45% { transform: translateX(-120%) rotate(8deg); }
+    100% { transform: translateX(120%) rotate(8deg); }
+}

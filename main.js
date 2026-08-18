@@ -14,8 +14,31 @@
                     console.error('加载自定义角色失败:', e);
                 }
             }
+            applyStoredBuiltInPromptVersions();
             applyFriendAvatarOverrides();
             loadGroupManager();
+        }
+
+        function getStoredBuiltInPromptVersions() {
+            try { return JSON.parse(localStorage.getItem('builtInPromptVersions') || '{}'); } catch (e) { return {}; }
+        }
+
+        function setStoredBuiltInPromptVersion(friendId, version) {
+            const versions = getStoredBuiltInPromptVersions();
+            versions[friendId] = String(version);
+            setLocalStorageSafely('builtInPromptVersions', JSON.stringify(versions), '内置角色提示词版本');
+        }
+
+        function applyStoredBuiltInPromptVersions() {
+            const versions = getStoredBuiltInPromptVersions();
+            Object.entries(versions).forEach(([friendId, version]) => {
+                const friend = friendsData[friendId];
+                const prompt = defaultFriendsData[friendId]?.promptVersions?.[version];
+                if (friend && prompt && !friend.isCustom) {
+                    friend.systemPrompt = prompt;
+                    friend.promptVersion = String(version);
+                }
+            });
         }
 
         function getStoredFriendAvatarOverrides() {
@@ -324,6 +347,8 @@
         const kbRerankModelInput = document.getElementById('kb-rerank-model');
         const kbEnabledCheckbox = document.getElementById('kb-enabled');
         const accentColorPicker = document.getElementById('accent-color-picker');
+        const enableCompatibilityModeCheckbox = document.getElementById('enable-compatibility-mode');
+        const enableMysteryModeCheckbox = document.getElementById('enable-mystery-mode');
         const shortcutHelpModal = document.getElementById('shortcut-help-modal');
         const closeShortcutHelpBtn = document.getElementById('close-shortcut-help-btn');
         const exportMemoryCsvBtn = document.getElementById('export-memory-csv-btn');
@@ -1173,7 +1198,10 @@
 
             let filteredFriends = allFriends;
             if (searchTerm) {
-                filteredFriends = allFriends.filter(friend => friend.name.toLowerCase().includes(searchTerm));
+                filteredFriends = allFriends.filter(friend => {
+                    const displayName = getFriendDisplayName(friend.id);
+                    return `${friend.name} ${displayName}`.toLowerCase().includes(searchTerm);
+                });
                 const header = document.createElement('div');
                 header.innerHTML = createSearchSectionHeader('角色结果', filteredFriends.length, 'characters', { icon: 'ri-user-search-line' }).trim();
                 fragment.appendChild(header.firstElementChild);
@@ -1198,21 +1226,22 @@
 
                     const groupHeader = document.createElement('div');
                     groupHeader.classList.add('friend-group-header');
-                    groupHeader.setAttribute('data-group', currentGroup);
-                    groupHeader.innerHTML = `<span><i class="ri-folder-line"></i> ${currentGroup}</span><span class="group-count">0</span>`;
+                    const headerGroup = currentGroup;
+                    groupHeader.setAttribute('data-group', headerGroup);
+                    groupHeader.innerHTML = `<span><i class="ri-folder-line"></i> ${escapeHtml(headerGroup)}</span><span class="group-count">0</span>`;
 
 
                     groupHeader.addEventListener('contextmenu', (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        const action = prompt(`管理分组「${currentGroup}」：输入 r 重命名，输入 d 删除`, 'r');
+                        const action = prompt(`管理分组「${headerGroup}」：输入 r 重命名，输入 d 删除`, 'r');
                         if (action === null) return;
                         if (action.trim().toLowerCase() === 'd') {
-                            deleteFriendGroup(currentGroup);
+                            deleteFriendGroup(headerGroup);
                             return;
                         }
-                        const newName = prompt('新的分组名称：', currentGroup);
-                        if (newName !== null) renameFriendGroup(currentGroup, newName);
+                        const newName = prompt('新的分组名称：', headerGroup);
+                        if (newName !== null) renameFriendGroup(headerGroup, newName);
                     });
 
 
@@ -1226,7 +1255,7 @@
 
 
                                 const collapsedGroups = JSON.parse(localStorage.getItem('collapsedGroups') || '{}');
-                                collapsedGroups[currentGroup] = isCollapsed;
+                                collapsedGroups[headerGroup] = isCollapsed;
                                 setLocalStorageSafely('collapsedGroups', JSON.stringify(collapsedGroups));
                             }
                         }
@@ -1314,7 +1343,7 @@
             const headers = friendList.querySelectorAll('.friend-group-header');
             headers.forEach(header => {
                 const groupName = header.getAttribute('data-group');
-                const count = allFriends.filter(f => getFriendGroup(f.id) === groupName).length;
+                const count = filteredFriends.filter(f => getFriendGroup(f.id) === groupName).length;
                 const countSpan = header.querySelector('.group-count');
                 if (countSpan) {
                     countSpan.textContent = count;
@@ -2379,6 +2408,15 @@ AI：${aiResponse}
             element.style.display = visible ? element.dataset.defaultDisplay : 'none';
         }
 
+        function applyMotionMode(settings = getChatSettings()) {
+            const compatibilityMode = settings.enableCompatibilityMode === true;
+            const mysteryMode = settings.enableMysteryMode === true && !compatibilityMode;
+            document.body.classList.toggle('compatibility-mode', compatibilityMode);
+            document.body.classList.toggle('mystery-mode', mysteryMode);
+            if (enableCompatibilityModeCheckbox) enableCompatibilityModeCheckbox.checked = compatibilityMode;
+            if (enableMysteryModeCheckbox) enableMysteryModeCheckbox.checked = settings.enableMysteryMode === true;
+        }
+
         function applyFeatureToggles() {
             const toggles = getFeatureToggles();
             setElementVisible(themeToggleBtn, toggles.showThemeToggle);
@@ -3155,6 +3193,32 @@ ${memoryText}
         }
 
 
+        function switchPromptVersion(version) {
+            const normalizedVersion = String(version || '').trim();
+            const currentFriend = friendsData[currentFriendId];
+            const defaultFriend = defaultFriendsData[currentFriendId];
+
+            if (!currentFriend || !defaultFriend || currentFriend.isCustom || !defaultFriend.promptVersions) {
+                showToast('提示词版本切换仅支持内置角色', 'ri-information-line');
+                return false;
+            }
+
+            const nextPrompt = defaultFriend.promptVersions[normalizedVersion];
+            if (!nextPrompt) {
+                const versions = Object.keys(defaultFriend.promptVersions).join('、');
+                showToast(`可用提示词版本：${versions || '无'}`, 'ri-information-line');
+                return false;
+            }
+
+            currentFriend.systemPrompt = nextPrompt;
+            currentFriend.promptVersion = normalizedVersion;
+            defaultFriend.systemPrompt = nextPrompt;
+            defaultFriend.promptVersion = normalizedVersion;
+            setStoredBuiltInPromptVersion(currentFriendId, normalizedVersion);
+            showToast(`已切换为提示词版本 ${normalizedVersion}`, 'ri-command-line');
+            return true;
+        }
+
         function handleCommand(input) {
             const parts = input.trim().split(' ');
             const cmd = parts[0].toLowerCase();
@@ -3167,6 +3231,11 @@ ${memoryText}
             else if (cmd === '/switch') {
                 if (arg && !isNaN(arg)) { switchThread(arg); }
                 else { showToast("用法：/switch <序号>", "ri-information-line"); }
+                return true;
+            }
+            else if (cmd === '/提示词版本') {
+                if (arg) { switchPromptVersion(arg); }
+                else { showToast("用法：/提示词版本 <版本号>", "ri-information-line"); }
                 return true;
             }
             else if (cmd === '/rename') {
@@ -3187,6 +3256,7 @@ ${memoryText}
                     /reset - 重置当前对话 (清空)<br>
                     /del - 删除当前对话线程<br>
                     /switch &lt;序号&gt; - 切换对话<br>
+                    /提示词版本 &lt;版本号&gt; - 切换内置角色提示词版本<br>
                     /rename &lt;名字&gt; - 重命名当前对话<br>
                     /download - 下载当前对话为 JSON<br>
                     /love, /like, /bey, /cry - 发送表情包<br>
@@ -4573,7 +4643,7 @@ ${memoryText}
 
         const commandCards = [
             ['/new', '开启新对话'], ['/ls', '列出所有对话'], ['/reset', '清空当前对话'],
-            ['/del', '删除当前线程'], ['/switch ', '切换到指定序号'], ['/rename ', '重命名当前对话'],
+            ['/del', '删除当前线程'], ['/switch ', '切换到指定序号'], ['/提示词版本 ', '切换提示词版本'], ['/rename ', '重命名当前对话'],
             ['/download', '下载当前对话 JSON'], ['/love', '发送爱心表情'], ['/like', '发送点赞表情'],
             ['/bey', '发送拜拜表情'], ['/cry', '发送哭哭表情'], ['/help', '显示帮助']
         ];
@@ -4590,7 +4660,7 @@ ${memoryText}
                 const card = e.target.closest('.command-card');
                 if (!card) return;
                 const command = card.dataset.command;
-                if (command.trim() === '/switch' || command.startsWith('/switch ')) {
+                if (command.trim() === '/switch' || command.startsWith('/switch ') || command.trim() === '/提示词版本' || command.startsWith('/提示词版本 ')) {
                     messageInput.value = command;
                     messageInput.focus();
                     autoResizeMessageInput();
@@ -4664,7 +4734,7 @@ ${memoryText}
                 ${createSearchSectionHeader('聊天记录结果', matchCount, 'messages', { icon: 'ri-chat-search-line' })}
                 ${collapsed ? '' : grouped.map(group => `
                     <div class="search-result-group-title">${escapeHtml(group.friend.name)}</div>
-                    ${group.matches.slice(0, 5).map(item => `<div class="search-result-item" data-friend-id="${group.friend.id}" data-thread-id="${item.thread.id}" data-message-id="${item.msg.id || item.msg.timestamp}">${escapeHtml(String(item.msg.content || '').slice(0, 80))}</div>`).join('')}
+                    ${group.matches.slice(0, 5).map(item => `<div class="search-result-item" data-friend-id="${escapeHtml(String(group.friend.id))}" data-thread-id="${escapeHtml(String(item.thread.id))}" data-message-id="${escapeHtml(String(item.msg.id || item.msg.timestamp))}">${escapeHtml(String(item.msg.content || '').slice(0, 80))}</div>`).join('')}
                 `).join('')}
             `;
         }
@@ -4676,7 +4746,7 @@ ${memoryText}
             saveThreadManager();
             renderMessages(friendId);
             setTimeout(() => {
-                const target = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
+                const target = chatMessages.querySelector(`[data-message-id="${cssEscapeValue(messageId)}"]`);
                 if (target) {
                     target.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     target.classList.add('search-highlight');
@@ -6870,6 +6940,26 @@ ${memoryText}
             if (rawUrl) { apiUrlInput.value = normalizeApiUrl(rawUrl); }
         });
 
+        enableCompatibilityModeCheckbox?.addEventListener('change', () => {
+            if (enableCompatibilityModeCheckbox.checked && enableMysteryModeCheckbox) {
+                enableMysteryModeCheckbox.checked = false;
+            }
+            applyMotionMode({
+                enableCompatibilityMode: enableCompatibilityModeCheckbox.checked,
+                enableMysteryMode: enableMysteryModeCheckbox?.checked === true
+            });
+        });
+
+        enableMysteryModeCheckbox?.addEventListener('change', () => {
+            if (enableMysteryModeCheckbox.checked && enableCompatibilityModeCheckbox) {
+                enableCompatibilityModeCheckbox.checked = false;
+            }
+            applyMotionMode({
+                enableCompatibilityMode: enableCompatibilityModeCheckbox?.checked === true,
+                enableMysteryMode: enableMysteryModeCheckbox.checked
+            });
+        });
+
         saveSettingsBtn.addEventListener('click', () => {
 
             saveApiSettings();
@@ -6932,6 +7022,9 @@ ${memoryText}
                 applyBubbleBackground();
                 updateBubbleTextInputs();
                 applyBubbleTextStyleToAll();
+                if (enableCompatibilityModeCheckbox) enableCompatibilityModeCheckbox.checked = false;
+                if (enableMysteryModeCheckbox) enableMysteryModeCheckbox.checked = false;
+                applyMotionMode({ enableCompatibilityMode: false, enableMysteryMode: false });
                 setLocalStorageSafely('accentColor', '#e6c78a');
                 applyAccentColor('#e6c78a');
             } else if (activeTab === 'chat') {

@@ -20,6 +20,8 @@
                 bubbleWidthPercentInput.value = settings.bubbleWidthPercent !== undefined ? settings.bubbleWidthPercent : 85;
                 bubbleWidthSlider.value = settings.bubbleWidthPercent !== undefined ? settings.bubbleWidthPercent : 85;
                 enableMessageSegmentationCheckbox.checked = settings.enableMessageSegmentation !== undefined ? settings.enableMessageSegmentation : false;
+                if (enableCompatibilityModeCheckbox) enableCompatibilityModeCheckbox.checked = settings.enableCompatibilityMode === true;
+                if (enableMysteryModeCheckbox) enableMysteryModeCheckbox.checked = settings.enableMysteryMode === true;
                 enableDisplayLimitCheckbox.checked = settings.enableDisplayLimit !== undefined ? settings.enableDisplayLimit : false;
                 displayLimitRoundsInput.value = settings.displayLimitRounds !== undefined ? settings.displayLimitRounds : 20;
                 const toggles = { ...getDefaultFeatureToggles(), ...(settings.featureToggles || {}) };
@@ -40,9 +42,13 @@
 
                 const root = document.documentElement;
                 root.style.setProperty('--bubble-max-width', (settings.bubbleWidthPercent || 85) + '%');
+                if (typeof applyMotionMode === 'function') applyMotionMode(settings);
             } else {
                 const toggles = getDefaultFeatureToggles();
                 Object.entries(featureToggleInputs).forEach(([key, input]) => { if (input) input.checked = toggles[key]; });
+                if (enableCompatibilityModeCheckbox) enableCompatibilityModeCheckbox.checked = false;
+                if (enableMysteryModeCheckbox) enableMysteryModeCheckbox.checked = false;
+                if (typeof applyMotionMode === 'function') applyMotionMode({ enableCompatibilityMode: false, enableMysteryMode: false });
             }
             applyFeatureToggles();
             renderContextEditList();
@@ -72,6 +78,8 @@
                 enableStreamingInput: enableStreamingInputCheckbox.checked,
                 bubbleWidthPercent: parseInt(bubbleWidthPercentInput.value) || 85,
                 enableMessageSegmentation: enableMessageSegmentationCheckbox.checked,
+                enableCompatibilityMode: enableCompatibilityModeCheckbox?.checked === true,
+                enableMysteryMode: enableMysteryModeCheckbox?.checked === true,
                 bubbleStyle: currentBubbleStyle,
                 bubbleImage: currentBubbleImage,
                 bubbleTextStyle: currentBubbleTextStyle,
@@ -86,6 +94,7 @@
 
             const root = document.documentElement;
             root.style.setProperty('--bubble-max-width', settings.bubbleWidthPercent + '%');
+            if (typeof applyMotionMode === 'function') applyMotionMode(settings);
 
             return settings;
         }
@@ -108,6 +117,8 @@
                 enableRealTime: false,
                 bubbleWidthPercent: 85,
                 enableMessageSegmentation: false,
+                enableCompatibilityMode: false,
+                enableMysteryMode: false,
                 bubbleStyle: 'default',
                 bubbleImage: null,
                 enableDisplayLimit: false,
