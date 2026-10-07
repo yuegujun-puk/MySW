@@ -381,14 +381,14 @@
             if (!getFeatureToggles().showCustomStickers) return;
             const myStickerTitle = document.createElement('div');
             myStickerTitle.className = 'emoji-category-title';
-            myStickerTitle.textContent = '我的表情';
+            myStickerTitle.textContent = '我的表情喵~';
             emojiPicker.appendChild(myStickerTitle);
             const addSticker = document.createElement('div');
             addSticker.classList.add('emoji-item');
             addSticker.innerHTML = '<i class="ri-add-line"></i>';
             addSticker.title = '添加图片链接表情';
             addSticker.addEventListener('click', () => {
-                const url = prompt('请输入表情图片链接：');
+                const url = prompt('请主人输入表情图片链接喵~');
                 if (!url) return;
                 const stickers = JSON.parse(localStorage.getItem('myStickers') || '[]');
                 stickers.push(url.trim());
@@ -458,7 +458,7 @@
 
         menuSetUrl.addEventListener('click', () => {
             toggleAvatarMenu(false);
-            const url = prompt("请输入头像图片的 URL 地址：", inputAvatar.src);
+            const url = prompt("请输入头像图片的 URL 地址喵~", inputAvatar.src);
             if (url && url.trim() !== '') {
                 updateMyAvatar(url.trim());
             }
@@ -487,7 +487,7 @@
         aiMenuSetUrl.addEventListener('click', () => {
             toggleAiAvatarMenu(false);
             if (currentAiAvatarTarget) {
-                const url = prompt("请输入头像图片的 URL 地址：", friendsData[currentAiAvatarTarget]?.avatar);
+                const url = prompt("请输入头像图片的 URL 地址喵~", friendsData[currentAiAvatarTarget]?.avatar);
                 if (url && url.trim() !== '') {
                     updateFriendAvatar(currentAiAvatarTarget, url.trim());
                 }
@@ -500,7 +500,7 @@
                 img.src = src;
             });
             localStorage.setItem('userAvatar', src);
-            showToast("头像已更新", "ri-check-line");
+            showToast("主人的头像更新好了喵~", "ri-check-line");
         }
 
         function updateFriendAvatar(friendId, src) {
@@ -516,7 +516,7 @@
                 });
             }
             renderFriendList();
-            showToast(`${getFriendDisplayName(friendId)} 的头像已更新`, "ri-check-line");
+            showToast(`${getFriendDisplayName(friendId)} 的头像换好啦喵~`, "ri-check-line");
         }
 
         function getFriendDisplayName(friendId) {
@@ -716,7 +716,7 @@
             const memories = getLongTermMemory();
 
             if (!memories || memories.length === 0) {
-                container.innerHTML = '<p style="color: #888; font-style: italic; text-align: center; padding: 20px;">暂无记忆档案</p>';
+                container.innerHTML = '<p style="color: #888; font-style: italic; text-align: center; padding: 20px;">还没有记忆档案呢喵~</p>';
                 return;
             }
 
@@ -744,17 +744,17 @@
             if (!memories || index < 0 || index >= memories.length) return;
 
             const memory = memories[index];
-            const newKey = prompt('编辑记忆键名:', memory.key);
+            const newKey = prompt('编辑记忆键名喵:', memory.key);
             if (newKey === null) return;
             if (!newKey.trim()) {
-                showToast('记忆键名不能为空', 'ri-error-warning-line');
+                showToast('记忆键名不能为空喵，主人再填一次吧', 'ri-error-warning-line');
                 return;
             }
 
-            const newValue = prompt('编辑记忆内容:', memory.value);
+            const newValue = prompt('编辑记忆内容喵:', memory.value);
             if (newValue === null) return;
             if (!newValue.trim()) {
-                showToast('记忆内容不能为空', 'ri-error-warning-line');
+                showToast('记忆内容不能为空喵~', 'ri-error-warning-line');
                 return;
             }
 
@@ -764,14 +764,14 @@
             // 检查键名是否重复（排除当前项）
             const duplicateIndex = friendData.longTermMemory.findIndex((m, i) => i !== index && m.key === newKey.trim());
             if (duplicateIndex >= 0) {
-                showToast('记忆键名已存在', 'ri-error-warning-line');
+                showToast('这个记忆键名已经存在了喵！', 'ri-error-warning-line');
                 return;
             }
 
             friendData.longTermMemory[index] = { key: newKey.trim(), value: newValue.trim() };
             saveThreadManager();
             renderMemoryProfileList();
-            showToast('记忆已更新', 'ri-check-line');
+            showToast('记忆更新好了喵~', 'ri-check-line');
         }
 
         // 删除记忆项
@@ -780,7 +780,7 @@
             if (!memories || index < 0 || index >= memories.length) return;
 
             const memory = memories[index];
-            if (!confirm(`确定要删除这条记忆吗？\n\n"${memory.key}: ${memory.value}"`)) return;
+            if (!confirm(`主人确定要删除这条记忆吗喵？\n\n"${memory.key}: ${memory.value}"`)) return;
 
             const friendData = threadManager[currentFriendId];
             if (!friendData) return;
@@ -798,7 +798,7 @@
                 thread.messages = [];
                 saveThreadManager();
                 renderMessages(currentFriendId);
-                showToast("对话上下文已重置", "ri-refresh-line");
+                showToast("对话上下文重置完毕喵~", "ri-refresh-line");
             }
         }
 
@@ -813,7 +813,7 @@
 
             if (friendData.threads.length === 1) {
                 clearCurrentThread();
-                showToast("已清空对话内容", "ri-delete-bin-line");
+                showToast("对话内容被本喵清空啦喵~", "ri-delete-bin-line");
                 return;
             }
 
@@ -831,7 +831,7 @@
 
             renderMessages(currentFriendId);
             renderFriendList();
-            showToast(`对话线程已删除`, "ri-delete-bin-line");
+            showToast(`对话线程删掉了喵~`, "ri-delete-bin-line");
         }
 
         function createNewThread() {
@@ -842,7 +842,7 @@
             saveThreadManager();
             renderMessages(currentFriendId);
             renderFriendList();
-            showToast(`新对话线程已创建`, "ri-add-circle-line");
+            showToast(`新对话线程创建好了喵~`, "ri-add-circle-line");
         }
         function switchThread(threadId) {
             const friendData = threadManager[currentFriendId];
@@ -851,15 +851,15 @@
                 friendData.currentThreadId = parseInt(threadId);
                 saveThreadManager();
                 renderMessages(currentFriendId);
-                showToast(`已切换对话线程`, "ri-exchange-line");
+                showToast(`切换到新的对话线程了喵~`, "ri-exchange-line");
             } else {
-                showToast(`未找到对话线程`, "ri-error-warning-line");
+                showToast(`找不到那个对话线程呢喵…`, "ri-error-warning-line");
             }
         }
 
         function renameCurrentThread(newName) {
             if (!newName || newName.trim() === '') {
-                showToast("请输入有效的对话名称", "ri-error-warning-line");
+                showToast("请输入有效的对话名称喵~", "ri-error-warning-line");
                 return;
             }
             const friendData = threadManager[currentFriendId];
@@ -867,7 +867,7 @@
             if (thread) {
                 thread.name = newName.trim();
                 saveThreadManager();
-                showToast(`对话已重命名`, "ri-edit-line");
+                showToast(`对话改名成功喵~`, "ri-edit-line");
                 renderFriendList();
             }
         }
@@ -1095,7 +1095,7 @@
                 const pinned = !isFriendPinned(currentFriendMenuTarget);
                 setFriendPinned(currentFriendMenuTarget, pinned);
                 renderFriendList();
-                showToast(`${getFriendDisplayName(currentFriendMenuTarget)} ${pinned ? '已置顶' : '已取消置顶'}`, pinned ? 'ri-pushpin-line' : 'ri-pushpin-2-line');
+                showToast(`${getFriendDisplayName(currentFriendMenuTarget)} ${pinned ? '置顶好了' : '取消置顶了'}喵~`, pinned ? 'ri-pushpin-line' : 'ri-pushpin-2-line');
             }
             toggleFriendContextMenu(false);
         });
@@ -1103,14 +1103,14 @@
         menuSetRemark.addEventListener('click', () => {
             if (currentFriendMenuTarget) {
                 const currentRemark = getFriendRemark(currentFriendMenuTarget);
-                const newRemark = prompt(`设置 "${friendsData[currentFriendMenuTarget].name}" 的备注：`, currentRemark);
+                const newRemark = prompt(`设置 "${friendsData[currentFriendMenuTarget].name}" 的备注喵：`, currentRemark);
                 if (newRemark !== null) {
                     setFriendRemark(currentFriendMenuTarget, newRemark.trim());
                     renderFriendList();
                     if (currentFriendId === currentFriendMenuTarget) {
                         currentFriendNameElement.textContent = getFriendDisplayName(currentFriendId);
                     }
-                    showToast(`备注已${newRemark.trim() ? '更新' : '清除'}`, 'ri-edit-line');
+                    showToast(`备注已${newRemark.trim() ? '更新' : '清除'}好了喵~`, 'ri-edit-line');
                 }
             }
             toggleFriendContextMenu(false);
@@ -1143,7 +1143,7 @@
             });
 
 
-            friendGroupModalTitle.textContent = '选择分组';
+            friendGroupModalTitle.textContent = '选择分组喵~';
             friendGroupModalBody.innerHTML = `
                 <div class="friend-group-list">
                     ${groupHtml}
@@ -1177,7 +1177,7 @@
                     friendsData[currentFriendMenuTarget].group = selectedGroup;
                     saveCustomFriendsData();
                     renderFriendList();
-                    showToast(`已移动分组至「${selectedGroup}」`, 'ri-folder-move-line');
+                    showToast(`已移动分组至「${selectedGroup}」啦喵~`, 'ri-folder-move-line');
                 }
                 toggleFriendGroupModal(false);
             };
@@ -1191,12 +1191,12 @@
 
             const friend = friendsData[currentFriendMenuTarget];
             if (!friend || !friend.isCustom) {
-                showToast('默认角色无法删除', 'ri-error-warning-line');
+                showToast('默认角色是不能删除的喵！', 'ri-error-warning-line');
                 toggleFriendContextMenu(false);
                 return;
             }
 
-            const confirmDelete = confirm(`确定要删除好友「${getFriendDisplayName(currentFriendMenuTarget)}」吗？\n\n此操作不可恢复，聊天记录也将被清空！`);
+            const confirmDelete = confirm(`主人真的确定要删除好友「${getFriendDisplayName(currentFriendMenuTarget)}」吗喵？\n\n此操作不可恢复，聊天记录也会被清空哦！`);
             if (!confirmDelete) {
                 toggleFriendContextMenu(false);
                 return;
@@ -1221,8 +1221,8 @@
                     switchFriend(remainingFriends[0]);
                 } else {
                     currentFriendId = null;
-                    chatMessages.innerHTML = '<div style="text-align:center;color:#888;margin-top:50px;">暂无好友，请添加新角色</div>';
-                    currentFriendNameElement.textContent = '无';
+                    chatMessages.innerHTML = '<div style="text-align:center;color:#888;margin-top:50px;">还没有好友呢喵，快添加新角色吧</div>';
+                    currentFriendNameElement.textContent = '没有喵';
                 }
             } else {
                 renderFriendList();
@@ -1615,7 +1615,7 @@
                         const regenerateBtn = document.createElement('div');
                         regenerateBtn.className = 'regenerate-btn';
                         regenerateBtn.innerHTML = '<i class="ri-refresh-line"></i>';
-                        regenerateBtn.title = '重新回答';
+                        regenerateBtn.title = '重新回答喵~';
                         regenerateBtn.addEventListener('click', () => {
                             console.log('重新回答按钮点击，messageId:', msgDiv.dataset.messageId);
                             regenerateAIResponse(msgDiv.dataset.messageId);
@@ -1626,7 +1626,7 @@
                         const branchBtn = document.createElement('div');
                         branchBtn.className = 'regenerate-btn';
                         branchBtn.innerHTML = '<i class="ri-git-branch-line"></i>';
-                        branchBtn.title = '从此处开新对话';
+                        branchBtn.title = '从此处开新对话喵~';
                         branchBtn.addEventListener('click', () => createBranchFromMessage(msgDiv.dataset.messageId));
                         actionsDiv.appendChild(branchBtn);
                     }
@@ -1680,7 +1680,7 @@
             const baseId = String(messageId).split('-')[0];
             const msgIndex = thread.messages.findIndex(m => String(m.id || m.timestamp) === baseId);
             if (msgIndex < 0) {
-                showToast('找不到分支起点', 'ri-error-warning-line');
+                showToast('找不到分支起点呢喵…', 'ri-error-warning-line');
                 return;
             }
             const friendData = threadManager[currentFriendId];
@@ -1694,7 +1694,7 @@
             saveThreadManager();
             renderFriendList();
             renderMessages(currentFriendId);
-            showToast('已从此处创建新对话分支', 'ri-git-branch-line');
+            showToast('新对话分支从这里创建好了喵~', 'ri-git-branch-line');
         }
 
         function regenerateAIResponse(messageId) {
@@ -1706,7 +1706,7 @@
             console.log('重新回答调试:', { messageId, baseId, msgIndex, messagesCount: messages.length });
 
             if (msgIndex === -1 || msgIndex === 0) {
-                showToast("无法重新生成回复", "ri-error-warning-line");
+                showToast("没办法重新生成回复呢喵…", "ri-error-warning-line");
                 return;
             }
 
@@ -1719,7 +1719,7 @@
             }
 
             if (!lastUserMsg) {
-                showToast("找不到对应的用户消息", "ri-error-warning-line");
+                showToast("找不到对应的用户消息喵…", "ri-error-warning-line");
                 return;
             }
 
@@ -1739,7 +1739,7 @@
                 }, 100);
             } else {
                 console.error('找不到当前线程');
-                showToast("找不到当前对话线程", "ri-error-warning-line");
+                showToast("找不到当前对话线程呢喵…", "ri-error-warning-line");
             }
         }
 
@@ -1982,7 +1982,7 @@ AI：${aiResponse}
             contextEditListContainer.innerHTML = '';
 
             if (messages.length === 0) {
-                contextEditListContainer.innerHTML = '<div style="text-align: center; color: #666; padding: 10px;">暂无消息</div>';
+                contextEditListContainer.innerHTML = '<div style="text-align: center; color: #666; padding: 10px;">还没有消息呢喵~</div>';
                 return;
             }
 
@@ -2023,23 +2023,23 @@ AI：${aiResponse}
 
             const msg = messages[index];
             if (msg.type === 'image') {
-                alert('暂时不支持编辑图片消息，请删除后重新发送。');
+                alert('暂时不支持编辑图片消息呢喵，请删除后重新发送哦。');
                 return;
             }
 
-            const newText = prompt(`编辑消息 (${msg.role === 'mine' ? '我' : 'AI'}):\n\n${msg.content}`, msg.content);
+            const newText = prompt(`编辑消息喵 (${msg.role === 'mine' ? '我' : 'AI'}):\n\n${msg.content}`, msg.content);
 
             if (newText !== null && newText.trim() !== '') {
                 msg.content = newText.trim();
                 saveThreadManager();
                 renderContextEditList();
                 renderMessages(currentFriendId);
-                showToast(`已修改第 ${index + 1} 条消息`, 'ri-edit-line');
+                showToast(`第 ${index + 1} 条消息修改好了喵~`, 'ri-edit-line');
             }
         }
 
         function deleteMessage(index) {
-            if (!confirm('确定要删除这条消息吗？这会影响后续的对话上下文。')) return;
+            if (!confirm('确定要删除这条消息吗喵？这会影响后续的对话上下文哦。')) return;
 
             const friendData = threadManager[currentFriendId];
             const thread = friendData.threads.find(t => t.id === friendData.currentThreadId);
@@ -2048,7 +2048,7 @@ AI：${aiResponse}
                 saveThreadManager();
                 renderContextEditList();
                 renderMessages(currentFriendId);
-                showToast(`已删除第 ${index + 1} 条消息`, 'ri-delete-bin-line');
+                showToast(`第 ${index + 1} 条消息删掉了喵~`, 'ri-delete-bin-line');
             }
         }
 
@@ -2708,7 +2708,7 @@ AI：${aiResponse}
                         const regenerateBtn = document.createElement('div');
                         regenerateBtn.className = 'regenerate-btn';
                         regenerateBtn.innerHTML = '<i class="ri-refresh-line"></i>';
-                        regenerateBtn.title = '重新回答';
+                        regenerateBtn.title = '重新回答喵~';
                         regenerateBtn.addEventListener('click', () => {
                             console.log('重新回答按钮点击，messageId:', msgId);
                             regenerateAIResponse(messageDiv.dataset.messageId || msgId);
@@ -2719,7 +2719,7 @@ AI：${aiResponse}
                             const branchBtn = document.createElement('div');
                             branchBtn.className = 'regenerate-btn';
                             branchBtn.innerHTML = '<i class="ri-git-branch-line"></i>';
-                            branchBtn.title = '从此处开新对话';
+                            branchBtn.title = '从此处开新对话喵~';
                             branchBtn.addEventListener('click', () => createBranchFromMessage(messageDiv.dataset.messageId || msgId));
                             actionsDiv.appendChild(branchBtn);
                         }
@@ -2789,7 +2789,7 @@ AI：${aiResponse}
                 // 重新渲染消息列表
                 renderMessages(currentFriendId);
 
-                showToast('已删除出错的上下文，防止污染对话', 'ri-delete-bin-line');
+                showToast('出错上下文已被本喵删掉啦，这样就不会污染对话了喵~', 'ri-delete-bin-line');
             }
         }
 
@@ -2918,12 +2918,12 @@ ${memoryText}
             else if (cmd === '/del') { deleteCurrentThread(); return true; }
             else if (cmd === '/switch') {
                 if (arg && !isNaN(arg)) { switchThread(arg); }
-                else { showToast("用法：/switch <序号>", "ri-information-line"); }
+                else { showToast("用法是 /switch <序号> 喵~", "ri-information-line"); }
                 return true;
             }
             else if (cmd === '/rename') {
                 if (arg) { renameCurrentThread(arg); }
-                else { showToast("用法：/rename <新名字>", "ri-information-line"); }
+                else { showToast("用法是 /rename <新名字> 喵~", "ri-information-line"); }
                 return true;
             }
             else if (cmd === '/download') { downloadCurrentThread(); return true; }
@@ -3014,7 +3014,7 @@ ${memoryText}
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            showToast(`对话已导出`, "ri-download-line");
+            showToast(`对话导出好了喵~`, "ri-download-line");
         }
 
 
@@ -3051,7 +3051,7 @@ ${memoryText}
             const extension = format === 'md' ? 'md' : 'txt';
             const mimeType = format === 'md' ? 'text/markdown;charset=utf-8' : 'text/plain;charset=utf-8';
             downloadBlob(`${friend.name}_可读对话_${Date.now()}.${extension}`, formatReadableMessages(format), mimeType);
-            showToast(`已导出 ${extension.toUpperCase()} 对话`, 'ri-file-text-line');
+            showToast(`已导出 ${extension.toUpperCase()} 格式对话啦喵~`, 'ri-file-text-line');
         }
 
         function printReadableChat() {
@@ -3103,7 +3103,7 @@ ${memoryText}
         async function exportSelectedCustomFriends() {
             const ids = [...selectedCustomFriends].filter(id => friendsData[id]?.isCustom);
             if (!ids.length) {
-                showToast('请先勾选自定义角色', 'ri-information-line');
+                showToast('请先勾选自定义角色喵~', 'ri-information-line');
                 return;
             }
             if (window.JSZip) {
@@ -3121,16 +3121,16 @@ ${memoryText}
             } else {
                 downloadBlob(`custom-characters-${Date.now()}.json`, JSON.stringify(ids.map(id => friendsData[id]), null, 2), 'application/json');
             }
-            showToast('已导出所选角色', 'ri-file-zip-line');
+            showToast('所选角色导出好了喵~', 'ri-file-zip-line');
         }
 
         function deleteSelectedCustomFriends() {
             const ids = [...selectedCustomFriends].filter(id => friendsData[id]?.isCustom);
             if (!ids.length) {
-                showToast('请先勾选自定义角色', 'ri-information-line');
+                showToast('请先勾选自定义角色喵~', 'ri-information-line');
                 return;
             }
-            if (!confirm(`确定删除 ${ids.length} 个自定义角色？相关聊天记录也会删除。`)) return;
+            if (!confirm(`确定要删除 ${ids.length} 个自定义角色吗喵？相关聊天记录也会一起删除哦。`)) return;
             const customData = JSON.parse(localStorage.getItem('customFriendsData') || '{}');
             ids.forEach(id => {
                 delete customData[id];
@@ -3143,7 +3143,7 @@ ${memoryText}
             if (!friendsData[currentFriendId]) currentFriendId = Object.keys(friendsData)[0] || 'silverwolf';
             renderFriendList();
             switchFriend(currentFriendId);
-            showToast('已删除所选角色', 'ri-delete-bin-line');
+            showToast('所选角色删掉了喵~', 'ri-delete-bin-line');
         }
 
         function initVoiceInput() {
@@ -3173,7 +3173,7 @@ ${memoryText}
             recognition.onend = () => voiceInputBtn.classList.remove('recording');
             recognition.onerror = () => {
                 voiceInputBtn.classList.remove('recording');
-                showToast('语音识别失败，请重试', 'ri-mic-off-line');
+                showToast('语音识别失败了喵，请主人再试一次', 'ri-mic-off-line');
             };
         }
 
@@ -3311,10 +3311,10 @@ ${memoryText}
                     saveThreadManager();
 
                     renderMessages(friendId);
-                    showToast(`对话已导入，共 ${data.messages.length} 条消息`, 'ri-upload-line');
+                    showToast(`对话导入好了喵，共 ${data.messages.length} 条消息`, 'ri-upload-line');
 
                 } catch (error) {
-                    showToast(`导入失败：${error.message}`, "ri-error-warning-line");
+                    showToast(`导入失败了喵：${error.message}`, "ri-error-warning-line");
                     console.error('导入错误:', error);
                 }
             };
@@ -3332,14 +3332,14 @@ ${memoryText}
                 const base64Img = e.target.result;
                 chatArea.style.backgroundImage = `url('${base64Img}')`;
                 localStorage.setItem('chatBackground', base64Img);
-                showToast("背景已更新", "ri-image-line");
+                showToast("背景焕然一新了喵~", "ri-image-line");
             };
             reader.readAsDataURL(file);
         }
         function resetBackground() {
             chatArea.style.backgroundImage = '';
             localStorage.removeItem('chatBackground');
-            showToast("背景已恢复默认", "ri-image-line");
+            showToast("背景恢复默认啦喵~", "ri-image-line");
         }
 
 
@@ -3387,7 +3387,7 @@ ${memoryText}
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            showToast(`角色配置已导出`, "ri-download-line");
+            showToast(`角色配置导出好了喵~`, "ri-download-line");
         }
 
         function importCharacterFile(file) {
@@ -3487,7 +3487,7 @@ ${memoryText}
                     };
                     saveThreadManager();
 
-                    alert(`✅ 角色 "${charName}" 导入成功！`);
+                    alert(`✅ 角色 "${charName}" 导入成功啦喵！`);
                     renderFriendOptions();
                     renderFriendList();
 
@@ -3495,7 +3495,7 @@ ${memoryText}
                     addFriendModal.classList.remove('show');
 
                 } catch (error) {
-                    alert(`❌ 导入失败：${error.message}`);
+                    alert(`❌ 导入失败了喵：${error.message}`);
                     console.error('导入错误:', error);
                 }
             };
@@ -3509,7 +3509,7 @@ ${memoryText}
 
             const friendData = threadManager[charId];
             if (!friendData || !friendData.threads || friendData.threads.length === 0) {
-                showToast(`该角色暂无对话记录`, "ri-information-line");
+                showToast(`这个角色还没有对话记录呢喵~`, "ri-information-line");
                 return;
             }
 
@@ -3538,7 +3538,7 @@ ${memoryText}
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            showToast(`角色聊天记录已导出`, "ri-download-line");
+            showToast(`角色聊天记录导出好了喵~`, "ri-download-line");
         }
 
         // 导入单个角色聊天记录功能
@@ -3705,7 +3705,7 @@ ${memoryText}
                         }
 
                         saveCustomFriendsData();
-                        alert(`✅ 角色 "${charData.name}" 的聊天记录已合并导入！`);
+                        alert(`✅ 角色 "${charData.name}" 的聊天记录合并导入好了喵！`);
                         renderFriendOptions();
                         renderFriendList();
                         switchFriend(existingCharId);
@@ -3730,14 +3730,14 @@ ${memoryText}
                         };
                         saveThreadManager();
 
-                        alert(`✅ 角色 "${charData.name}" 及其聊天记录导入成功！`);
+                        alert(`✅ 角色 "${charData.name}" 和它的聊天记录都导入成功啦喵！`);
                         renderFriendOptions();
                         renderFriendList();
                         switchFriend(charId);
                     }
 
                 } catch (error) {
-                    alert(`❌ 导入失败：${error.message}`);
+                    alert(`❌ 导入失败了喵：${error.message}`);
                     console.error('导入错误:', error);
                 }
             };
@@ -3783,7 +3783,7 @@ ${memoryText}
 
                 document.getElementById('confirm-modal').classList.add('show');
             } else {
-                alert('请选择要' + (action === 'export' ? '导出' : '导入') + '的角色');
+                alert('请主人选择要' + (action === 'export' ? '导出' : '导入') + '的角色');
             }
         }
 
@@ -3886,7 +3886,7 @@ ${memoryText}
             newCharAvatarInputModal.value = '';
             newCharWelcomeInputModal.value = '';
             characterEditModalTitle.textContent = '创建新角色';
-            saveBtnTextModal.textContent = '创建角色';
+            saveBtnTextModal.textContent = '创建角色喵~';
             deleteCharacterBtnModal.style.display = 'none';
         }
 
@@ -3902,7 +3902,7 @@ ${memoryText}
             newCharWelcomeInputModal.value = char.welcomeMessage || '';
 
             characterEditModalTitle.textContent = `编辑角色：${char.name}`;
-            saveBtnTextModal.textContent = '保存修改';
+            saveBtnTextModal.textContent = '保存修改喵~';
             deleteCharacterBtnModal.style.display = 'flex';
         }
 
@@ -3919,7 +3919,7 @@ ${memoryText}
             newCharAvatarInput.value = '';
             newCharWelcomeInput.value = '';
             createEditTitle.textContent = '创建新角色';
-            saveBtnText.textContent = '创建角色';
+            saveBtnText.textContent = '创建角色喵~';
             deleteCharacterBtn.style.display = 'none';
         }
 
@@ -3937,7 +3937,7 @@ ${memoryText}
             newCharWelcomeInput.value = char.welcomeMessage || '';
 
             createEditTitle.textContent = `编辑角色：${char.name}`;
-            saveBtnText.textContent = '保存修改';
+            saveBtnText.textContent = '保存修改喵~';
             deleteCharacterBtn.style.display = 'flex';
         }
 
@@ -3947,18 +3947,18 @@ ${memoryText}
             const name = newCharNameInput.value.trim() || '角色';
 
             if (!prompt) {
-                alert('请先填写角色提示词！');
+                alert('请先填写角色提示词喵！');
                 return;
             }
 
             const apiSettings = JSON.parse(localStorage.getItem('aiChatSettings'));
             if (!apiSettings || !apiSettings.apiKey) {
-                alert('请先在设置中配置 API Key！');
+                alert('请先在设置里配置好 API Key 喵！');
                 return;
             }
 
             generateWelcomeBtn.disabled = true;
-            generateWelcomeBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> 生成中...';
+            generateWelcomeBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> 生成中喵...';
 
             try {
                 const response = await fetch(apiSettings.apiUrl, {
@@ -3983,13 +3983,13 @@ ${memoryText}
                     const welcome = data.choices[0].message.content.trim();
                     newCharWelcomeInput.value = welcome;
                 } else {
-                    alert('生成失败，请检查 API 配置');
+                    alert('生成失败了喵，请检查一下 API 配置');
                 }
             } catch (e) {
-                alert('生成出错：' + e.message);
+                alert('生成出错了喵：' + e.message);
             } finally {
                 generateWelcomeBtn.disabled = false;
-                generateWelcomeBtn.innerHTML = '<i class="ri-magic-line"></i> AI 生成开场白';
+                generateWelcomeBtn.innerHTML = '<i class="ri-magic-line"></i> AI 生成开场白喵~';
             }
         });
 
@@ -4000,7 +4000,7 @@ ${memoryText}
             const welcome = newCharWelcomeInput.value.trim() || `你好，我是${name}，很高兴认识你！`;
 
             if (!name || !prompt) {
-                alert('请填写角色名字和提示词！');
+                alert('请填写角色名字和提示词喵！');
                 return;
             }
 
@@ -4019,7 +4019,7 @@ ${memoryText}
                     renderMessages(editId);
                 }
 
-                alert('✅ 角色已更新！');
+                alert('✅ 角色更新好了喵！');
                 renderFriendOptions();
                 renderFriendList();
             } else {
@@ -4042,7 +4042,7 @@ ${memoryText}
                 };
                 saveThreadManager();
 
-                alert('✅ 角色创建成功！');
+                alert('✅ 角色创建成功啦喵！');
                 renderFriendOptions();
                 renderFriendList();
 
@@ -4063,7 +4063,7 @@ ${memoryText}
             const welcome = newCharWelcomeInputModal.value.trim() || `你好，我是${name}，很高兴认识你！`;
 
             if (!name || !prompt) {
-                alert('请填写角色名字和提示词！');
+                alert('请填写角色名字和提示词喵！');
                 return;
             }
 
@@ -4082,7 +4082,7 @@ ${memoryText}
                     renderMessages(editId);
                 }
 
-                alert('✅ 角色已更新！');
+                alert('✅ 角色更新好了喵！');
                 renderFriendOptions();
                 renderFriendList();
             } else {
@@ -4105,7 +4105,7 @@ ${memoryText}
                 };
                 saveThreadManager();
 
-                alert('✅ 角色创建成功！');
+                alert('✅ 角色创建成功啦喵！');
                 renderFriendOptions();
                 renderFriendList();
 
@@ -4120,7 +4120,7 @@ ${memoryText}
             const charId = editCharacterIdInput.value;
             if (!charId) return;
 
-            if (confirm(`确定要删除角色 "${friendsData[charId].name}" 吗？此操作不可撤销，且会删除所有相关聊天记录！`)) {
+            if (confirm(`主人确定要删除角色 "${friendsData[charId].name}" 吗喵？此操作不可撤销，且会删除所有相关聊天记录哦！`)) {
                 delete friendsData[charId];
                 delete threadManager[charId];
 
@@ -4131,7 +4131,7 @@ ${memoryText}
                     switchFriend('silverwolf');
                 }
 
-                alert('️ 角色已删除。');
+                alert('️ 角色删掉了喵。');
                 resetCreateForm();
                 createCharacterSection.style.display = 'none';
                 toggleCreateBtn.style.display = 'flex';
@@ -4145,7 +4145,7 @@ ${memoryText}
             const charId = editCharacterIdInputModal.value;
             if (!charId) return;
 
-            if (confirm(`确定要删除角色 "${friendsData[charId].name}" 吗？此操作不可撤销，且会删除所有相关聊天记录！`)) {
+            if (confirm(`主人确定要删除角色 "${friendsData[charId].name}" 吗喵？此操作不可撤销，且会删除所有相关聊天记录哦！`)) {
                 delete friendsData[charId];
                 delete threadManager[charId];
 
@@ -4156,7 +4156,7 @@ ${memoryText}
                     switchFriend('silverwolf');
                 }
 
-                alert('️ 角色已删除。');
+                alert('️ 角色删掉了喵。');
                 characterEditModal.classList.remove('show');
                 resetCreateFormModal();
                 renderFriendOptions();
@@ -4211,10 +4211,10 @@ ${memoryText}
                 try {
                     localStorage.setItem('knowledgeSettings', JSON.stringify(s));
                     renderKnowledgeFileList(s.files);
-                    alert(`✅ 已读取并添加 ${files.length} 个文档到知识库列表`);
+                    alert(`✅ 已读取并把 ${files.length} 个文档加入知识库列表啦喵~`);
                 } catch (err) {
                     console.error('知识库文档保存失败:', err);
-                    alert('❌ 文档内容过大，保存到 localStorage 失败。请减少文件大小或数量后重试。');
+                    alert('❌ 文档内容太大了喵，保存到 localStorage 失败了。请减少文件大小或数量后再试一次哦。');
                 }
             }
             kbFileUploadInput.value = '';
@@ -4249,24 +4249,24 @@ ${memoryText}
             currentAvatarInput = null;
         });
 
-        // 弹窗版本的 AI 生成开场白按钮
+        // 弹窗版本的 AI 生成开场白喵~按钮
         generateWelcomeBtnModal.addEventListener('click', async () => {
             const prompt = newCharPromptInputModal.value.trim();
             const name = newCharNameInputModal.value.trim() || '角色';
 
             if (!prompt) {
-                alert('请先填写角色提示词！');
+                alert('请先填写角色提示词喵！');
                 return;
             }
 
             const apiSettings = JSON.parse(localStorage.getItem('aiChatSettings'));
             if (!apiSettings || !apiSettings.apiKey) {
-                alert('请先在设置中配置 API Key！');
+                alert('请先在设置里配置好 API Key 喵！');
                 return;
             }
 
             generateWelcomeBtnModal.disabled = true;
-            generateWelcomeBtnModal.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> 生成中...';
+            generateWelcomeBtnModal.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> 生成中喵...';
 
             try {
                 const response = await fetch(apiSettings.apiUrl, {
@@ -4291,13 +4291,13 @@ ${memoryText}
                     const welcome = data.choices[0].message.content.trim();
                     newCharWelcomeInputModal.value = welcome;
                 } else {
-                    alert('生成失败，请检查 API 配置');
+                    alert('生成失败了喵，请检查一下 API 配置');
                 }
             } catch (e) {
-                alert('生成出错：' + e.message);
+                alert('生成出错了喵：' + e.message);
             } finally {
                 generateWelcomeBtnModal.disabled = false;
-                generateWelcomeBtnModal.innerHTML = '<i class="ri-magic-line"></i> AI 生成开场白';
+                generateWelcomeBtnModal.innerHTML = '<i class="ri-magic-line"></i> AI 生成开场白喵~';
             }
         });
 
@@ -4402,7 +4402,7 @@ ${memoryText}
             };
             applyBubbleTextStyleToAll();
             saveChatSettings();
-            showToast("气泡样式已应用", "ri-font-size");
+            showToast("气泡样式应用好了喵~", "ri-font-size");
         });
 
         function applyBubbleTextStyleToAll() {
@@ -4763,7 +4763,7 @@ ${memoryText}
 
         function renderKnowledgeFileList(files) {
             if (!files || files.length === 0) {
-                kbFileListDiv.innerHTML = '<p style="color: #666; font-size: 0.9em; text-align: center;">暂无上传的文档</p>';
+                kbFileListDiv.innerHTML = '<p style="color: #666; font-size: 0.9em; text-align: center;">还没有上传的文档呢喵~</p>';
                 return;
             }
             kbFileListDiv.innerHTML = files.map(f => `
@@ -4809,7 +4809,7 @@ ${memoryText}
                 localStorage.removeItem('aiChatSettings');
                 testResultDiv.textContent = '';
             } else if (activeTab === 'appearance') {
-                if(confirm("确定要恢复默认背景吗？")) { resetBackground(); }
+                if(confirm("确定要恢复默认背景吗喵？")) { resetBackground(); }
                 currentBubbleStyle = 'default';
                 currentBubbleImage = null;
                 currentBubbleTextStyle = {
@@ -4852,7 +4852,7 @@ ${memoryText}
                 return;
             }
 
-            testResultDiv.innerHTML = '<span class="loading-spinner"></span>🔄 测试对话模型中...';
+            testResultDiv.innerHTML = '<span class="loading-spinner"></span>🔄 正在测试对话模型喵...';
             testResultDiv.className = 'test-result info';
             testConnectionBtn.disabled = true;
 
@@ -4891,7 +4891,7 @@ ${memoryText}
             }
 
             fetchModelsBtn.disabled = true;
-            fetchModelsBtn.innerHTML = '<span class="loading-spinner"></span> 获取中...';
+            fetchModelsBtn.innerHTML = '<span class="loading-spinner"></span> 获取中喵...';
 
             try {
                 // 构建模型列表 API 地址（去掉 /chat/completions 后缀）
@@ -4914,7 +4914,7 @@ ${memoryText}
                         testResultDiv.className = 'test-result warning';
                     } else {
                         // 填充下拉选择框
-                        modelSelect.innerHTML = '<option value="">-- 请选择模型 --</option>';
+                        modelSelect.innerHTML = '<option value="">-- 请主人选择模型喵 --</option>';
                         models.forEach(model => {
                             const option = document.createElement('option');
                             option.value = model.id;
@@ -4965,7 +4965,7 @@ ${memoryText}
                 return;
             }
 
-            testMemoryResultDiv.innerHTML = '<span class="loading-spinner"></span>🔄 测试长期记忆模型中...';
+            testMemoryResultDiv.innerHTML = '<span class="loading-spinner"></span>🔄 正在测试长期记忆模型喵...';
             testMemoryResultDiv.className = 'test-result info';
             testMemoryBtn.disabled = true;
 
@@ -5072,7 +5072,7 @@ ${memoryText}
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            showToast('配置已导出', 'ri-download-line');
+            showToast('配置导出好了喵~', 'ri-download-line');
         });
 
 
@@ -5140,7 +5140,7 @@ ${memoryText}
             URL.revokeObjectURL(url);
 
             if (!silent) {
-                showToast('完整数据已导出', 'ri-download-line');
+                showToast('完整数据导出成功喵~', 'ri-download-line');
             }
         }
 
@@ -5211,14 +5211,14 @@ ${memoryText}
                     }
 
                     const itemCount = Object.keys(fullData).length - 2;
-                    showToast(`完整数据已导入，共 ${itemCount} 项`, 'ri-upload-line');
+                    showToast(`完整数据导入成功喵，共 ${itemCount} 项`, 'ri-upload-line');
 
 
-                    if (confirm('完整数据已导入成功！是否立即刷新页面以应用所有更改？')) {
+                    if (confirm('完整数据导入成功啦喵！要不要立即刷新页面以应用所有更改呢喵？')) {
                         location.reload();
                     }
                 } catch (error) {
-                    showToast(`导入失败：${error.message}`, "ri-error-warning-line");
+                    showToast(`导入失败了喵：${error.message}`, "ri-error-warning-line");
                     console.error('导入错误:', error);
                 }
             };
@@ -5249,14 +5249,14 @@ ${memoryText}
                     if (config.myUserName) localStorage.setItem('myUserName', config.myUserName);
                     if (config.isMobileView) localStorage.setItem('isMobileView', config.isMobileView);
 
-                    showToast(`配置已导入，共 ${Object.keys(config).length - 2} 项`, 'ri-upload-line');
+                    showToast(`配置导入好了喵，共 ${Object.keys(config).length - 2} 项`, 'ri-upload-line');
 
 
-                    if (confirm('配置已导入成功！是否立即刷新页面以应用新配置？')) {
+                    if (confirm('配置导入成功啦喵！要不要立即刷新页面以应用新配置呢喵？')) {
                         location.reload();
                     }
                 } catch (error) {
-                    showToast(`导入失败：${error.message}`, "ri-error-warning-line");
+                    showToast(`导入失败了喵：${error.message}`, "ri-error-warning-line");
                     console.error('导入错误:', error);
                 }
             };
