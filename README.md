@@ -1,3 +1,5 @@
+————重要：因为神秘原因，本仓库已多月未更新！以后也可能不更新，请去主站游玩！ https://mysw-yg.pages.dev ————
+
 使用本仓库内置角色提示词请标明出处谢谢喵
 
 如果你拿去做有赞助链接（或者你的项目有交流群，群里有赞助链接），然后提示词出处也不标
@@ -9,8 +11,6 @@ My SW - AI 角色聊天
 
 一个沉浸式的 AI 角色扮演聊天应用，专为《崩坏：星穹铁道》等游戏的玩家和二次创作爱好者打造。
 
-https://img.shields.io/badge/PWA-Enabled-5A0FC8?style=flat&logo=pwa
-https://img.shields.io/badge/License-MIT-yellow.svg
 
 项目简介
 
