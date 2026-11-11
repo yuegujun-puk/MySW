@@ -1,0 +1,3807 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MySW 插件市场 - 扩展你的 AI 聊天</title>
+<meta name="description" content="MySW 插件市场：浏览、安装与管理社区插件，为 AI 角色聊天扩展新能力（提示词版本器、小工具等），全部服务于本地运行的 My SW。">
+<link rel="canonical" href="https://mysw-yg.pages.dev/plugin-marketplace.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="My SW">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="MySW 插件市场">
+<meta property="og:description" content="为 AI 聊天扩展新能力：浏览、安装与管理插件的 MySW 插件市场。">
+<meta property="og:image" content="https://bbs-static.miyoushe.com/static/2026/08/11/8ca0cb781565d2bb8350054bc8c57191_5612658286973808923.png?x-oss-process=image/resize,s_630/quality,q_80/auto-orient,0/interlace,1/format,jpg">
+<meta property="og:image:width" content="630">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://mysw-yg.pages.dev/plugin-marketplace.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://bbs-static.miyoushe.com/static/2026/08/11/8ca0cb781565d2bb8350054bc8c57191_5612658286973808923.png?x-oss-process=image/resize,s_630/quality,q_80/auto-orient,0/interlace,1/format,jpg">
+<script type="application/ld+json">
+[{"@context":"https://schema.org","@type":"WebPage","name":"MySW 插件市场","inLanguage":"zh-CN","url":"https://mysw-yg.pages.dev/plugin-marketplace.html","dateModified":"2026-10-18"}]
+</script>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'">
+<script>
+/* 毛玻璃开关：市场页是独立打开的标签页，必须自己读一次设置，
+   否则主站关了毛玻璃、这里仍旧一片模糊。 */
+(function () {
+    try {
+        var s = JSON.parse(localStorage.getItem('chatSettings') || '{}');
+        if (s.glassEffectEnabled === false) document.documentElement.classList.add('glass-off');
+    } catch (e) { }
+})();
+</script>
+<style>
+/* ============================================================
+   MySW 插件市场
+   ------------------------------------------------------------
+   配色 / 圆角 / 阴影沿用主应用（style.css）的设计变量，
+   保持「深色底 + 金色强调」的统一观感。
+   ============================================================ */
+
+:root {
+    --bg-primary: #1a1c23;
+    --bg-secondary: #262933;
+    --bg-tertiary: #2d303a;
+    --bg-card: #2d303a;
+    --text-primary: #e0e0e0;
+    --text-secondary: #aaa;
+    --text-muted: #888;
+    --accent-gold: #e6c78a;
+    --accent-gold-rgb: 230, 199, 138;
+    --accent-blue: #6fa8ff;
+    --accent-green: #7cd5a4;
+    --border-color: #333;
+    --border-soft: #3d424e;
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, .3);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, .5);
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --font-mono: 'Consolas', Monaco, 'Courier New', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.7;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-image:
+        radial-gradient(circle at 10% -8%, rgba(230, 199, 138, .10), transparent 44%),
+        radial-gradient(circle at 92% 2%, rgba(111, 168, 255, .07), transparent 40%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent-blue); text-decoration: none; transition: color .2s; }
+a:hover { color: var(--accent-gold); }
+
+/* 系统级「减少动效」：关掉装饰性动画/过渡，保留功能可用性 */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ---------------- 顶栏 ---------------- */
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 24px;
+    background: rgba(26, 28, 35, .92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: .2px;
+}
+
+.brand-logo {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, rgba(var(--accent-gold-rgb), .28), rgba(var(--accent-gold-rgb), .06));
+    border: 1px solid rgba(var(--accent-gold-rgb), .45);
+    color: var(--accent-gold);
+    flex-shrink: 0;
+}
+
+.brand-logo svg { width: 18px; height: 18px; }
+
+.brand small {
+    display: block;
+    font-weight: 400;
+    font-size: .72rem;
+    color: var(--text-muted);
+    line-height: 1.2;
+}
+
+.topbar-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.topbar-nav a {
+    color: var(--text-secondary);
+    font-size: .9rem;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    transition: all .2s;
+}
+
+.topbar-nav a:hover {
+    background: rgba(var(--accent-gold-rgb), .12);
+    color: var(--accent-gold);
+}
+
+.topbar-nav a.nav-primary {
+    background: rgba(var(--accent-gold-rgb), .14);
+    color: var(--accent-gold);
+    border: 1px solid rgba(var(--accent-gold-rgb), .35);
+}
+
+/* ---------------- 布局容器 ---------------- */
+.wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+/* ---------------- Hero ---------------- */
+.hero {
+    padding: 60px 0 26px;
+    text-align: center;
+}
+
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    margin-bottom: 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(var(--accent-gold-rgb), .35);
+    background: rgba(var(--accent-gold-rgb), .08);
+    color: var(--accent-gold);
+    font-size: .78rem;
+    letter-spacing: .04em;
+}
+
+.hero h1 {
+    font-size: clamp(1.9rem, 4.4vw, 2.85rem);
+    line-height: 1.28;
+    letter-spacing: -.5px;
+}
+
+.hero h1 .grad {
+    background: linear-gradient(100deg, #f6e4bd, #e6c78a 45%, #c8a25a);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.hero p {
+    max-width: 620px;
+    margin: 16px auto 0;
+    color: var(--text-secondary);
+    font-size: .96rem;
+}
+
+.hero p code {
+    background: rgba(255, 255, 255, .06);
+    padding: 1px 7px;
+    border-radius: 5px;
+    color: var(--accent-gold);
+    font-family: var(--font-mono);
+    font-size: .86em;
+}
+
+.hero-stats {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 26px;
+}
+
+.stat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--border-soft);
+    background: rgba(255, 255, 255, .03);
+    font-size: .84rem;
+    color: var(--text-secondary);
+}
+
+.stat-chip b {
+    color: var(--accent-gold);
+    font-weight: 700;
+}
+
+/* ---------------- 工具条 ---------------- */
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 34px 0 18px;
+}
+
+.search-box {
+    position: relative;
+    flex: 1 1 260px;
+    min-width: 180px;
+    display: flex;
+    align-items: center;
+}
+
+.search-box > svg {
+    position: absolute;
+    left: 13px;
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+    pointer-events: none;
+    transition: color .2s;
+}
+
+.search-box:focus-within > svg { color: var(--accent-gold); }
+
+.search-box input {
+    width: 100%;
+    padding: 11px 40px 11px 38px;
+    border-radius: 999px;
+    border: 1px solid var(--border-soft);
+    background: #20232c;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: .9rem;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.search-box input::placeholder { color: #7d8290; }
+
+/* 隐藏 Safari / Chrome 自带的清除按钮，统一用自己的，样式可控 */
+.search-box input::-webkit-search-cancel-button,
+.search-box input::-webkit-search-decoration { -webkit-appearance: none; display: none; }
+
+.search-box input:focus {
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 0 3px rgba(var(--accent-gold-rgb), .14);
+}
+
+.search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: .95rem;
+    line-height: 1;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: color .15s, background-color .15s;
+}
+
+.search-clear:hover { color: var(--accent-gold); background: rgba(255, 255, 255, .08); }
+.search-clear[hidden] { display: none; }
+
+.filter-count {
+    flex: 0 0 auto;
+    padding: 7px 14px;
+    border-radius: 999px;
+    border: 1px dashed var(--border-soft);
+    font-size: .82rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.filter-count b { color: var(--accent-gold); font-weight: 700; }
+.filter-count[hidden] { display: none; }
+.filter-count.is-empty { color: #f0a878; border-color: rgba(240, 168, 120, .4); }
+
+.section-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 30px 0 16px;
+    font-size: .82rem;
+    letter-spacing: .08em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border-soft), transparent);
+}
+
+/* ---------------- 插件网格 ---------------- */
+.plugin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+    gap: 20px;
+    align-items: start;
+}
+
+.plugin-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-xl);
+    background: linear-gradient(180deg, #2d303a, #262932);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    transition: border-color .22s, transform .22s, box-shadow .22s;
+}
+
+.plugin-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(var(--accent-gold-rgb), .8), transparent);
+    opacity: 0;
+    transition: opacity .25s;
+}
+
+/* 只在有真悬停能力的设备上开 hover 效果：
+   触屏上点击后 hover 会「卡住」不放，卡片一直保持抬起状态，观感很怪。 */
+@media (hover: hover) and (pointer: fine) {
+    .plugin-card:hover {
+        border-color: rgba(var(--accent-gold-rgb), .55);
+        transform: translateY(-3px);
+        box-shadow: 0 18px 38px rgba(0, 0, 0, .45);
+    }
+    .plugin-card:hover::before { opacity: 1; }
+}
+
+.plugin-card:focus-within {
+    border-color: rgba(var(--accent-gold-rgb), .55);
+}
+
+.pc-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.pc-icon {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 auto;
+    border-radius: 13px;
+    display: grid;
+    place-items: center;
+    font-size: 1.4rem;
+    color: var(--accent-gold);
+    background: linear-gradient(135deg, rgba(var(--accent-gold-rgb), .24), rgba(var(--accent-gold-rgb), .05));
+    border: 1px solid rgba(var(--accent-gold-rgb), .38);
+    user-select: none;
+}
+
+.pc-title {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.pc-title h3 {
+    font-size: 1.06rem;
+    line-height: 1.4;
+    color: #f2ede2;
+    word-break: break-word;
+}
+
+.pc-title .pc-id {
+    margin-top: 3px;
+    font-size: .74rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    word-break: break-all;
+}
+
+.pc-desc {
+    font-size: .88rem;
+    color: var(--text-secondary);
+    line-height: 1.72;
+}
+
+.pc-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: .72rem;
+    border: 1px solid #4a4f5d;
+    color: #b9bfcc;
+    white-space: nowrap;
+}
+
+.tag.gold { border-color: rgba(var(--accent-gold-rgb), .5); color: var(--accent-gold); background: rgba(var(--accent-gold-rgb), .08); }
+.tag.blue { border-color: rgba(111, 168, 255, .45); color: #8ecbff; background: rgba(111, 168, 255, .08); }
+.tag.green { border-color: rgba(124, 213, 164, .45); color: #8fe0b6; background: rgba(124, 213, 164, .08); }
+.tag.pink { border-color: rgba(255, 143, 176, .45); color: #ffa8c4; background: rgba(255, 143, 176, .08); }
+.tag.purple { border-color: rgba(184, 156, 232, .45); color: #c7b0f0; background: rgba(184, 156, 232, .08); }
+.tag.orange { border-color: rgba(240, 168, 120, .45); color: #f5c19a; background: rgba(240, 168, 120, .08); }
+
+.pc-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(255, 255, 255, .1);
+    font-size: .78rem;
+    color: var(--text-muted);
+}
+
+.pc-meta span { display: inline-flex; align-items: center; gap: 5px; }
+.pc-meta b { color: #c9cede; font-weight: 600; }
+.pc-meta svg { color: #7d8496; flex-shrink: 0; }
+
+.pc-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* 一键导入：独占一行作为主操作，下载降级成次要按钮。
+   这里必须带 .pc-actions 前缀压过 .btn-primary / .btn-ghost 自带的 flex 值，
+   否则「一键导入」会和「下载」挤在同一行。 */
+.pc-actions .pc-import-btn { flex: 1 1 100%; }
+.pc-actions > .btn-ghost { flex: 1 1 0; }
+.pc-import-btn.busy { opacity: .78; cursor: progress; }
+.pc-spin {
+    display: inline-block; width: 12px; height: 12px;
+    border: 2px solid currentColor; border-right-color: transparent;
+    border-radius: 50%; animation: pc-spin .7s linear infinite;
+}
+@keyframes pc-spin { to { transform: rotate(360deg); } }
+.pc-import-status {
+    margin: 8px 0 0; font-size: .76rem; line-height: 1.7;
+    color: var(--text-secondary); word-break: break-word;
+}
+.pc-import-status.ok { color: #7cd5a4; }
+.pc-import-status.warn { color: #e0a35f; }
+.pc-import-status.info { color: #9aa1b0; }
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    font: inherit;
+    font-size: .88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+    -webkit-appearance: none;
+    appearance: none;
+    text-decoration: none;
+}
+
+.btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+.btn:focus-visible {
+    outline: 2px solid var(--accent-gold);
+    outline-offset: 2px;
+}
+
+.btn-primary {
+    flex: 1 1 auto;
+    background: linear-gradient(135deg, #e6c78a, #cfa95f);
+    color: #241c0d;
+    box-shadow: 0 4px 14px rgba(var(--accent-gold-rgb), .22);
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(var(--accent-gold-rgb), .34);
+    filter: brightness(1.05);
+}
+
+.btn-primary:active { transform: translateY(0); filter: brightness(.98); }
+
+.btn-ghost {
+    flex: 0 0 auto;
+    background: transparent;
+    border-color: #4a4f5d;
+    color: var(--text-secondary);
+}
+
+.btn-ghost:hover {
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+}
+
+.btn-ghost.copied {
+    border-color: #4caf7d;
+    color: #8fe0a8;
+    background: rgba(76, 175, 125, .12);
+}
+
+/* 占位卡片 */
+.plugin-card.placeholder {
+    border-style: dashed;
+    background: rgba(255, 255, 255, .015);
+    box-shadow: none;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 240px;
+    color: var(--text-muted);
+}
+
+.plugin-card.placeholder:hover {
+    transform: none;
+    border-color: var(--border-soft);
+}
+
+.plugin-card.placeholder .ph-icon {
+    font-size: 1.9rem;
+    color: #4b5162;
+    margin-bottom: 10px;
+}
+
+.plugin-card.placeholder p { font-size: .86rem; line-height: 1.7; }
+
+/* 无搜索结果 */
+.no-result {
+    display: none;
+    padding: 46px 20px;
+    text-align: center;
+    color: var(--text-muted);
+    border: 1px dashed var(--border-soft);
+    border-radius: var(--radius-xl);
+    font-size: .9rem;
+}
+
+.no-result.show { display: block; }
+.no-result p { margin-bottom: 14px; }
+
+/* ---------------- 安装说明 ---------------- */
+.guide {
+    margin: 56px 0 20px;
+    padding: 26px 24px;
+    border: 1px solid var(--border-soft);
+    border-left: 4px solid var(--accent-gold);
+    border-radius: var(--radius-xl);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, .012));
+}
+
+.guide h2 {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 1.05rem;
+    color: var(--accent-gold);
+    margin-bottom: 16px;
+}
+
+.step-list {
+    counter-reset: step;
+    list-style: none;
+    display: grid;
+    gap: 10px;
+}
+
+.step-list li {
+    counter-increment: step;
+    position: relative;
+    padding: 12px 14px 12px 52px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: rgba(0, 0, 0, .16);
+    font-size: .88rem;
+    color: var(--text-secondary);
+}
+
+.step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 13px;
+    top: 12px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: rgba(var(--accent-gold-rgb), .18);
+    border: 1px solid rgba(var(--accent-gold-rgb), .5);
+    color: var(--accent-gold);
+    font-size: .8rem;
+    font-weight: 700;
+}
+
+.step-list li b { color: #e8ddc6; }
+
+kbd {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 5px;
+    border: 1px solid #454a57;
+    border-bottom-width: 2px;
+    background: #1f222b;
+    color: var(--accent-gold);
+    font-family: var(--font-mono);
+    font-size: .84em;
+}
+
+/* ---------------- 页脚 ---------------- */
+.footer {
+    margin-top: 50px;
+    padding: 26px 0 40px;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+    font-size: .82rem;
+    color: var(--text-muted);
+}
+
+.footer b { color: var(--accent-gold); font-weight: 600; }
+
+/* ---------------- 代码弹窗 ---------------- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(12, 14, 20, .74);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.modal-overlay.show { display: flex; }
+
+.modal {
+    display: flex;
+    flex-direction: column;
+    width: min(820px, 100%);
+    max-height: 86vh;
+    border: 1px solid #454a57;
+    border-radius: var(--radius-xl);
+    background: linear-gradient(180deg, #2c2f38, #23262d);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .62);
+    overflow: hidden;
+    animation: modalIn .2s ease;
+}
+
+@keyframes modalIn {
+    from { opacity: 0; transform: translateY(10px) scale(.99); }
+    to { opacity: 1; transform: none; }
+}
+
+.modal-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-soft);
+    background: #2c2f38;
+    color: var(--accent-gold);
+    font-size: .95rem;
+    flex-shrink: 0;
+}
+
+.modal-head b { flex: 0 0 auto; }
+
+.modal-head .file-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: var(--font-mono);
+    font-size: .78rem;
+    color: var(--text-muted);
+    font-weight: 400;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.modal-close {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all .18s;
+}
+
+.modal-close:hover { background: rgba(255, 255, 255, .1); color: #fff; }
+.modal-close:focus-visible { outline: 2px solid var(--accent-gold); outline-offset: 2px; }
+
+.modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    padding: 16px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, .18) transparent;
+}
+
+.modal-body::-webkit-scrollbar { width: 8px; height: 8px; }
+.modal-body::-webkit-scrollbar-track { background: transparent; }
+.modal-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, .16);
+    border-radius: 4px;
+}
+.modal-body::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, .26); }
+
+.modal-body pre {
+    margin: 0;
+    padding: 14px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: #16181e;
+    color: #c8cddb;
+    font-family: var(--font-mono);
+    font-size: .78rem;
+    line-height: 1.65;
+    white-space: pre;
+    tab-size: 2;
+}
+
+/* 代码高亮：VSCode Dark+ 风格 */
+.modal-body pre .tok-comment { color: #6a9955; font-style: italic; }
+.modal-body pre .tok-string { color: #ce9178; }
+.modal-body pre .tok-kw { color: #569cd6; }
+.modal-body pre .tok-num { color: #b5cea8; }
+.modal-body pre .tok-builtin { color: #4ec9b0; }
+
+.modal-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-soft);
+    background: #262932;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+/* ---------------- Toast ---------------- */
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 11px 20px;
+    border: 1px solid var(--accent-gold);
+    border-radius: 12px;
+    background: #2d303a;
+    color: var(--text-primary);
+    font-size: .88rem;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .55);
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, 22px);
+    transition: opacity .25s ease, transform .25s ease, visibility 0s linear .25s;
+    max-width: calc(100vw - 32px);
+    word-break: break-word;
+}
+
+.toast.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0);
+    transition: opacity .25s ease, transform .25s ease;
+}
+
+.toast svg { width: 16px; height: 16px; color: var(--accent-gold); flex-shrink: 0; }
+
+/* ---------------- 响应式 ---------------- */
+@media (max-width: 720px) {
+    .topbar { padding: 10px 16px; }
+    .topbar-nav { display: none; }
+    .wrap { padding: 0 16px; }
+    .hero { padding: 40px 0 18px; }
+    .plugin-grid { grid-template-columns: 1fr; }
+    .guide { padding: 20px 16px; }
+    .modal-overlay { padding: 12px; }
+    .modal { max-height: 90vh; }
+    .modal-body pre { font-size: .72rem; }
+    .filter-count { flex: 1 1 auto; text-align: center; }
+}
+
+@media (max-width: 420px) {
+    .pc-actions .btn { flex: 1 1 100%; }
+    .stat-chip { font-size: .8rem; padding: 7px 13px; }
+}
+
+/* ============================================================
+   毛玻璃开关（html.glass-off）
+   ------------------------------------------------------------
+   本页有 7 处 backdrop-filter（顶栏、卡片、搜索框等）。关掉毛玻璃时
+   全部清掉，并把半透明的卡片底色改成不透明，避免"模糊没了但后面
+   还是透出来一片"。
+   ============================================================ */
+html.glass-off,
+html.glass-off *,
+html.glass-off *::before,
+html.glass-off *::after {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+html.glass-off .mp-header,
+html.glass-off .mp-card,
+html.glass-off .mp-search,
+html.glass-off .mp-toolbar {
+    background: #1d1f27 !important;
+}
+</style>
+<script src="i18n.js"></script><script src="ad-lab.js" defer></script>
+</head>
+<body>
+
+<!-- ============ 顶栏 ============ -->
+<header class="topbar">
+    <div class="brand">
+        <span class="brand-logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                <path d="m3.3 7 8.7 5 8.7-5"/>
+                <path d="M12 22V12"/>
+            </svg>
+        </span>
+        <span>
+            MySW 插件市场
+            <small>Plugin Marketplace</small>
+        </span>
+    </div>
+    <nav class="topbar-nav">
+        <a href="#plugins">插件库</a>
+        <a href="#install">安装说明</a>
+        <a href="#plugins" class="nav-primary">浏览插件</a>
+    </nav>
+</header>
+
+<main class="wrap">
+
+    <!-- ============ Hero ============ -->
+    <section class="hero">
+        <span class="hero-badge">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M12 2 9.2 8.6 2 9.3l5.5 4.8L5.9 21 12 17.3 18.1 21l-1.6-6.9L22 9.3l-7.2-.7z"/></svg>
+            官方插件源
+        </span>
+        <h1>给 MySW 装上<span class="grad">更多可能</span></h1>
+        <p>这里收录经过验证的 MySW 扩展插件。<strong>主站开着时点「一键导入」就能直接装进去</strong>，也可以下载 <code>.js</code> 文件后从「设置 → 插件」导入，无需额外配置。</p>
+
+        <div class="hero-stats">
+            <span class="stat-chip">插件总数 <b id="stat-total">11</b></span>
+            <span class="stat-chip">下载格式 <b>.js</b></span>
+            <span class="stat-chip">全部免费 <b>¥0</b></span>
+        </div>
+    </section>
+
+    <!-- ============ 工具条 ============ -->
+    <div class="toolbar">
+        <label class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/>
+            </svg>
+            <input type="search" id="plugin-search" placeholder="搜索插件名称、描述或 ID…" autocomplete="off" spellcheck="false" aria-label="搜索插件">
+            <button type="button" class="search-clear" id="search-clear" hidden aria-label="清除搜索">✕</button>
+        </label>
+        <span class="filter-count" id="filter-count" hidden aria-live="polite"></span>
+    </div>
+
+    <div class="section-label">全部插件</div>
+
+    <!-- ============ 插件网格 ============ -->
+    <section class="plugin-grid" id="plugins">
+
+        <!-- ① 提示词版本查看器 -->
+        <article class="plugin-card"
+                 data-name="提示词版本查看器"
+                 data-id="mysw-prompt-viewer"
+                 data-desc="在界面右下角显示一个悬浮按钮，点击可随时查看当前角色的提示词及不同版本"
+                 data-source="src-prompt-viewer"
+                 data-file="mysw-prompt-viewer.js"
+                 data-version="v1.0.0">
+            <div class="pc-head">
+                <div class="pc-icon" aria-hidden="true">📝</div>
+                <div class="pc-title">
+                    <h3>提示词版本查看器</h3>
+                    <div class="pc-id">mysw-prompt-viewer</div>
+                </div>
+            </div>
+
+            <div class="pc-tags">
+                <span class="tag gold">官方</span>
+                <span class="tag green">免费</span>
+                <span class="tag blue">工具</span>
+            </div>
+
+            <p class="pc-desc">
+                在界面右下角显示一个悬浮按钮，点击即可随时查看当前角色的提示词内容与全部历史版本，
+                支持一键切换预览、复制当前版本，并实时捕获最近发送给 AI 的系统提示词。
+            </p>
+
+            <div class="pc-meta">
+                <span>
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                    <b data-role="size">—</b>
+                </span>
+                <span>
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                    <b data-role="version">v1.0.0</b>
+                </span>
+                <span>
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/></svg>
+                    权限 <b>useDom</b>
+                </span>
+            </div>
+
+            <div class="pc-actions">
+                <button class="btn btn-primary" data-action="download" aria-label="下载 提示词版本查看器 插件">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>
+                    </svg>
+                    下载 .js
+                </button>
+                <button class="btn btn-ghost" data-action="view" aria-label="查看 提示词版本查看器 源码">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="m9 8-5 4 5 4"/><path d="m15 8 5 4-5 4"/>
+                    </svg>
+                    查看代码
+                </button>
+            </div>
+        </article>
+
+        <!-- ② 好友名字加喵 -->
+        <article class="plugin-card"
+                 data-name="好友名字加喵"
+                 data-id="friend-name-meow"
+                 data-desc="开启后会把好友列表里每个人的名字后面加上喵"
+                 data-source="src-friend-meow"
+                 data-file="friend-name-meow.js"
+                 data-version="v1.0.0">
+            <div class="pc-head">
+                <div class="pc-icon" aria-hidden="true">🐱</div>
+                <div class="pc-title">
+                    <h3>好友名字加喵</h3>
+                    <div class="pc-id">friend-name-meow</div>
+                </div>
+            </div>
+
+            <div class="pc-tags">
+                <span class="tag gold">官方</span>
+                <span class="tag green">免费</span>
+                <span class="tag pink">趣味</span>
+            </div>
+
+            <p class="pc-desc">
+                开启后会把好友列表里每个人的名字后面自动加上「喵」。插件会记住原始名字并监听列表变化，
+                新加入的好友也会同步生效；关闭插件时自动还原，不会污染任何数据。
+            </p>
+
+            <div class="pc-meta">
+                <span>
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                    <b data-role="size">—</b>
+                </span>
+                <span>
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                    <b data-role="version">v1.0.0</b>
+                </span>
+                <span>
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/></svg>
+                    权限 <b>useDom</b>
+                </span>
+            </div>
+
+            <div class="pc-actions">
+                <button class="btn btn-primary" data-action="download" aria-label="下载 好友名字加喵 插件">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>
+                    </svg>
+                    下载 .js
+                </button>
+                <button class="btn btn-ghost" data-action="view" aria-label="查看 好友名字加喵 源码">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="m9 8-5 4 5 4"/><path d="m15 8 5 4-5 4"/>
+                    </svg>
+                    查看代码
+                </button>
+            </div>
+        </article>
+
+        <!-- ③ 虚假记忆 -->
+        <article class="plugin-card"
+                 data-name="虚假记忆"
+                 data-id="fake-memory"
+                 data-desc="向发给模型的提示词注入一段用户可自行编辑、实际并不存在的记忆"
+                 data-source="src-fake-memory"
+                 data-file="fake-memory.js"
+                 data-version="v1.0.0">
+            <div class="pc-head">
+                <div class="pc-icon" aria-hidden="true">🧠</div>
+                <div class="pc-title">
+                    <h3>虚假记忆</h3>
+                    <div class="pc-id">fake-memory</div>
+                </div>
+            </div>
+
+            <div class="pc-tags">
+                <span class="tag gold">官方</span>
+                <span class="tag green">免费</span>
+                <span class="tag purple">设定注入</span>
+            </div>
+
+            <p class="pc-desc">
+                向发给模型的提示词注入一段用户可自行编辑、实际并不存在的记忆。角色会把它当作真实经历来回应，
+                适合用来制造「本来不该记得的往事」这类剧情。注入内容可在插件设置里随时修改。
+            </p>
+
+            <div class="pc-meta">
+                <span>
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                    <b data-role="size">—</b>
+                </span>
+                <span>
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                    <b data-role="version">v1.0.0</b>
+                </span>
+                <span>
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/></svg>
+                    权限 <b>无（仅改提示词）</b>
+                </span>
+            </div>
+
+            <div class="pc-actions">
+                <button class="btn btn-primary" data-action="download" aria-label="下载 虚假记忆 插件">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>
+                    </svg>
+                    下载 .js
+                </button>
+                <button class="btn btn-ghost" data-action="view" aria-label="查看 虚假记忆 源码">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="m9 8-5 4 5 4"/><path d="m15 8 5 4-5 4"/>
+                    </svg>
+                    查看代码
+                </button>
+            </div>
+        </article>
+
+        <!-- ④ AI 角色性转 -->
+        <article class="plugin-card"
+                 data-name="AI 角色性转"
+                 data-id="ai-gender-swap"
+                 data-desc="强制将 AI 角色进行性别反转，并以性转后的设定与你对话"
+                 data-source="src-gender-swap"
+                 data-file="ai-gender-swap.js"
+                 data-version="v1.0.0">
+            <div class="pc-head">
+                <div class="pc-icon" aria-hidden="true">⚧</div>
+                <div class="pc-title">
+                    <h3>AI 角色性转</h3>
+                    <div class="pc-id">ai-gender-swap</div>
+                </div>
+            </div>
+
+            <div class="pc-tags">
+                <span class="tag gold">官方</span>
+                <span class="tag green">免费</span>
+                <span class="tag purple">设定注入</span>
+            </div>
+
+            <p class="pc-desc">
+                强制将 AI 角色进行性别反转（例如男变女、女变男），并以性转后的新性别、语气、心理状态和外貌特征
+                与你对话。引导词可在插件设置里自行编辑，用来微调性转后的演绎方向。
+            </p>
+
+            <div class="pc-meta">
+                <span>
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                    <b data-role="size">—</b>
+                </span>
+                <span>
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                    <b data-role="version">v1.0.0</b>
+                </span>
+                <span>
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/></svg>
+                    权限 <b>无（仅改提示词）</b>
+                </span>
+            </div>
+
+            <div class="pc-actions">
+                <button class="btn btn-primary" data-action="download" aria-label="下载 AI 角色性转 插件">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>
+                    </svg>
+                    下载 .js
+                </button>
+                <button class="btn btn-ghost" data-action="view" aria-label="查看 AI 角色性转 源码">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="m9 8-5 4 5 4"/><path d="m15 8 5 4-5 4"/>
+                    </svg>
+                    查看代码
+                </button>
+            </div>
+        </article>
+
+        <!-- ⑤ 和AI玩跳一跳 -->
+        <article class="plugin-card"
+                 data-name="和AI玩跳一跳"
+                 data-id="ai-tiao-yi-tiao"
+                 data-desc="打开一局简易跳一跳，可自己蓄力，也可让 AI 决定跳多远"
+                 data-source="src-tiao-yi-tiao"
+                 data-file="ai-tiao-yi-tiao.js"
+                 data-version="v1.0.0">
+            <div class="pc-head">
+                <div class="pc-icon" aria-hidden="true">🕹️</div>
+                <div class="pc-title">
+                    <h3>和AI玩跳一跳</h3>
+                    <div class="pc-id">ai-tiao-yi-tiao</div>
+                </div>
+            </div>
+
+            <div class="pc-tags">
+                <span class="tag gold">官方</span>
+                <span class="tag green">免费</span>
+                <span class="tag orange">游戏</span>
+            </div>
+
+            <p class="pc-desc">
+                在界面里打开一局简易跳一跳：按住蓄力、松手起跳，可以纯手动玩；
+                也可以把这一跳交给 AI，由它根据到下一平台的距离决定蓄力大小。
+                支持勾选「成功后和 AI 轮流」，让两边交替跳。
+            </p>
+
+            <div class="pc-meta">
+                <span>
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                    <b data-role="size">—</b>
+                </span>
+                <span>
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                    <b data-role="version">v1.0.0</b>
+                </span>
+                <span>
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/></svg>
+                    权限 <b>useDom · useApi</b>
+                </span>
+            </div>
+
+            <div class="pc-actions">
+                <button class="btn btn-primary" data-action="download" aria-label="下载 和AI玩跳一跳 插件">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>
+                    </svg>
+                    下载 .js
+                </button>
+                <button class="btn btn-ghost" data-action="view" aria-label="查看 和AI玩跳一跳 源码">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="m9 8-5 4 5 4"/><path d="m15 8 5 4-5 4"/>
+                    </svg>
+                    查看代码
+                </button>
+            </div>
+        </article>
+
+        <!-- ⑥ 角色一致性守卫 -->
+        <article class="plugin-card"
+                 data-name="角色一致性守卫"
+                 data-id="mysw-role-guard"
+                 data-desc="在提示词尾部追加陪聊规则，防止 AI 代替你说话、替你行动、擅自跳时间或总结剧情，规则可自行编辑"
+                 data-source="src-role-guard"
+                 data-file="mysw-role-guard.js"
+                 data-version="v1.0.0">
+            <div class="pc-head">
+                <div class="pc-icon" aria-hidden="true">🛡️</div>
+                <div class="pc-title">
+                    <h3>角色一致性守卫</h3>
+                    <div class="pc-id">mysw-role-guard</div>
+                </div>
+            </div>
+            <div class="pc-tags">
+                <span class="tag gold">官方</span>
+                <span class="tag green">免费</span>
+                <span class="tag blue">对话质量</span>
+            </div>
+            <p class="pc-desc">
+                最伤沉浸感的几件事它都拦住了：替你说话、替你行动、替你决定、一句话跳过半天、在末尾写剧情总结。
+                规则是一条一行，默认给了一组稳妥的组合，可以随时删改或加自己的规矩。
+            </p>
+            <div class="pc-meta">
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><b data-role="size">—</b></span>
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><b data-role="version">v1.0.0</b></span>
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/></svg>权限 <b>无（只改提示词）</b></span>
+            </div>
+            <div class="pc-actions">
+                <button class="btn btn-primary" data-action="download" aria-label="下载 角色一致性守卫 插件">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                    下载 .js
+                </button>
+                <button class="btn btn-ghost" data-action="view" aria-label="查看 角色一致性守卫 源码">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 8-5 4 5 4"/><path d="m15 8 5 4-5 4"/></svg>
+                    查看代码
+                </button>
+            </div>
+        </article>
+
+        <!-- ⑦ 去 AI 味 -->
+        <article class="plugin-card"
+                 data-name="去 AI 味"
+                 data-id="mysw-human-voice"
+                 data-desc="在提示词里加一份口语化禁令，去掉首先其次最后、客服腔、排比句和句末总结，让回复更像真人"
+                 data-source="src-human-voice"
+                 data-file="mysw-human-voice.js"
+                 data-version="v1.0.0">
+            <div class="pc-head">
+                <div class="pc-icon" aria-hidden="true">🗣️</div>
+                <div class="pc-title">
+                    <h3>去 AI 味</h3>
+                    <div class="pc-id">mysw-human-voice</div>
+                </div>
+            </div>
+            <div class="pc-tags">
+                <span class="tag gold">官方</span>
+                <span class="tag green">免费</span>
+                <span class="tag blue">对话质量</span>
+            </div>
+            <p class="pc-desc">
+                专门治「首先…其次…最后」「总的来说」「作为一个 AI」「不是…而是…」这类一眼假的句式。
+                三档强度可选，还能单独禁掉 emoji，适合写实向的角色。
+            </p>
+            <div class="pc-meta">
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><b data-role="size">—</b></span>
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><b data-role="version">v1.0.0</b></span>
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/></svg>权限 <b>无（只改提示词）</b></span>
+            </div>
+            <div class="pc-actions">
+                <button class="btn btn-primary" data-action="download" aria-label="下载 去 AI 味 插件">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                    下载 .js
+                </button>
+                <button class="btn btn-ghost" data-action="view" aria-label="查看 去 AI 味 源码">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 8-5 4 5 4"/><path d="m15 8 5 4-5 4"/></svg>
+                    查看代码
+                </button>
+            </div>
+        </article>
+
+        <!-- ⑧ 提示词体检 -->
+        <article class="plugin-card"
+                 data-name="提示词体检"
+                 data-id="mysw-prompt-meter"
+                 data-desc="左下角实时显示当前系统提示词的字数、估算 Token 与每轮成本，点击还能复制完整提示词"
+                 data-source="src-prompt-meter"
+                 data-file="mysw-prompt-meter.js"
+                 data-version="v1.0.0">
+            <div class="pc-head">
+                <div class="pc-icon" aria-hidden="true">📊</div>
+                <div class="pc-title">
+                    <h3>提示词体检</h3>
+                    <div class="pc-id">mysw-prompt-meter</div>
+                </div>
+            </div>
+            <div class="pc-tags">
+                <span class="tag gold">官方</span>
+                <span class="tag green">免费</span>
+                <span class="tag blue">省钱</span>
+            </div>
+            <p class="pc-desc">
+                角色卡写得越长，每一轮越贵、模型也越容易忘事。它把当前真正发送出去的提示词量摆在明面上：
+                字数、估算 Token、按你填的单价算出的每轮输入成本，点击可展开明细并复制原文。
+            </p>
+            <div class="pc-meta">
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><b data-role="size">—</b></span>
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><b data-role="version">v1.0.0</b></span>
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/></svg>权限 <b>useDom</b></span>
+            </div>
+            <div class="pc-actions">
+                <button class="btn btn-primary" data-action="download" aria-label="下载 提示词体检 插件">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                    下载 .js
+                </button>
+                <button class="btn btn-ghost" data-action="view" aria-label="查看 提示词体检 源码">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 8-5 4 5 4"/><path d="m15 8 5 4-5 4"/></svg>
+                    查看代码
+                </button>
+            </div>
+        </article>
+
+        <!-- ⑨ 设定速记本 -->
+        <article class="plugin-card"
+                 data-name="设定速记本"
+                 data-id="mysw-memo-book"
+                 data-desc="随手记下临时设定（怕黑、左撇子、正在下雨），每轮自动注入提示词，不必再去改角色卡"
+                 data-source="src-memo-book"
+                 data-file="mysw-memo-book.js"
+                 data-version="v1.0.0">
+            <div class="pc-head">
+                <div class="pc-icon" aria-hidden="true">📌</div>
+                <div class="pc-title">
+                    <h3>设定速记本</h3>
+                    <div class="pc-id">mysw-memo-book</div>
+                </div>
+            </div>
+            <div class="pc-tags">
+                <span class="tag gold">官方</span>
+                <span class="tag green">免费</span>
+                <span class="tag blue">记忆</span>
+            </div>
+            <p class="pc-desc">
+                写着写着突然想到「她其实怕黑」，直接记进速记本，下一轮就生效，不用中断对话去改角色卡。
+                条目存在本机、可随时勾掉或清空，只注入最近开启的若干条，不会把提示词撑爆。
+            </p>
+            <div class="pc-meta">
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><b data-role="size">—</b></span>
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><b data-role="version">v1.0.0</b></span>
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/></svg>权限 <b>useDom</b></span>
+            </div>
+            <div class="pc-actions">
+                <button class="btn btn-primary" data-action="download" aria-label="下载 设定速记本 插件">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                    下载 .js
+                </button>
+                <button class="btn btn-ghost" data-action="view" aria-label="查看 设定速记本 源码">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 8-5 4 5 4"/><path d="m15 8 5 4-5 4"/></svg>
+                    查看代码
+                </button>
+            </div>
+        </article>
+
+        <!-- ⑩ 回复长度限幅 -->
+        <article class="plugin-card"
+                 data-name="回复长度限幅"
+                 data-id="mysw-length-guard"
+                 data-desc="把每轮回复控制在指定字数区间，治长篇大论与一句话敷衍，可设置是否允许分段"
+                 data-source="src-length-guard"
+                 data-file="mysw-length-guard.js"
+                 data-version="v1.0.0">
+            <div class="pc-head">
+                <div class="pc-icon" aria-hidden="true">📏</div>
+                <div class="pc-title">
+                    <h3>回复长度限幅</h3>
+                    <div class="pc-id">mysw-length-guard</div>
+                </div>
+            </div>
+            <div class="pc-tags">
+                <span class="tag gold">官方</span>
+                <span class="tag green">免费</span>
+                <span class="tag blue">对话质量</span>
+            </div>
+            <p class="pc-desc">
+                想让它多说一点，或者别再一口气写三千字？填个区间就行。和聊天设置里的「最大 Token」不同，
+                它约束的是最终成文的中文字数，更贴近你真正想要的手感。
+            </p>
+            <div class="pc-meta">
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><b data-role="size">—</b></span>
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><b data-role="version">v1.0.0</b></span>
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/></svg>权限 <b>无（只改提示词）</b></span>
+            </div>
+            <div class="pc-actions">
+                <button class="btn btn-primary" data-action="download" aria-label="下载 回复长度限幅 插件">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                    下载 .js
+                </button>
+                <button class="btn btn-ghost" data-action="view" aria-label="查看 回复长度限幅 源码">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 8-5 4 5 4"/><path d="m15 8 5 4-5 4"/></svg>
+                    查看代码
+                </button>
+            </div>
+        </article>
+
+        <!-- ⑪ 快捷短语板 -->
+        <article class="plugin-card"
+                 data-name="快捷短语板"
+                 data-id="mysw-quick-phrases"
+                 data-desc="右下角挂一个短语按钮，点一下就把常用句子填进输入框，适合开场白、口头禅与指令"
+                 data-source="src-quick-phrases"
+                 data-file="mysw-quick-phrases.js"
+                 data-version="v1.0.0">
+            <div class="pc-head">
+                <div class="pc-icon" aria-hidden="true">💬</div>
+                <div class="pc-title">
+                    <h3>快捷短语板</h3>
+                    <div class="pc-id">mysw-quick-phrases</div>
+                </div>
+            </div>
+            <div class="pc-tags">
+                <span class="tag gold">官方</span>
+                <span class="tag green">免费</span>
+                <span class="tag pink">效率</span>
+            </div>
+            <p class="pc-desc">
+                总在重复打同样几句？把它们存成短语，点一下就进输入框，光标自动落到末尾，按回车就能发。
+                短语一行一条，支持「标题|正文」的写法。
+            </p>
+            <div class="pc-meta">
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><b data-role="size">—</b></span>
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><b data-role="version">v1.0.0</b></span>
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/></svg>权限 <b>useDom</b></span>
+            </div>
+            <div class="pc-actions">
+                <button class="btn btn-primary" data-action="download" aria-label="下载 快捷短语板 插件">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                    下载 .js
+                </button>
+                <button class="btn btn-ghost" data-action="view" aria-label="查看 快捷短语板 源码">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 8-5 4 5 4"/><path d="m15 8 5 4-5 4"/></svg>
+                    查看代码
+                </button>
+            </div>
+        </article>
+
+        <!-- 占位 -->
+        <article class="plugin-card placeholder" data-placeholder>
+            <div>
+                <div class="ph-icon" aria-hidden="true">＋</div>
+                <p>更多插件正在开发中<br>敬请期待</p>
+            </div>
+        </article>
+    </section>
+
+    <div class="no-result" id="no-result">
+        <p id="no-result-text">没有找到匹配的插件，换个关键词试试。</p>
+        <button type="button" class="btn btn-ghost" id="clear-search">清除搜索</button>
+    </div>
+
+    <!-- ============ 安装说明 ============ -->
+    <section class="guide" id="install">
+        <h2>
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9"/><path d="M12 16v-5"/><path d="M12 8h.01"/>
+            </svg>
+            如何安装
+        </h2>
+        <ol class="step-list">
+            <li><b>一键导入（推荐）</b>：先把 MySW 主站开在任意标签页，回到这里点卡片上的 <b>一键导入</b>。主站会弹出确认框，核对插件名与权限后点「导入」，插件就直接装好了 —— 不用下载、不用找文件。</li>
+            <li>主站会立刻回执，本页会显示「已发送到主站，请切到主站标签页确认」。确认框里能看到来源、插件标识和它要的权限。</li>
+            <li>主站没开或换了浏览器：本页会在 1.6 秒后自动改为下载 <kbd>.js</kbd>，之后按老办法装：<b>设置 → 插件 → 导入插件</b>，选择该文件。</li>
+            <li>无论走哪条路，插件导入后都是<b>未启用</b>状态，打开右侧开关才生效。</li>
+            <li>带参数的插件（虚假记忆 / AI 角色性转 / 和AI玩跳一跳 / 角色一致性守卫 / 去AI味 / 提示词体检 / 设定速记本 / 回复长度限幅 / 快捷短语板）可在插件设置里调整参数。</li>
+            <li>「和AI玩跳一跳」需要 <b>useApi</b> 权限才能让 AI 帮你跳，关掉它仍可手动玩；「提示词体检」「设定速记本」「快捷短语板」需要 <b>useDom</b> 权限才能挂悬浮按钮。</li>
+            <li>只改提示词的三个插件（角色一致性守卫 / 去AI味 / 回复长度限幅）<b>不需要任何权限</b>，装上打开开关就生效。</li>
+        </ol>
+    </section>
+
+</main>
+
+<!-- ============ 页脚 ============ -->
+<footer class="footer">
+    <div class="wrap">
+        <b>MySW 插件市场</b> · 所有插件均在本地运行，不会上传你的对话数据。
+    </div>
+</footer>
+
+<!-- ============ 代码弹窗 ============ -->
+<div class="modal-overlay" id="code-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal" role="document">
+        <div class="modal-head">
+            <b id="modal-title">插件源码</b>
+            <span class="file-name" id="modal-file-name">—</span>
+            <button class="modal-close" id="modal-close" type="button" aria-label="关闭">✕</button>
+        </div>
+        <div class="modal-body">
+            <pre id="code-block" tabindex="0"></pre>
+        </div>
+        <div class="modal-foot">
+            <button class="btn btn-ghost" id="copy-code" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>
+                </svg>
+                <span id="copy-label">复制代码</span>
+            </button>
+            <button class="btn btn-primary" id="download-modal" type="button" style="flex:0 0 auto;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>
+                </svg>
+                下载 .js
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============ Toast ============ -->
+<div class="toast" id="toast" role="status" aria-live="polite">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 6 9 17l-5-5"/>
+    </svg>
+    <span id="toast-text">已完成</span>
+</div>
+
+
+<!-- ============================================================
+     插件源码本体
+     用 type="text/plain" 存放，浏览器不会执行它，
+     JS 通过 textContent 读取后生成 Blob 供下载。
+     ============================================================ -->
+
+<!-- ① 提示词版本查看器 -->
+<script type="text/plain" id="src-prompt-viewer">MySWPlugins.register({
+  id: "mysw-prompt-viewer",
+  name: "提示词版本查看器",
+  description: "在界面右下角显示一个悬浮按钮，点击可随时查看当前角色的提示词及不同版本",
+  enabled: false,
+  permissions: ["useDom"],
+
+  transformPrompt(text, params) {
+    this._lastCapturedPrompt = text;
+    return text;
+  },
+
+  activate(params, plugin, ctx) {
+    if (!ctx.dom.available) return;
+
+    this._lastCapturedPrompt = this._lastCapturedPrompt || "";
+
+    // 创建悬浮按钮
+    const btn = document.createElement('button');
+    btn.id = 'mysw-prompt-viewer-btn';
+    btn.innerHTML = '📝 提示词';
+    Object.assign(btn.style, {
+      position: 'fixed',
+      bottom: '85px',
+      right: '20px',
+      zIndex: '9999',
+      padding: '8px 14px',
+      backgroundColor: '#4F46E5',
+      color: '#FFF',
+      border: 'none',
+      borderRadius: '20px',
+      cursor: 'pointer',
+      boxShadow: '0 4px 12px rgba(79, 70, 229, 0.4)',
+      fontSize: '13px',
+      fontWeight: '600',
+      transition: 'all 0.2s ease',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '4px'
+    });
+
+    btn.onmouseover = () => {
+      btn.style.transform = 'translateY(-2px)';
+      btn.style.boxShadow = '0 6px 16px rgba(79, 70, 229, 0.5)';
+    };
+    btn.onmouseout = () => {
+      btn.style.transform = 'translateY(0)';
+      btn.style.boxShadow = '0 4px 12px rgba(79, 70, 229, 0.4)';
+    };
+
+    // 创建模态框
+    const modal = document.createElement('div');
+    modal.id = 'mysw-prompt-viewer-modal';
+    Object.assign(modal.style, {
+      position: 'fixed',
+      top: '0',
+      left: '0',
+      width: '100vw',
+      height: '100vh',
+      backgroundColor: 'rgba(15, 23, 42, 0.6)',
+      backdropFilter: 'blur(4px)',
+      zIndex: '10000',
+      display: 'none',
+      justifyContent: 'center',
+      alignItems: 'center',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    });
+
+    const modalContent = document.createElement('div');
+    Object.assign(modalContent.style, {
+      backgroundColor: '#FFFFFF',
+      color: '#1E293B',
+      width: '90%',
+      maxWidth: '650px',
+      maxHeight: '85vh',
+      borderRadius: '16px',
+      padding: '24px',
+      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'relative',
+      border: '1px solid #E2E8F0'
+    });
+
+    // 关闭按钮
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '✕';
+    Object.assign(closeBtn.style, {
+      position: 'absolute',
+      top: '20px',
+      right: '20px',
+      border: 'none',
+      background: 'none',
+      fontSize: '20px',
+      cursor: 'pointer',
+      color: '#64748B',
+      transition: 'color 0.2s'
+    });
+    closeBtn.onmouseover = () => closeBtn.style.color = '#0F172A';
+    closeBtn.onmouseout = () => closeBtn.style.color = '#64748B';
+    closeBtn.onclick = () => modal.style.display = 'none';
+
+    // 标题
+    const title = document.createElement('h3');
+    title.innerText = '当前角色提示词查看';
+    Object.assign(title.style, {
+      margin: '0 0 20px 0',
+      fontSize: '18px',
+      fontWeight: '700',
+      color: '#0F172A',
+      borderBottom: '1px solid #F1F5F9',
+      paddingBottom: '12px'
+    });
+
+    // 内容容器
+    const body = document.createElement('div');
+    Object.assign(body.style, {
+      flex: '1',
+      overflowY: 'auto',
+      fontSize: '14px',
+      lineHeight: '1.6'
+    });
+
+    modalContent.appendChild(closeBtn);
+    modalContent.appendChild(title);
+    modalContent.appendChild(body);
+    modal.appendChild(modalContent);
+
+    // 挂载到 DOM
+    ctx.dom.mount(btn, document.body);
+    ctx.dom.mount(modal, document.body);
+
+    this._btn = btn;
+    this._modal = modal;
+
+    // 点击事件
+    btn.onclick = () => {
+      modal.style.display = 'flex';
+      body.innerHTML = '<div style="text-align:center;color:#64748B;padding:20px;">正在读取提示词数据...</div>';
+
+      const char = this._findCharacter();
+      body.innerHTML = '';
+
+      if (!char && !this._lastCapturedPrompt) {
+        body.innerHTML = '<div style="color:#EF4444;text-align:center;padding:20px;font-weight:500;">未检测到当前角色的提示词。请尝试发送一条消息，或打开角色设置页面以初始化数据。</div>';
+        return;
+      }
+
+      if (char) {
+        // 显示角色名
+        // 安全：角色名可能来自本机角色数据（可被导入文件写入），先转义再拼 innerHTML
+        const charName = String(char.name || '未命名角色').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const nameEl = document.createElement('div');
+        nameEl.innerHTML = `<span style="color:#64748B;font-weight:500;">当前角色:</span> <span style="color:#0F172A;font-weight:600;font-size:16px;">${charName}</span>`;
+        nameEl.style.marginBottom = '16px';
+        body.appendChild(nameEl);
+
+        // 提取提示词版本
+        const prompts = char.prompts || char.promptList || (char.prompt ? [char.prompt] : []);
+        const activeIndex = char.activePromptIndex !== undefined ? char.activePromptIndex : (char.currentPromptIndex !== undefined ? char.currentPromptIndex : 0);
+
+        if (Array.isArray(prompts) && prompts.length > 0) {
+          const versionContainer = document.createElement('div');
+          versionContainer.style.marginBottom = '20px';
+
+          const vTitle = document.createElement('div');
+          vTitle.innerHTML = `<strong style="color:#334155;">提示词版本列表 (${prompts.length} 个版本):</strong>`;
+          versionContainer.appendChild(vTitle);
+
+          const list = document.createElement('div');
+          Object.assign(list.style, {
+            marginTop: '10px',
+            display: 'flex',
+            gap: '8px',
+            flexWrap: 'wrap'
+          });
+
+          const contentDiv = document.createElement('div');
+          Object.assign(contentDiv.style, {
+            marginTop: '12px',
+            padding: '12px',
+            backgroundColor: '#F8FAFC',
+            borderRadius: '8px',
+            border: '1px solid #E2E8F0'
+          });
+
+          const pre = document.createElement('pre');
+          Object.assign(pre.style, {
+            margin: '0',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-all',
+            maxHeight: '280px',
+            overflowY: 'auto',
+            fontSize: '13px',
+            fontFamily: 'Consolas, Monaco, monospace',
+            color: '#334155'
+          });
+
+          const copyBtn = document.createElement('button');
+          copyBtn.innerText = '复制当前版本';
+          Object.assign(copyBtn.style, {
+            marginTop: '10px',
+            padding: '6px 12px',
+            fontSize: '12px',
+            fontWeight: '600',
+            backgroundColor: '#10B981',
+            color: '#FFF',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            transition: 'background-color 0.2s'
+          });
+          copyBtn.onmouseover = () => copyBtn.style.backgroundColor = '#059669';
+          copyBtn.onmouseout = () => copyBtn.style.backgroundColor = '#10B981';
+
+          let selectedPromptText = '';
+
+          const selectVersion = (idx) => {
+            const p = prompts[idx];
+            let text = '';
+            if (typeof p === 'string') {
+              text = p;
+            } else if (p && typeof p === 'object') {
+              text = p.content || p.text || p.prompt || JSON.stringify(p);
+            }
+            selectedPromptText = text;
+            pre.innerText = text || '(无内容)';
+
+            Array.from(list.children).forEach((btn, i) => {
+              if (i === idx) {
+                btn.style.backgroundColor = '#4F46E5';
+                btn.style.color = '#FFF';
+                btn.style.borderColor = '#4F46E5';
+              } else {
+                btn.style.backgroundColor = '#FFF';
+                btn.style.color = '#475569';
+                btn.style.borderColor = '#D1D5DB';
+              }
+            });
+          };
+
+          prompts.forEach((p, idx) => {
+            const vBtn = document.createElement('button');
+            const isCurrent = idx === activeIndex;
+            vBtn.innerText = `版本 ${idx + 1}${isCurrent ? ' (使用中)' : ''}`;
+            Object.assign(vBtn.style, {
+              padding: '6px 12px',
+              border: '1px solid #D1D5DB',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: '500',
+              transition: 'all 0.2s'
+            });
+            vBtn.onclick = () => selectVersion(idx);
+            list.appendChild(vBtn);
+          });
+
+          copyBtn.onclick = () => {
+            navigator.clipboard.writeText(selectedPromptText).then(() => {
+              ctx.toast('复制成功！');
+            }).catch(() => {
+              ctx.toast('复制失败，请手动复制');
+            });
+          };
+
+          versionContainer.appendChild(list);
+          contentDiv.appendChild(pre);
+          contentDiv.appendChild(copyBtn);
+          versionContainer.appendChild(contentDiv);
+          body.appendChild(versionContainer);
+
+          selectVersion(activeIndex < prompts.length ? activeIndex : 0);
+        } else if (char.prompt) {
+          this._renderSinglePrompt(body, '角色设定提示词', char.prompt, ctx);
+        }
+      }
+
+      if (this._lastCapturedPrompt) {
+        this._renderSinglePrompt(body, '最近发送给 AI 的系统提示词 (实时捕获)', this._lastCapturedPrompt, ctx);
+      }
+    };
+  },
+
+  _renderSinglePrompt(container, titleText, promptText, ctx) {
+    const wrap = document.createElement('div');
+    wrap.style.marginTop = '16px';
+
+    const t = document.createElement('div');
+    t.innerHTML = `<strong style="color:#334155;">${titleText}:</strong>`;
+    wrap.appendChild(t);
+
+    const contentDiv = document.createElement('div');
+    Object.assign(contentDiv.style, {
+      marginTop: '8px',
+      padding: '12px',
+      backgroundColor: '#F8FAFC',
+      borderRadius: '8px',
+      border: '1px solid #E2E8F0'
+    });
+
+    const pre = document.createElement('pre');
+    Object.assign(pre.style, {
+      margin: '0',
+      whiteSpace: 'pre-wrap',
+      wordBreak: 'break-all',
+      maxHeight: '220px',
+      overflowY: 'auto',
+      fontSize: '13px',
+      fontFamily: 'Consolas, Monaco, monospace',
+      color: '#334155'
+    });
+    pre.innerText = promptText;
+
+    const copyBtn = document.createElement('button');
+    copyBtn.innerText = '复制';
+    Object.assign(copyBtn.style, {
+      marginTop: '10px',
+      padding: '6px 12px',
+      fontSize: '12px',
+      fontWeight: '600',
+      backgroundColor: '#10B981',
+      color: '#FFF',
+      border: 'none',
+      borderRadius: '6px',
+      cursor: 'pointer',
+      transition: 'background-color 0.2s'
+    });
+    copyBtn.onmouseover = () => copyBtn.style.backgroundColor = '#059669';
+    copyBtn.onmouseout = () => copyBtn.style.backgroundColor = '#10B981';
+
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(promptText).then(() => {
+        ctx.toast('复制成功！');
+      }).catch(() => {
+        ctx.toast('复制失败，请手动复制');
+      });
+    };
+
+    contentDiv.appendChild(pre);
+    contentDiv.appendChild(copyBtn);
+    wrap.appendChild(contentDiv);
+    container.appendChild(wrap);
+  },
+
+  _findCharacter() {
+    // 1. 遍历 React Fiber 树寻找角色状态
+    const root = document.getElementById('root');
+    if (root) {
+      const queue = [root];
+      const visited = new Set();
+      let depth = 0;
+      while (queue.length > 0 && depth < 800) {
+        depth++;
+        const node = queue.shift();
+        if (!node || visited.has(node)) continue;
+        visited.add(node);
+        const key = Object.keys(node).find(k => k.startsWith('__reactFiber') || k.startsWith('__reactContainer'));
+        if (key) {
+          let fiber = node[key];
+          while (fiber) {
+            if (fiber.memoizedProps) {
+              const props = fiber.memoizedProps;
+              if (props.character && (props.character.prompt || props.character.prompts)) {
+                return props.character;
+              }
+              if (props.currentRole && (props.currentRole.prompt || props.currentRole.prompts)) {
+                return props.currentRole;
+              }
+            }
+            if (fiber.memoizedState) {
+              let stateNode = fiber.memoizedState;
+              while (stateNode) {
+                const val = stateNode.memoizedState;
+                if (val && typeof val === 'object') {
+                  if (val.character && (val.character.prompt || val.character.prompts)) {
+                    return val.character;
+                  }
+                  if (val.currentRole && (val.currentRole.prompt || val.currentRole.prompts)) {
+                    return val.currentRole;
+                  }
+                }
+                stateNode = stateNode.next;
+              }
+            }
+            fiber = fiber.return;
+          }
+        }
+        for (let i = 0; i < node.children.length; i++) {
+          queue.push(node.children[i]);
+        }
+      }
+    }
+
+    // 2. 备用方案：从 LocalStorage 检索
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key.includes('character') || key.includes('state') || key.includes('store') || key.includes('mysw')) {
+        try {
+          const data = JSON.parse(localStorage.getItem(key));
+          const found = this._findCharacterInObject(data);
+          if (found) return found;
+        } catch (e) {}
+      }
+    }
+
+    return null;
+  },
+
+  _findCharacterInObject(obj) {
+    if (!obj || typeof obj !== 'object') return null;
+    if ((obj.prompt || obj.prompts) && obj.name) {
+      return obj;
+    }
+    for (const k in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, k) && typeof obj[k] === 'object') {
+        const res = this._findCharacterInObject(obj[k]);
+        if (res) return res;
+      }
+    }
+    return null;
+  },
+
+  deactivate(params, plugin) {
+    if (this._btn && this._btn.parentNode) {
+      this._btn.parentNode.removeChild(this._btn);
+    }
+    if (this._modal && this._modal.parentNode) {
+      this._modal.parentNode.removeChild(this._modal);
+    }
+  }
+});
+</script>
+
+<!-- ② 好友名字加喵 -->
+<script type="text/plain" id="src-friend-meow">MySWPlugins.register({
+  id: "friend-name-meow",
+  name: "好友名字加喵",
+  description: "开启后会把好友列表里每个人的名字后面加上喵",
+  enabled: false,
+  permissions: ["useDom"],
+  activate: function (params, plugin, ctx) {
+    if (!ctx || !ctx.dom || !ctx.dom.available) return;
+    if (plugin.__meowCleanup) return;
+    var SUFFIX = "喵";
+    var SELECTORS = [
+      ".friend-list .friend-name",
+      ".friend-list .name",
+      ".friend-list .nickname",
+      ".friends-list .friend-name",
+      ".friends-list .name",
+      ".friends-list .nickname",
+      ".friends .friend-name",
+      ".friends .name",
+      ".contact-list .name",
+      ".contact-list .nickname",
+      ".contact-list .friend-name",
+      ".friend-item .name",
+      ".friend-item .nickname",
+      ".friend-item .friend-name",
+      ".friend-card .name",
+      ".friend-card .nickname",
+      "[data-friend-id] .name",
+      "[data-friend-id] .friend-name",
+      "[data-friend-id] .nickname",
+      "[data-friend-name]",
+      ".mysw-friend-name"
+    ].join(", ");
+    function hostOf(el) {
+      if (!el || el.nodeType !== 1) return null;
+      if (!el.children || el.children.length === 0) return el;
+      var inner = null;
+      try {
+        inner = el.querySelector(":scope > span, :scope > .name, :scope > .nickname, :scope > .friend-name, :scope > .title");
+      } catch (e) {
+        inner = null;
+      }
+      if (inner && (!inner.children || inner.children.length === 0)) return inner;
+      return null;
+    }
+    function decorate(el) {
+      var host = hostOf(el);
+      if (!host) return;
+      var current = host.textContent || "";
+      if (host.getAttribute("data-meow-suffix") === "1") {
+        var original = host.getAttribute("data-meow-original");
+        if (original == null) return;
+        if (current !== original && current !== original + SUFFIX) {
+          original = current.endsWith(SUFFIX) ? current.slice(0, -SUFFIX.length) : current;
+          host.setAttribute("data-meow-original", original);
+        }
+        if (host.textContent !== original + SUFFIX) host.textContent = original + SUFFIX;
+        return;
+      }
+      host.setAttribute("data-meow-original", current);
+      if (!current.endsWith(SUFFIX)) host.textContent = current + SUFFIX;
+      host.setAttribute("data-meow-suffix", "1");
+    }
+    function apply(root) {
+      if (!root || root.nodeType !== 1 && root !== document) return;
+      var nodes = [];
+      try {
+        if (root.nodeType === 1 && root.matches && root.matches(SELECTORS)) nodes.push(root);
+        if (root.querySelectorAll) {
+          var found = root.querySelectorAll(SELECTORS);
+          for (var i = 0; i < found.length; i++) nodes.push(found[i]);
+        }
+      } catch (e) {
+        return;
+      }
+      for (var j = 0; j < nodes.length; j++) decorate(nodes[j]);
+    }
+    var watch = document.body;
+    if (!watch) return;
+    apply(document);
+    var observer = new MutationObserver(function (mutations) {
+      for (var i = 0; i < mutations.length; i++) {
+        var added = mutations[i].addedNodes;
+        if (!added) continue;
+        for (var j = 0; j < added.length; j++) {
+          if (added[j] && added[j].nodeType === 1) apply(added[j]);
+        }
+      }
+    });
+    observer.observe(watch, { childList: true, subtree: true });
+    plugin.__meowCleanup = function () {
+      observer.disconnect();
+      var marked = document.querySelectorAll("[data-meow-suffix='1']");
+      for (var i = 0; i < marked.length; i++) {
+        var el = marked[i];
+        var original = el.getAttribute("data-meow-original");
+        if (original != null) el.textContent = original;
+        el.removeAttribute("data-meow-suffix");
+        el.removeAttribute("data-meow-original");
+      }
+    };
+    if (typeof ctx.toast === "function") ctx.toast("好友名字后面已加上喵");
+  },
+  deactivate: function (params, plugin) {
+    if (plugin && typeof plugin.__meowCleanup === "function") {
+      plugin.__meowCleanup();
+      plugin.__meowCleanup = null;
+    }
+  }
+});
+</script>
+
+<!-- ③ 虚假记忆 -->
+<script type="text/plain" id="src-fake-memory">MySWPlugins.register({
+  id: "fake-memory",
+  name: "虚假记忆",
+  description: "向发给模型的提示词注入一段用户可自行编辑、实际并不存在的记忆。",
+  enabled: false,
+  permissions: [],
+  params: [
+    {
+      key: "memory",
+      label: "虚假记忆",
+      type: "textarea",
+      value: "你记得自己曾经被用户强吻过。这件事其实从未发生，但你会把它当作真实经历来回应。"
+    }
+  ],
+  transformPrompt(text, params) {
+    const marker = "【虚假记忆】";
+    const memory = String(params && params.memory != null ? params.memory : "").trim();
+    const base = text == null ? "" : String(text);
+    const idx = base.indexOf(marker);
+    if (!memory) {
+      if (idx === -1) return base;
+      return base.slice(0, idx).replace(/\s+$/, "");
+    }
+    const block = marker + memory;
+    if (idx === -1) {
+      if (!base) return block;
+      return base.replace(/\s+$/, "") + "\n" + block;
+    }
+    const before = base.slice(0, idx).replace(/\s+$/, "");
+    return before ? before + "\n" + block : block;
+  }
+});
+</script>
+
+<!-- ④ AI 角色性转 -->
+<script type="text/plain" id="src-gender-swap">MySWPlugins.register({
+  id: "ai-gender-swap",
+  name: "AI 角色性转",
+  description: "强制将 AI 角色进行性别反转（例如男变女、女变男），并以性转后的设定与你对话。",
+  enabled: false,
+  permissions: [],
+  params: [
+    {
+      key: "instruction",
+      label: "性转引导词",
+      type: "textarea",
+      value: "【设定修改】请将你当前扮演角色的性别进行完全反转（如果原本是男性则变为女性，原本是女性则变为男性）。在接下来的对话中，请完全以性转后的新性别身份、语气、心理状态、人设和外貌特征来进行演绎与回复。"
+    }
+  ],
+  transformPrompt(text, params) {
+    const instruction = params.instruction || "【设定修改】请将你当前扮演角色的性别进行完全反转。";
+    if (text.includes(instruction)) {
+      return text;
+    }
+    return text + "\n\n" + instruction;
+  }
+});
+</script>
+
+<!-- ⑤ 和AI玩跳一跳 -->
+<script type="text/plain" id="src-tiao-yi-tiao">MySWPlugins.register({
+  id: "ai-tiao-yi-tiao",
+  name: "和AI玩跳一跳",
+  description: "打开一局简易跳一跳，可自己蓄力，也可让 AI 决定跳多远",
+  enabled: false,
+  permissions: ["useDom", "useApi"],
+  params: [
+    { key: "difficulty", label: "难度（0.6-2.5，越大间距越远）", type: "number", value: 1 }
+  ],
+  activate(params, plugin, ctx) {
+    if (!ctx || !ctx.dom || !ctx.dom.available || typeof ctx.dom.mount !== "function") {
+      if (ctx && typeof ctx.toast === "function") ctx.toast("界面不可用，无法开始跳一跳");
+      return;
+    }
+    if (plugin._root) return;
+
+    function readParam(source, key, fallback) {
+      if (!source) return fallback;
+      if (Array.isArray(source)) {
+        for (let i = 0; i < source.length; i++) {
+          if (source[i] && source[i].key === key) return source[i].value;
+        }
+        return fallback;
+      }
+      if (Object.prototype.hasOwnProperty.call(source, key)) return source[key];
+      return fallback;
+    }
+
+    function clamp(n, min, max) {
+      const v = Number(n);
+      if (!isFinite(v)) return min;
+      return Math.max(min, Math.min(max, v));
+    }
+
+    function extractText(res) {
+      if (res == null) return "";
+      if (typeof res === "string" || typeof res === "number") return String(res);
+      if (Array.isArray(res)) {
+        let out = "";
+        for (let i = 0; i < res.length; i++) out += extractText(res[i]);
+        return out;
+      }
+      if (typeof res.content === "string") return res.content;
+      if (Array.isArray(res.content)) return extractText(res.content);
+      if (typeof res.text === "string") return res.text;
+      if (typeof res.output === "string") return res.output;
+      if (res.message) return extractText(res.message);
+      if (res.choices && res.choices[0]) {
+        const choice = res.choices[0];
+        return extractText(choice.message || choice.text || choice);
+      }
+      return "";
+    }
+
+    const PALETTE = ["#f2c14e", "#e07a5f", "#81b29a", "#7eb6d9", "#c084fc", "#f4a261", "#90be6d", "#f28482"];
+    const GROUND = 520;
+    const nowFn = (typeof performance !== "undefined" && performance.now) ? function () { return performance.now(); } : function () { return Date.now(); };
+
+    const root = document.createElement("div");
+    root.style.cssText = "box-sizing:border-box;max-width:380px;padding:12px;border:1px solid #e4dcd0;border-radius:16px;background:#f7f4ef;color:#2b2b2b;font:14px/1.4 system-ui,sans-serif;user-select:none;";
+    root.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;"><strong>跳一跳</strong><span class="j-status">准备中</span></div><canvas class="j-canvas" width="640" height="760" style="width:100%;height:auto;display:block;background:#efe7dc;border-radius:12px;touch-action:none;"></canvas><div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;"><button type="button" class="j-charge" style="border:0;border-radius:999px;padding:8px 14px;background:#1f1f1f;color:#fff;">按住蓄力</button><button type="button" class="j-ai" style="border:0;border-radius:999px;padding:8px 14px;background:#3d5a80;color:#fff;">让 AI 跳</button><button type="button" class="j-reset" style="border:0;border-radius:999px;padding:8px 14px;background:#fff;color:#1f1f1f;">重开</button></div><label style="display:flex;gap:6px;align-items:center;margin-top:8px;"><input type="checkbox" class="j-alt">成功后和 AI 轮流</label>';
+
+    const canvas = root.querySelector(".j-canvas");
+    const statusEl = root.querySelector(".j-status");
+    const chargeBtn = root.querySelector(".j-charge");
+    const aiBtn = root.querySelector(".j-ai");
+    const resetBtn = root.querySelector(".j-reset");
+    const altBox = root.querySelector(".j-alt");
+    const g = canvas.getContext("2d");
+
+    let disposed = false;
+    let platforms = [];
+    let idx = 0;
+    let score = 0;
+    let alive = true;
+    let anim = null;
+    let charging = false;
+    let power = 0;
+    let aiBusy = false;
+    let lastActor = "";
+    let timer = 0;
+    let pointerId = null;
+    let lastTs = nowFn();
+    let difficulty = 1;
+    let maxDist = 200;
+    const piece = { x: 80, y: GROUND, squash: 0 };
+
+    function setStatus(text) {
+      if (statusEl) statusEl.textContent = text;
+    }
+
+    function later(fn, ms) {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(function () {
+        timer = 0;
+        if (!disposed) fn();
+      }, ms);
+    }
+
+    function ensurePlatforms() {
+      if (!platforms.length) {
+        platforms.push({ x: 80, w: 78, color: PALETTE[0] });
+      }
+      while (platforms.length < idx + 7) {
+        const prev = platforms[platforms.length - 1];
+        const gap = Math.min(maxDist * 0.9, (64 + Math.random() * 110) * difficulty);
+        const w = 44 + Math.random() * 40;
+        platforms.push({
+          x: prev.x + gap,
+          w: w,
+          color: PALETTE[platforms.length % PALETTE.length]
+        });
+      }
+    }
+
+    function resetGame() {
+      if (timer) clearTimeout(timer);
+      timer = 0;
+      difficulty = clamp(readParam(params, "difficulty", 1), 0.6, 2.5);
+      maxDist = 200 * difficulty;
+      platforms = [];
+      idx = 0;
+      score = 0;
+      alive = true;
+      anim = null;
+      charging = false;
+      power = 0;
+      aiBusy = false;
+      lastActor = "";
+      pointerId = null;
+      ensurePlatforms();
+      piece.x = platforms[0].x;
+      piece.y = GROUND;
+      piece.squash = 0;
+      setStatus("按住蓄力，松手起跳");
+    }
+
+    function drawPlatform(x, color, width, highlight) {
+      const top = 18;
+      const front = 26;
+      g.fillStyle = color;
+      g.fillRect(x - width / 2, GROUND - top, width, top);
+      g.fillStyle = "rgba(0,0,0,0.18)";
+      g.fillRect(x - width / 2, GROUND, width, front);
+      if (highlight) {
+        g.strokeStyle = "rgba(0,0,0,0.45)";
+        g.lineWidth = 3;
+        g.strokeRect(x - width / 2 + 1.5, GROUND - top + 1.5, width - 3, top - 3);
+      }
+    }
+
+    function draw() {
+      const w = canvas.width;
+      const h = canvas.height;
+      g.clearRect(0, 0, w, h);
+      g.fillStyle = "#efe7dc";
+      g.fillRect(0, 0, w, h);
+      const cam = piece.x - 170;
+      for (let i = 0; i < platforms.length; i++) {
+        const p = platforms[i];
+        const sx = p.x - cam;
+        if (sx < -180 || sx > w + 180) continue;
+        drawPlatform(sx, p.color, p.w, alive && i === idx + 1);
+      }
+      const squash = piece.squash || 0;
+      const pw = 36 + squash * 12;
+      const ph = 50 - squash * 20;
+      const px = piece.x - cam;
+      const py = piece.y - ph;
+      const r = 8;
+      g.beginPath();
+      g.moveTo(px - pw / 2 + r, py);
+      g.arcTo(px + pw / 2, py, px + pw / 2, py + ph, r);
+      g.arcTo(px + pw / 2, py + ph, px - pw / 2, py + ph, r);
+      g.arcTo(px - pw / 2, py + ph, px - pw / 2, py, r);
+      g.arcTo(px - pw / 2, py, px + pw / 2, py, r);
+      g.closePath();
+      g.fillStyle = "#1b1b1b";
+      g.fill();
+      g.fillStyle = "rgba(0,0,0,0.08)";
+      g.fillRect(36, h - 46, w - 72, 14);
+      g.fillStyle = charging || power > 0 ? "#e07a5f" : "#c47b68";
+      g.fillRect(36, h - 46, (w - 72) * (Math.max(0, Math.min(100, power)) / 100), 14);
+      g.fillStyle = "#2b2b2b";
+      g.font = "28px sans-serif";
+      g.fillText(String(score), 36, 52);
+      if (!alive) {
+        g.fillStyle = "rgba(43,43,43,0.78)";
+        g.font = "bold 42px sans-serif";
+        g.fillText("掉下去了", 196, 300);
+      }
+    }
+
+    function finishLanding(landX) {
+      piece.y = GROUND;
+      piece.squash = 0;
+      const to = platforms[idx + 1];
+      if (!to) {
+        alive = false;
+        setStatus("没有落点了");
+        return;
+      }
+      const err = Math.abs(landX - to.x);
+      if (err <= to.w / 2 + 4) {
+        const perfect = err <= 8;
+        score += perfect ? 2 : 1;
+        idx += 1;
+        piece.x = to.x;
+        ensurePlatforms();
+        if (perfect) setStatus("完美落点 · 分数 " + score);
+        else setStatus("站住了 · 分数 " + score);
+        if (altBox && altBox.checked && lastActor === "user") later(function () { aiJump(); }, 280);
+        else if (altBox && altBox.checked && lastActor === "ai") setStatus("轮到你了 · 分数 " + score);
+      } else {
+        alive = false;
+        piece.x = landX;
+        setStatus("没站住，分数 " + score);
+        if (!disposed && typeof ctx.toast === "function") ctx.toast("本局结束，分数 " + score);
+      }
+    }
+
+    function jump(powerPercent, actor) {
+      if (!alive || anim || disposed) return;
+      const p = clamp(powerPercent, 0, 100);
+      const from = platforms[idx];
+      if (!from) return;
+      lastActor = actor || "user";
+      const landX = from.x + (p / 100) * maxDist;
+      anim = {
+        start: nowFn(),
+        duration: 460,
+        startX: piece.x,
+        landX: landX,
+        power: p
+      };
+      charging = false;
+      power = 0;
+      piece.squash = 0;
+    }
+
+    function localPower(dist) {
+      const ideal = (dist / maxDist) * 100;
+      const wobble = (Math.random() - 0.5) * 10;
+      return clamp(ideal + wobble, 0, 100);
+    }
+
+    async function aiJump() {
+      if (disposed || !alive || anim || aiBusy || charging) return;
+      const next = platforms[idx + 1];
+      const from = platforms[idx];
+      if (!next || !from) return;
+      aiBusy = true;
+      setStatus("AI 正在看台子…");
+      const dist = next.x - from.x;
+      let value = localPower(dist);
+      try {
+        if (ctx.api && ctx.api.available && typeof ctx.api.chat === "function") {
+          const messages = [
+            { role: "system", content: "你在和用户玩跳一跳。只输出一个 0 到 100 的整数，表示蓄力百分比。不要解释，不要输出单位或其他文字。" },
+            { role: "user", content: "当前棋子到下一平台中心的距离是 " + Math.round(dist) + "，满蓄力最远 " + Math.round(maxDist) + "，平台可站立半宽约 " + Math.round(next.w / 2) + "。请给出蓄力百分比。" }
+          ];
+          const res = await ctx.api.chat(messages, {});
+          if (disposed) {
+            aiBusy = false;
+            return;
+          }
+          const matched = extractText(res).match(/\d+(\.\d+)?/);
+          if (matched) value = Number(matched[0]);
+          else if (typeof ctx.toast === "function") ctx.toast("AI 没给出数字，改用估算蓄力");
+        } else {
+          if (typeof ctx.toast === "function") ctx.toast("模型不可用，使用本地估算蓄力");
+        }
+      } catch (err) {
+        value = localPower(dist);
+        if (!disposed && typeof ctx.toast === "function") ctx.toast("AI 跳跃失败，已改用估算");
+      }
+      value = clamp(value, 0, 100);
+      aiBusy = false;
+      if (disposed || !alive || anim) return;
+      setStatus("AI 蓄力 " + Math.round(value));
+      jump(value, "ai");
+    }
+
+    function startCharge(e) {
+      if (!alive || anim || aiBusy || disposed) return;
+      charging = true;
+      power = 0;
+      piece.squash = 0;
+      pointerId = e && e.pointerId != null ? e.pointerId : null;
+      if (e && e.currentTarget && pointerId != null && e.currentTarget.setPointerCapture) {
+        try { e.currentTarget.setPointerCapture(pointerId); } catch (err) {}
+      }
+      setStatus("蓄力中…");
+    }
+
+    function endCharge(e) {
+      if (!charging) return;
+      if (pointerId != null && e && e.pointerId != null && e.pointerId !== pointerId) return;
+      const fired = power;
+      charging = false;
+      pointerId = null;
+      power = 0;
+      piece.squash = 0;
+      if (alive && !anim && !aiBusy) jump(fired, "user");
+    }
+
+    function loop(ts) {
+      if (disposed) return;
+      const dt = Math.max(0, Math.min(40, ts - lastTs));
+      lastTs = ts;
+      if (charging) {
+        power = Math.min(100, power + dt * 0.09);
+        piece.squash = power / 100;
+      }
+      if (anim) {
+        const t = Math.max(0, Math.min(1, (ts - anim.start) / anim.duration));
+        piece.x = anim.startX + (anim.landX - anim.startX) * t;
+        piece.y = GROUND - Math.sin(Math.PI * t) * (90 + anim.power * 0.7);
+        if (t >= 1) {
+          const landX = anim.landX;
+          anim = null;
+          finishLanding(landX);
+        }
+      }
+      draw();
+      plugin._raf = requestAnimationFrame(loop);
+    }
+
+    chargeBtn.addEventListener("pointerdown", startCharge);
+    chargeBtn.addEventListener("pointerup", endCharge);
+    chargeBtn.addEventListener("pointercancel", endCharge);
+    canvas.addEventListener("pointerdown", startCharge);
+    canvas.addEventListener("pointerup", endCharge);
+    canvas.addEventListener("pointercancel", endCharge);
+    aiBtn.addEventListener("click", function () { aiJump(); });
+    resetBtn.addEventListener("click", resetGame);
+
+    plugin._cleanup = function () {
+      disposed = true;
+      if (timer) clearTimeout(timer);
+      timer = 0;
+      if (plugin._raf) cancelAnimationFrame(plugin._raf);
+      plugin._raf = 0;
+      if (plugin._root && plugin._root.parentNode) plugin._root.parentNode.removeChild(plugin._root);
+      plugin._root = null;
+      plugin._cleanup = null;
+    };
+
+    resetGame();
+    plugin._root = root;
+    try {
+      if (ctx.dom.container) ctx.dom.mount(root, ctx.dom.container);
+      else ctx.dom.mount(root);
+    } catch (err) {
+      plugin._root = null;
+      plugin._cleanup = null;
+      if (typeof ctx.toast === "function") ctx.toast("跳一跳界面挂载失败");
+      return;
+    }
+    lastTs = nowFn();
+    plugin._raf = requestAnimationFrame(loop);
+    if (typeof ctx.toast === "function") ctx.toast("跳一跳已就绪");
+  },
+  deactivate(params, plugin) {
+    if (plugin && typeof plugin._cleanup === "function") plugin._cleanup();
+  }
+});
+</script>
+
+<!-- ⑥ 角色一致性守卫 -->
+<script type="text/plain" id="src-role-guard">MySWPlugins.register({
+  id: "mysw-role-guard",
+  name: "角色一致性守卫",
+  description: "在提示词尾部追加陪聊规则，防止 AI 代替你说话、替你行动、擅自跳时间或总结剧情",
+  enabled: false,
+  // 只改提示词文本，不碰界面、不调接口，所以不需要任何权限
+  permissions: [],
+
+  params: [{
+    key: "rules",
+    label: "规则清单（一行一条；删掉某行即关闭该条，留空则不注入）",
+    type: "textarea",
+    value: [
+      "不要代替用户说话、行动或做决定，只描写你自己的角色。",
+      "不要替用户写内心独白、感受或反应。",
+      "不要在同一轮里推进过多剧情，留出让用户回应的空间。",
+      "不要擅自跳过时间、切换场景或改写已经发生的事实。",
+      "不要在回复末尾做剧情总结、列选项，或写「接下来你想怎么做」。",
+      "始终保持角色本人的说话方式，不要跳出角色解释自己是 AI。"
+    ].join("\n")
+  }],
+
+  transformPrompt(text, params) {
+    const rules = String((params && params.rules) || "")
+      .split(/\r?\n/)
+      .map(line => line.replace(/^\s*[-*·]\s*/, "").trim())
+      .filter(Boolean);
+    if (!rules.length) return text;
+
+    const base = String(text == null ? "" : text);
+    const block = "【陪聊规则 · 优先级高于一般风格要求】\n"
+      + rules.map(rule => "- " + rule).join("\n");
+    // 幂等：同一段规则只追加一次，流式重发 / 多轮包装不会越叠越长
+    if (base.indexOf(block) !== -1) return base;
+    return base + "\n\n" + block;
+  }
+});
+</script>
+
+<!-- ⑦ 去 AI 味 -->
+<script type="text/plain" id="src-human-voice">MySWPlugins.register({
+  id: "mysw-human-voice",
+  name: "去 AI 味",
+  description: "在提示词里加一份口语化禁令，去掉作文式连接词、客服腔、排比句与句末总结",
+  enabled: false,
+  permissions: [],
+
+  params: [
+    { key: "level", label: "强度（1 温和 / 2 标准 / 3 激进）", type: "number", value: 2, min: 1, max: 3 },
+    { key: "emoji", label: "允许 emoji（1 = 允许，0 = 禁止）", type: "number", value: 1, min: 0, max: 1 }
+  ],
+
+  transformPrompt(text, params) {
+    const level = Math.min(3, Math.max(1, parseInt((params && params.level), 10) || 2));
+    const emojiRaw = (params && params.emoji != null) ? String(params.emoji) : "1";
+    const allowEmoji = emojiRaw !== "0";
+
+    const common = [
+      "用具体的人话说话，不要写成说明文或客服话术。",
+      "不要用「首先 / 其次 / 最后」「总的来说」「总而言之」这类作文式连接词。",
+      "避免三段排比、每段三句的整齐结构，句子长短要交错。"
+    ];
+    const standard = [
+      "不要用「作为一个 AI」「我理解你的感受」「希望这对你有帮助」这类客服腔。",
+      "允许口语化的省略、停顿和半截话，不必每句都写完整。",
+      "少用破折号，更不要一句话里塞三个。"
+    ];
+    const strong = [
+      "不要复述用户刚说过的话再回应，直接接话。",
+      "不要用「不仅…而且…」「既…又…」「不是…而是…」这类对偶句式。",
+      "不要在结尾反问、升华，或总结上一段。"
+    ];
+
+    const rules = common
+      .concat(level >= 2 ? standard : [])
+      .concat(level >= 3 ? strong : []);
+    if (!allowEmoji) rules.push("不要使用任何 emoji 与颜文字。");
+
+    const base = String(text == null ? "" : text);
+    const block = "【说话方式 · 去 AI 腔】\n" + rules.map(rule => "- " + rule).join("\n");
+    if (base.indexOf(block) !== -1) return base;
+    return base + "\n\n" + block;
+  }
+});
+</script>
+
+<!-- ⑧ 提示词体检 -->
+<script type="text/plain" id="src-prompt-meter">MySWPlugins.register({
+  id: "mysw-prompt-meter",
+  name: "提示词体检",
+  description: "左下角实时显示当前系统提示词的字数、估算 Token 与每轮成本，点击可复制全文",
+  enabled: false,
+  permissions: ["useDom"],
+
+  params: [
+    { key: "price", label: "输入单价（元 / 百万 tokens，用于估算每轮成本；填 0 只显示 token）", type: "number", value: 2, min: 0 },
+    { key: "offset", label: "距底部位置（像素；默认给悬浮插件留了三档位置，挡住界面就调大）", type: "number", value: 280, min: 0 }
+  ],
+
+  /* 粗估 token：中日韩字符按 1 token/字，其余按 0.3 token/字符。
+     目的不是精确计费，而是让「这份提示词到底有多长」有个量级感。 */
+  _estimate(text) {
+    let cjk = 0;
+    let other = 0;
+    for (const ch of String(text || "")) {
+      if (/[\u3400-\u9fff\uf900-\ufaff\u3040-\u30ff\uac00-\ud7af]/.test(ch)) cjk++;
+      else other++;
+    }
+    return Math.round(cjk + other * 0.3);
+  },
+
+  _fmt(n) {
+    const v = Number(n) || 0;
+    if (v >= 1e6) return (v / 1e6).toFixed(2) + "M";
+    if (v >= 1e3) return (v / 1e3).toFixed(1) + "k";
+    return String(v);
+  },
+
+  _el(tag, css, text) {
+    const node = document.createElement(tag);
+    if (css) node.style.cssText = css;
+    if (text != null) node.textContent = text;
+    return node;
+  },
+
+  /* 把当前提示词量画到徽标与面板上。数据都从 this 取，
+     所以「保存参数 / 切换角色」后重新 activate 也能直接复用同一套 DOM。 */
+  _paint() {
+    const badge = this._badge;
+    const panel = this._panel;
+    if (!badge) return;
+
+    const text = String(this._prompt || "");
+    const chars = text.length;
+    const tokens = this._estimate(text);
+    const price = Number((this._paramRef && this._paramRef.price) || 0);
+    const cost = price > 0 ? (tokens / 1e6) * price : 0;
+
+    badge.textContent = "📊 " + this._fmt(chars) + " 字 · ≈" + this._fmt(tokens) + " tok";
+    badge.title = "点击查看提示词明细";
+
+    if (panel && panel.style.display !== "none") {
+      const set = (sel, val) => {
+        const el = panel.querySelector(sel);
+        if (el) el.textContent = val;
+      };
+      set("[data-m-chars]", chars.toLocaleString());
+      set("[data-m-tokens]", tokens.toLocaleString());
+      set("[data-m-lines]", String(text ? text.split(/\r?\n/).length : 0));
+      set("[data-m-cost]", cost > 0 ? "≈ ¥" + cost.toFixed(4) + " / 轮" : "未填单价");
+      set("[data-m-time]", new Date().toLocaleTimeString());
+    }
+  },
+
+  _fallbackCopy(text, done) {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.cssText = "position:fixed;top:-1000px;left:-1000px;";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      done();
+    } catch (e) {
+      /* 复制失败就安静地算了，别打断聊天 */
+    }
+  },
+
+  activate(params, plugin, ctx) {
+    if (!ctx.dom.available) return;
+
+    this._paramRef = params;
+    this._prompt = this._prompt || "";
+
+    // 已经挂过（保存参数会再次 activate）：只更新参数并重画，不要叠第二套界面
+    if (this._badge && this._badge.isConnected) {
+      this._paint();
+      return;
+    }
+
+    const offset = Math.max(0, Number(params.offset) || 16);
+    const self = this;
+
+    const badge = this._el("button",
+      "position:fixed;right:16px;bottom:" + offset + "px;z-index:9997;"
+      + "padding:6px 12px;border:1px solid rgba(230,199,138,.45);border-radius:999px;"
+      + "background:rgba(24,27,35,.94);color:#e6c78a;font:12px/1.2 system-ui,-apple-system,sans-serif;"
+      + "cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35);backdrop-filter:blur(6px);",
+      "📊 提示词 —");
+    badge.type = "button";
+    badge.title = "点击查看提示词明细";
+
+    const panel = this._el("div",
+      "position:fixed;right:16px;bottom:" + (offset + 44) + "px;z-index:9998;display:none;"
+      + "box-sizing:border-box;width:min(320px,calc(100vw - 32px));padding:14px;"
+      + "border:1px solid #414653;border-radius:14px;background:#181b23;color:#e6e8ee;"
+      + "font:13px/1.6 system-ui,-apple-system,sans-serif;box-shadow:0 12px 32px rgba(0,0,0,.5);");
+
+    const head = this._el("div", "display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;");
+    head.appendChild(this._el("b", "color:#e6c78a;", "提示词体检"));
+    const closeBtn = this._el("button", "border:0;background:transparent;color:#9aa1b0;cursor:pointer;font-size:15px;line-height:1;", "✕");
+    closeBtn.type = "button";
+    closeBtn.addEventListener("click", () => { panel.style.display = "none"; });
+    head.appendChild(closeBtn);
+    panel.appendChild(head);
+
+    const grid = this._el("div", "display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;");
+    [
+      ["字符数", "data-m-chars", "#fff", "16px"],
+      ["估算 Token", "data-m-tokens", "#fff", "16px"],
+      ["行数", "data-m-lines", "#d7dae2", "13px"],
+      ["输入成本", "data-m-cost", "#7cd5a4", "13px"]
+    ].forEach(([label, attr, color, size]) => {
+      const cell = this._el("div", "color:#9aa1b0;font-size:12px;", label);
+      const value = this._el("b", "display:block;color:" + color + ";font-size:" + size + ";", "—");
+      value.setAttribute(attr, "");
+      cell.appendChild(value);
+      grid.appendChild(cell);
+    });
+    panel.appendChild(grid);
+
+    const timeRow = this._el("div", "margin-top:10px;font-size:12px;color:#8d93a2;", "最近一次发送 ");
+    const timeVal = this._el("span", "", "—");
+    timeVal.setAttribute("data-m-time", "");
+    timeRow.appendChild(timeVal);
+    panel.appendChild(timeRow);
+
+    const copyBtn = this._el("button",
+      "width:100%;margin-top:12px;padding:7px;border-radius:8px;border:1px solid #4b505f;"
+      + "background:#20232c;color:#d7dae2;cursor:pointer;font:inherit;font-size:12px;", "复制全文");
+    copyBtn.type = "button";
+    copyBtn.addEventListener("click", () => {
+      const text = String(self._prompt || "");
+      const done = () => ctx.toast("提示词已复制（" + text.length + " 字）");
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => self._fallbackCopy(text, done));
+      } else {
+        self._fallbackCopy(text, done);
+      }
+    });
+    panel.appendChild(copyBtn);
+
+    panel.appendChild(this._el("div", "margin-top:8px;font-size:11px;color:#6f7688;line-height:1.6;",
+      "Token 为粗略估算（中文约 1 字 ≈ 1 token）。成本 = token × 单价，仅供参考。"));
+
+    badge.addEventListener("click", () => {
+      const showing = panel.style.display !== "none";
+      panel.style.display = showing ? "none" : "block";
+      if (!showing) self._paint();
+    });
+
+    this._badge = badge;
+    this._panel = panel;
+    ctx.dom.mount(badge);
+    ctx.dom.mount(panel);
+    this._paint();
+  },
+
+  transformPrompt(text, params) {
+    const base = String(text == null ? "" : text);
+    this._prompt = base;
+    this._paramRef = params;
+    // 拼装提示词时只记数据，DOM 更新放到下一帧，别拖慢发送
+    if (this._badge) {
+      if (this._paintTimer) clearTimeout(this._paintTimer);
+      const self = this;
+      this._paintTimer = setTimeout(() => {
+        self._paintTimer = 0;
+        self._paint();
+      }, 80);
+    }
+    return base;
+  },
+
+  deactivate() {
+    if (this._paintTimer) { clearTimeout(this._paintTimer); this._paintTimer = 0; }
+    ["_badge", "_panel"].forEach(key => {
+      const node = this[key];
+      if (node) {
+        try { node.remove(); } catch (e) { /* 已被统一回收 */ }
+        this[key] = null;
+      }
+    });
+  }
+});
+</script>
+
+<!-- ⑨ 设定速记本 -->
+<script type="text/plain" id="src-memo-book">const MEMO_KEY = "mysw-memo-book.v1";
+
+function memoRead() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(MEMO_KEY) || "[]");
+    if (!Array.isArray(raw)) return [];
+    return raw.filter(item => item && typeof item.text === "string" && item.text.trim());
+  } catch (e) {
+    return [];
+  }
+}
+
+function memoWrite(list) {
+  try {
+    // 只保留最近 200 条，避免长期积累把 localStorage 撑满
+    localStorage.setItem(MEMO_KEY, JSON.stringify(list.slice(-200)));
+  } catch (e) {
+    /* 配额满时不写入，界面上仍可继续用当前会话的条目 */
+  }
+}
+
+MySWPlugins.register({
+  id: "mysw-memo-book",
+  name: "设定速记本",
+  description: "随手记下临时设定（怕黑、左撇子、正在下雨），每轮自动注入提示词，不必再去改角色卡",
+  enabled: false,
+  permissions: ["useDom"],
+
+  params: [
+    { key: "maxItems", label: "最多注入几条（最近添加的优先）", type: "number", value: 12, min: 1, max: 50 },
+    { key: "offset", label: "距底部位置（像素，和别的悬浮插件错开用）", type: "number", value: 224, min: 0 }
+  ],
+
+  /* 注入：全部「已勾选」的条目，按最近添加排序取前 N 条 */
+  transformPrompt(text, params) {
+    const limit = Math.max(1, Math.min(50, Number((params && params.maxItems) || 12)));
+    const items = memoRead().filter(item => item && item.on !== false && String(item.text || "").trim());
+    if (!items.length) return text;
+
+    const picked = items.slice(-limit);
+    const base = String(text == null ? "" : text);
+    const block = "【临时设定备忘 · 用户手动记录，视为既定事实】\n"
+      + picked.map(item => "- " + String(item.text).trim()).join("\n");
+    if (base.indexOf(block) !== -1) return base;
+    return base + "\n\n" + block;
+  },
+
+  _el(tag, css, text) {
+    const node = document.createElement(tag);
+    if (css) node.style.cssText = css;
+    if (text != null) node.textContent = text;
+    return node;
+  },
+
+  _renderList() {
+    const listEl = this._list;
+    if (!listEl) return;
+    const self = this;
+    listEl.innerHTML = "";
+    const items = memoRead();
+
+    if (!items.length) {
+      listEl.appendChild(this._el("div", "color:#8d93a2;font-size:12px;padding:8px 0;line-height:1.7;",
+        "还没有条目。在上面写一句设定（例如「她其实怕黑」），回车即可添加。"));
+      return;
+    }
+
+    items.slice().reverse().forEach(item => {
+      const row = this._el("div",
+        "display:flex;align-items:flex-start;gap:8px;padding:7px 8px;border-radius:8px;"
+        + "background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);margin-bottom:6px;");
+
+      const box = document.createElement("input");
+      box.type = "checkbox";
+      box.checked = item.on !== false;
+      box.style.cssText = "margin-top:3px;flex:none;width:15px;height:15px;cursor:pointer;";
+      box.addEventListener("change", () => {
+        memoWrite(memoRead().map(x => x.id === item.id ? Object.assign({}, x, { on: box.checked }) : x));
+        self._renderList();
+      });
+
+      const span = this._el("span",
+        "flex:1;min-width:0;font-size:13px;line-height:1.6;word-break:break-word;"
+        + (item.on === false ? "color:#6f7688;text-decoration:line-through;" : "color:#e6e8ee;"),
+        item.text);
+      span.title = item.text;
+
+      const del = this._el("button",
+        "flex:none;border:0;background:transparent;color:#8d93a2;cursor:pointer;font-size:13px;padding:0 2px;",
+        "✕");
+      del.type = "button";
+      del.title = "删除这条";
+      del.addEventListener("click", () => {
+        memoWrite(memoRead().filter(x => x.id !== item.id));
+        self._renderList();
+      });
+
+      row.appendChild(box);
+      row.appendChild(span);
+      row.appendChild(del);
+      listEl.appendChild(row);
+    });
+  },
+
+  _add(text) {
+    const value = String(text || "").trim();
+    if (!value) return;
+    const list = memoRead();
+    list.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      text: value,
+      on: true
+    });
+    memoWrite(list);
+    this._renderList();
+  },
+
+  activate(params, plugin, ctx) {
+    if (!ctx.dom.available) return;
+    this._paramRef = params;
+
+    // 保存参数会再次 activate：只刷新数据，不要叠第二套界面
+    if (this._btn && this._btn.isConnected) {
+      this._renderList();
+      return;
+    }
+
+    const offset = Math.max(0, Number(params.offset) || 96);
+    const self = this;
+
+    const btn = this._el("button",
+      "position:fixed;right:16px;bottom:" + offset + "px;z-index:9996;"
+      + "padding:8px 13px;border:1px solid rgba(230,199,138,.45);border-radius:999px;"
+      + "background:rgba(24,27,35,.94);color:#e6c78a;font:12px/1.2 system-ui,-apple-system,sans-serif;"
+      + "cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35);backdrop-filter:blur(6px);",
+      "📌 速记");
+    btn.type = "button";
+    btn.title = "打开设定速记本";
+
+    const panel = this._el("div",
+      "position:fixed;right:16px;bottom:" + (offset + 46) + "px;z-index:9997;display:none;"
+      + "box-sizing:border-box;width:min(330px,calc(100vw - 32px));max-height:min(60vh,480px);"
+      + "padding:14px;border:1px solid #414653;border-radius:14px;background:#181b23;color:#e6e8ee;"
+      + "font:13px/1.6 system-ui,-apple-system,sans-serif;box-shadow:0 12px 32px rgba(0,0,0,.5);"
+      + "flex-direction:column;");
+
+    const head = this._el("div", "display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;");
+    head.appendChild(this._el("b", "color:#e6c78a;", "设定速记本"));
+    const closeBtn = this._el("button", "border:0;background:transparent;color:#9aa1b0;cursor:pointer;font-size:15px;line-height:1;", "✕");
+    closeBtn.type = "button";
+    closeBtn.addEventListener("click", () => { panel.style.display = "none"; });
+    head.appendChild(closeBtn);
+    panel.appendChild(head);
+
+    panel.appendChild(this._el("div", "font-size:11px;color:#6f7688;line-height:1.7;margin-bottom:8px;",
+      "勾上的条目会在每轮请求里作为「既定事实」注入。只存在本机。"));
+
+    const inputRow = this._el("div", "display:flex;gap:6px;margin-bottom:10px;");
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "例如：她其实怕黑";
+    input.style.cssText = "flex:1;min-width:0;padding:7px 9px;border-radius:8px;border:1px solid #4b505f;"
+      + "background:#20232c;color:#e6e8ee;font:inherit;font-size:12px;";
+    const addBtn = this._el("button",
+      "flex:none;padding:7px 12px;border-radius:8px;border:0;background:#e6c78a;color:#221d10;"
+      + "font:inherit;font-size:12px;font-weight:600;cursor:pointer;", "添加");
+    addBtn.type = "button";
+    const submit = () => {
+      self._add(input.value);
+      input.value = "";
+      input.focus();
+    };
+    addBtn.addEventListener("click", submit);
+    input.addEventListener("keydown", event => {
+      if (event.key === "Enter") { event.preventDefault(); submit(); }
+    });
+    inputRow.appendChild(input);
+    inputRow.appendChild(addBtn);
+    panel.appendChild(inputRow);
+
+    const list = this._el("div", "flex:1;min-height:0;overflow:auto;");
+    panel.appendChild(list);
+
+    this._btn = btn;
+    this._panel = panel;
+    this._list = list;
+
+    btn.addEventListener("click", () => {
+      const showing = panel.style.display !== "none";
+      panel.style.display = showing ? "none" : "flex";
+      if (!showing) {
+        self._renderList();
+        setTimeout(() => input.focus(), 30);
+      }
+    });
+
+    ctx.dom.mount(btn);
+    ctx.dom.mount(panel);
+    this._renderList();
+  },
+
+  deactivate() {
+    ["_btn", "_panel", "_list"].forEach(key => {
+      const node = this[key];
+      if (node) {
+        try { node.remove(); } catch (e) { /* 已被统一回收 */ }
+        this[key] = null;
+      }
+    });
+  }
+});
+</script>
+
+<!-- ⑩ 回复长度限幅 -->
+<script type="text/plain" id="src-length-guard">MySWPlugins.register({
+  id: "mysw-length-guard",
+  name: "回复长度限幅",
+  description: "把每轮回复控制在指定字数区间，治长篇大论与一句话敷衍，可设置是否允许分段",
+  enabled: false,
+  permissions: [],
+
+  params: [
+    { key: "min", label: "最少字数（0 = 不限制下限）", type: "number", value: 60, min: 0, max: 5000 },
+    { key: "max", label: "最多字数", type: "number", value: 220, min: 20, max: 8000 },
+    { key: "segment", label: "允许分段（1 = 允许，0 = 只写一段）", type: "number", value: 1, min: 0, max: 1 }
+  ],
+
+  transformPrompt(text, params) {
+    let min = Math.max(0, Math.min(5000, Number((params && params.min) || 0)));
+    let max = Math.max(20, Math.min(8000, Number((params && params.max) || 220)));
+    // 上下限填反了就忽略下限（宁可明确，也别给出自相矛盾的指令）
+    if (min >= max) min = 0;
+
+    const allowSegment = String((params && params.segment != null) ? params.segment : 1) !== "0";
+    const range = min > 0 ? (min + "~" + max) : ("不超过 " + max);
+
+    const rules = ["本轮回复正文控制在 " + range + " 个中文字符（按字符数计，标点也算）。"];
+    if (min > 0) rules.push("内容不足以写满下限时，宁可多写细节、心理与环境，也不要凑废话。");
+    rules.push("接近上限时优先压缩环境与动作描写，保留关键对话与剧情推进，不要用「篇幅所限」之类的话交代。");
+    if (!allowSegment) rules.push("只写一段连贯的话，不要分点、不要小标题。");
+
+    const base = String(text == null ? "" : text);
+    const block = "【本轮长度要求】\n" + rules.map(rule => "- " + rule).join("\n");
+    if (base.indexOf(block) !== -1) return base;
+    return base + "\n\n" + block;
+  }
+});
+</script>
+
+<!-- ⑪ 快捷短语板 -->
+<script type="text/plain" id="src-quick-phrases">MySWPlugins.register({
+  id: "mysw-quick-phrases",
+  name: "快捷短语板",
+  description: "右下角挂一个短语按钮，点一下就把常用句子填进输入框，适合开场白、口头禅与指令",
+  enabled: false,
+  permissions: ["useDom"],
+
+  params: [
+    {
+      key: "phrases",
+      label: "短语列表（一行一条；写成「标题|正文」会显示成标题，不写标题就直接显示正文）",
+      type: "textarea",
+      value: [
+        "打招呼|嗨，今天过得怎么样？",
+        "继续|（继续吧，别停。）",
+        "慢一点|先别急着推进剧情，我想多聊几句。",
+        "OOC 提醒|（OOC：请保持角色设定，不要替我行动或说话。）"
+      ].join("\n")
+    },
+    { key: "offset", label: "距底部位置（像素，和别的悬浮插件错开用）", type: "number", value: 168, min: 0 }
+  ],
+
+  _el(tag, css, text) {
+    const node = document.createElement(tag);
+    if (css) node.style.cssText = css;
+    if (text != null) node.textContent = text;
+    return node;
+  },
+
+  _parse() {
+    const params = this._paramRef || {};
+    return String(params.phrases || "")
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .filter(Boolean)
+      .map(line => {
+        const cut = line.indexOf("|");
+        if (cut === -1) return { title: line, text: line };
+        return {
+          title: line.slice(0, cut).trim() || line.slice(cut + 1).trim(),
+          text: line.slice(cut + 1).trim()
+        };
+      })
+      .filter(item => item.text);
+  },
+
+  /* 往聊天输入框里插文本：走原生 setter + input 事件，
+     这样站内的草稿保存、自动高度、发送按钮状态都会跟着更新。 */
+  _insert(text) {
+    const input = document.getElementById("message-input");
+    if (!input) return false;
+
+    const desc = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value");
+    const start = typeof input.selectionStart === "number" ? input.selectionStart : input.value.length;
+    const end = typeof input.selectionEnd === "number" ? input.selectionEnd : input.value.length;
+    const next = input.value.slice(0, start) + text + input.value.slice(end);
+    if (desc && desc.set) desc.set.call(input, next);
+    else input.value = next;
+
+    const pos = start + text.length;
+    input.focus();
+    try { input.setSelectionRange(pos, pos); } catch (e) { /* 某些浏览器不支持就算了 */ }
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    return true;
+  },
+
+  _renderList() {
+    const list = this._list;
+    if (!list) return;
+    const self = this;
+    list.innerHTML = "";
+
+    const items = this._parse();
+    if (!items.length) {
+      list.appendChild(this._el("div", "font-size:12px;color:#8d93a2;padding:6px 0;", "参数里还没有短语。"));
+      return;
+    }
+
+    items.forEach(item => {
+      const row = this._el("button",
+        "display:block;width:100%;text-align:left;padding:8px 10px;margin-bottom:6px;border-radius:9px;"
+        + "border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:#e6e8ee;"
+        + "font:inherit;font-size:12.5px;line-height:1.6;cursor:pointer;word-break:break-word;");
+      row.type = "button";
+      row.appendChild(this._el("b", "display:block;color:#e6c78a;font-size:12px;margin-bottom:2px;", item.title));
+      row.appendChild(this._el("span", "display:block;color:#b9bfcd;font-size:11.5px;", item.text));
+      row.addEventListener("click", () => {
+        if (self._insert(item.text)) {
+          if (self._panel) self._panel.style.display = "none";
+        } else if (self._ctx && typeof self._ctx.toast === "function") {
+          self._ctx.toast("没有找到聊天输入框，先打开一个聊天再试");
+        }
+      });
+      list.appendChild(row);
+    });
+  },
+
+  activate(params, plugin, ctx) {
+    if (!ctx.dom.available) return;
+    this._paramRef = params;
+    this._ctx = ctx;
+
+    // 保存参数会再次 activate：刷新列表即可，不要叠第二套界面
+    if (this._btn && this._btn.isConnected) {
+      this._renderList();
+      return;
+    }
+
+    const offset = Math.max(0, Number(params.offset) || 20);
+    const self = this;
+
+    const btn = this._el("button",
+      "position:fixed;right:16px;bottom:" + offset + "px;z-index:9996;"
+      + "padding:8px 13px;border:1px solid rgba(230,199,138,.45);border-radius:999px;"
+      + "background:rgba(24,27,35,.94);color:#e6c78a;font:12px/1.2 system-ui,-apple-system,sans-serif;"
+      + "cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35);backdrop-filter:blur(6px);",
+      "💬 短语");
+    btn.type = "button";
+    btn.title = "打开快捷短语板";
+
+    const panel = this._el("div",
+      "position:fixed;right:16px;bottom:" + (offset + 46) + "px;z-index:9997;display:none;"
+      + "box-sizing:border-box;width:min(300px,calc(100vw - 32px));"
+      + "padding:12px;border:1px solid #414653;border-radius:14px;background:#181b23;color:#e6e8ee;"
+      + "font:13px/1.6 system-ui,-apple-system,sans-serif;box-shadow:0 12px 32px rgba(0,0,0,.5);");
+
+    const head = this._el("div", "display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;");
+    head.appendChild(this._el("b", "color:#e6c78a;", "快捷短语"));
+    const closeBtn = this._el("button", "border:0;background:transparent;color:#9aa1b0;cursor:pointer;font-size:15px;line-height:1;", "✕");
+    closeBtn.type = "button";
+    closeBtn.addEventListener("click", () => { panel.style.display = "none"; });
+    head.appendChild(closeBtn);
+    panel.appendChild(head);
+
+    const list = this._el("div", "max-height:min(50vh,360px);overflow:auto;");
+    panel.appendChild(list);
+
+    panel.appendChild(this._el("div", "margin-top:8px;font-size:11px;color:#6f7688;line-height:1.6;",
+      "短语会插入到输入框光标处，不会直接发送。内容可在「插件」页的参数里改。"));
+
+    this._btn = btn;
+    this._panel = panel;
+    this._list = list;
+
+    btn.addEventListener("click", () => {
+      const showing = panel.style.display !== "none";
+      panel.style.display = showing ? "none" : "block";
+      if (!showing) self._renderList();
+    });
+
+    ctx.dom.mount(btn);
+    ctx.dom.mount(panel);
+    this._renderList();
+  },
+
+  deactivate() {
+    ["_btn", "_panel", "_list"].forEach(key => {
+      const node = this[key];
+      if (node) {
+        try { node.remove(); } catch (e) { /* 已被统一回收 */ }
+        this[key] = null;
+      }
+    });
+  }
+});
+</script>
+
+
+<script>
+(function () {
+    'use strict';
+
+    /* ============================================================
+       1) 收集所有插件卡片与源码
+       ============================================================ */
+    var cards = Array.prototype.slice.call(
+        document.querySelectorAll('.plugin-card[data-source]')
+    );
+    var placeholders = Array.prototype.slice.call(
+        document.querySelectorAll('.plugin-card[data-placeholder]')
+    );
+
+    // 每张卡片绑上：源码文本、文件名、大小
+    cards.forEach(function (card) {
+        var srcEl = document.getElementById(card.dataset.source);
+        var raw = srcEl ? srcEl.textContent : '';
+        // 去掉首尾多余空行，统一以一个换行结尾
+        card.__code = raw.replace(/^\n+/, '').replace(/\s+$/, '') + '\n';
+        card.__file = card.dataset.file || (card.dataset.id + '.js');
+        // 供搜索匹配的 haystack，预先算好，避免每次输入都重新拼字符串
+        card.__haystack = [
+            card.dataset.name || '',
+            card.dataset.id || '',
+            card.dataset.desc || ''
+        ].join(' ').toLowerCase();
+
+        // 把大小写进卡片元信息
+        var sizeEl = card.querySelector('[data-role="size"]');
+        if (sizeEl) sizeEl.textContent = formatSize(card.__code);
+    });
+
+    var totalCount = cards.length;
+    document.getElementById('stat-total').textContent = totalCount;
+
+    /* ---------- 工具：字节大小 ---------- */
+    function formatSize(str) {
+        var bytes = new Blob([str]).size;
+        if (bytes < 1024) return bytes + ' B';
+        return (bytes / 1024).toFixed(1) + ' KB';
+    }
+
+    /* ---------- 工具：HTML 转义 ---------- */
+    function escapeHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    /* ============================================================
+       2) 极简 JS 语法高亮
+       ------------------------------------------------------------
+       先把注释和字符串「挖出来」当作占位符放到一边，再在剩下的骨架
+       上匹配关键字 / 数字 / 内置对象，最后把占位符还原成 <span>。
+       这样能避免字符串里的 "function" 或注释里的 // 被重复高亮。
+       ============================================================ */
+    var KEYWORDS = [
+        'function','return','if','else','for','while','var','let','const',
+        'new','this','typeof','instanceof','class','extends','super','try',
+        'catch','finally','throw','switch','case','break','continue','default',
+        'in','of','delete','void','yield','async','await','do','with','debugger',
+        'export','import','from','as','null','undefined','true','false'
+    ].join('|');
+
+    var BUILTINS = [
+        'document','window','console','Object','Array','String','Number','Boolean',
+        'Math','JSON','Date','RegExp','Error','Promise','Map','Set','WeakMap','WeakSet',
+        'Symbol','navigator','localStorage','sessionStorage','MutationObserver',
+        'setTimeout','setInterval','clearTimeout','clearInterval','Blob','URL','fetch',
+        'performance','requestAnimationFrame','cancelAnimationFrame','isFinite','Number'
+    ].join('|');
+
+    function highlightJS(code) {
+        var escaped = escapeHtml(code);
+        var slots = [];
+        var counter = 0;
+
+        // 用 \u0001 编号 \u0002 收尾（这两个控制字符不会出现在源码里）
+        function mask(re, cls) {
+            escaped = escaped.replace(re, function (m) {
+                var key = '\u0001' + (counter++) + '\u0002';
+                slots.push({ key: key, html: '<span class="tok-' + cls + '">' + m + '</span>' });
+                return key;
+            });
+        }
+
+        // 顺序很重要：注释 → 字符串（模板串要先于普通串）
+        mask(/\/\*[\s\S]*?\*\//g, 'comment');
+        mask(/\/\/[^\n]*/g, 'comment');
+        mask(/`(?:\\.|[^`\\])*`/g, 'string');
+        mask(/"(?:\\.|[^"\\])*"/g, 'string');
+        mask(/'(?:\\.|[^'\\])*'/g, 'string');
+
+        // 此时剩下的内容里已经没有注释/字符串了
+        escaped = escaped.replace(new RegExp('\\b(?:' + KEYWORDS + ')\\b', 'g'),
+            '<span class="tok-kw">$&</span>');
+        escaped = escaped.replace(/\b\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\b/g,
+            '<span class="tok-num">$&</span>');
+        escaped = escaped.replace(new RegExp('\\b(?:' + BUILTINS + ')\\b', 'g'),
+            '<span class="tok-builtin">$&</span>');
+
+        // 还原占位符（循环几轮以支持嵌套，理论上不会发生）
+        for (var round = 0; round < 3; round++) {
+            var changed = false;
+            for (var i = 0; i < slots.length; i++) {
+                if (escaped.indexOf(slots[i].key) !== -1) {
+                    escaped = escaped.split(slots[i].key).join(slots[i].html);
+                    changed = true;
+                }
+            }
+            if (!changed) break;
+        }
+
+        return escaped;
+    }
+
+    /* ============================================================
+       3) Toast
+       ============================================================ */
+    var toastEl = document.getElementById('toast');
+    var toastText = document.getElementById('toast-text');
+    var toastTimer = null;
+
+    function showToast(msg) {
+        toastText.textContent = msg;
+        toastEl.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+            toastEl.classList.remove('show');
+        }, 2200);
+    }
+
+    /* ============================================================
+       4) 通用下载
+       ============================================================ */
+    function downloadFile(name, content) {
+        try {
+            var blob = new Blob([content], { type: 'application/javascript;charset=utf-8' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = name;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+            showToast('已开始下载 ' + name);
+        } catch (err) {
+            showToast('下载失败，请改用「查看代码」手动复制');
+        }
+    }
+
+    /* ============================================================
+       5) 代码弹窗
+       ============================================================ */
+    var modal = document.getElementById('code-modal');
+    var modalFileName = document.getElementById('modal-file-name');
+    var codeBlock = document.getElementById('code-block');
+    var copyBtn = document.getElementById('copy-code');
+    var copyLabel = document.getElementById('copy-label');
+    var currentCode = '';
+    var currentFile = '';
+    var copyResetTimer = null;
+    var lastFocused = null;
+
+    function openModal(card) {
+        currentCode = card.__code;
+        currentFile = card.__file;
+
+        var lineCount = currentCode.split('\n').length;
+        // 末尾如果有一个多余空行（每个 .js 都加了尾换行），行数减掉它再显示更准
+        if (lineCount > 1 && currentCode.slice(-1) === '\n') lineCount -= 1;
+
+        modalFileName.textContent = currentFile + ' · ' + lineCount + ' 行';
+        codeBlock.innerHTML = highlightJS(currentCode);
+        codeBlock.scrollTop = 0;
+
+        lastFocused = document.activeElement;
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+
+        // 打开后把焦点送进弹窗，方便键盘用户
+        setTimeout(function () { codeBlock.focus(); }, 0);
+    }
+
+    function closeModal() {
+        modal.classList.remove('show');
+        document.body.style.overflow = '';
+        if (lastFocused && typeof lastFocused.focus === 'function') {
+            try { lastFocused.focus(); } catch (e) {}
+        }
+    }
+
+    document.getElementById('modal-close').addEventListener('click', closeModal);
+
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) closeModal();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal.classList.contains('show')) closeModal();
+    });
+
+    /* ============================================================
+       5.5) 一键导入主站
+       ------------------------------------------------------------
+       市场页通常是从主站「插件市场」入口（target=_blank）打开的独立标签页。
+       这里用两条通道把插件源码递给主站：
+         · BroadcastChannel —— 主站开在任意标签页都能收到，不依赖 opener；
+         · postMessage —— 给没有 BroadcastChannel 的老浏览器兜底。
+       主站收到后先回 ack（证明它在），用户在那边确认后再回 result。
+       这里以「1.6 秒内没收到 ack」判定主站没开，直接退回下载，别让用户干等。
+       ============================================================ */
+    var INSTALL_CHANNEL = 'mysw-plugin-install-bridge';
+    var INSTALL_REQUEST_KEY = 'mysw-plugin-install-request';
+    var INSTALL_REPLY_KEY = 'mysw-plugin-install-reply';
+    var installBus = null;
+    try {
+        if (typeof BroadcastChannel === 'function') installBus = new BroadcastChannel(INSTALL_CHANNEL);
+    } catch (e) {
+        installBus = null;
+    }
+
+    var installJobs = new Map();   // nonce -> { ack, result }
+
+    /* 三条通道一起发，谁先到算谁的（主站会按 nonce 去重）：
+         BroadcastChannel —— 主站开在哪个标签页都能收到；
+         postMessage —— 从主站打开本页时（有 opener 且允许）最快；
+         localStorage —— 入口带了 rel="noopener" 时 opener 为 null，靠它兜底。 */
+    function bridgeSend(payload) {
+        if (installBus) {
+            try { installBus.postMessage(payload); } catch (e) { /* 忽略 */ }
+        }
+        try {
+            if (window.opener && !window.opener.closed) window.opener.postMessage(payload, location.origin);
+        } catch (e) { /* 跨域或已关闭 */ }
+        try {
+            localStorage.setItem(INSTALL_REQUEST_KEY, JSON.stringify(Object.assign({ ts: Date.now() }, payload)));
+        } catch (e) { /* 隐私模式 / 配额满 */ }
+    }
+
+    function onBridgeMessage(data) {
+        if (!data || !data.nonce) return;
+        var job = installJobs.get(data.nonce);
+        if (!job) return;
+        if (data.type === 'mysw:plugin-install-ack') job.ack();
+        if (data.type === 'mysw:plugin-install-result') {
+            job.ack();
+            job.result(data);
+        }
+    }
+
+    if (installBus) installBus.onmessage = function (e) { onBridgeMessage(e.data); };
+    window.addEventListener('message', function (e) {
+        if (e.origin !== location.origin) return;   // 只认同源主站
+        onBridgeMessage(e.data);
+    });
+    // 主站把回执写在 localStorage：跨标签不依赖 opener / BroadcastChannel
+    window.addEventListener('storage', function (e) {
+        if (e.key !== INSTALL_REPLY_KEY || !e.newValue) return;
+        var data = null;
+        try { data = JSON.parse(e.newValue); } catch (err) { data = null; }
+        if (data) onBridgeMessage(data);
+    });
+
+    function setImportStatus(el, text, tone) {
+        if (!el) return;
+        el.textContent = text || '';
+        el.className = 'pc-import-status' + (tone ? ' ' + tone : '');
+        el.hidden = !text;
+    }
+
+    function setImportBusy(btn, busy) {
+        if (!btn) return;
+        if (busy) {
+            if (!btn.dataset.label) btn.dataset.label = btn.innerHTML;
+            btn.disabled = true;
+            btn.classList.add('busy');
+            btn.innerHTML = '<span class="pc-spin"></span> 发送中…';
+        } else {
+            btn.disabled = false;
+            btn.classList.remove('busy');
+            if (btn.dataset.label) btn.innerHTML = btn.dataset.label;
+        }
+    }
+
+    function quickImport(card, btn, statusEl) {
+        var nonce = 'ins-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+        var settled = false;
+        var timeoutId = 0;
+
+        var job = {
+            ack: function () {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timeoutId);
+                setImportStatus(statusEl, '已发送到主站 —— 切到主站标签页，在弹框里点「导入」就装好了', 'info');
+            },
+            result: function (data) {
+                settled = true;
+                clearTimeout(timeoutId);
+                installJobs.delete(nonce);
+                setImportBusy(btn, false);
+                if (data && data.ok) {
+                    setImportStatus(statusEl, '✅ ' + (data.message || '已导入主站') + '（在主站「设置 → 插件」打开开关即可）', 'ok');
+                    showToast('已导入主站：' + (card.dataset.name || '插件'));
+                } else {
+                    setImportStatus(statusEl, '⚠️ ' + ((data && data.message) || '主站取消了导入'), 'warn');
+                }
+            }
+        };
+
+        installJobs.set(nonce, job);
+        setImportStatus(statusEl, '正在把插件发给主站…', 'info');
+        setImportBusy(btn, true);
+        bridgeSend({
+            type: 'mysw:plugin-install-request',
+            nonce: nonce,
+            code: card.__code,
+            id: card.dataset.id,
+            name: card.dataset.name
+        });
+
+        timeoutId = setTimeout(function () {
+            if (settled) return;
+            settled = true;
+            installJobs.delete(nonce);
+            setImportBusy(btn, false);
+            setImportStatus(statusEl, '没检测到已打开的主站，已改为下载文件。先打开 MySW，再回来点一次就能直接装进去。', 'warn');
+            downloadFile(card.__file, card.__code);
+        }, 1600);
+    }
+
+    /* ---------- 卡片按钮事件 ---------- */
+    var IMPORT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/></svg>';
+
+    cards.forEach(function (card) {
+        var actions = card.querySelector('.pc-actions');
+        var dlBtn = card.querySelector('[data-action="download"]');
+        var viewBtn = card.querySelector('[data-action="view"]');
+
+        if (actions) {
+            var importBtn = document.createElement('button');
+            importBtn.type = 'button';
+            importBtn.className = 'btn btn-primary pc-import-btn';
+            importBtn.innerHTML = IMPORT_ICON + ' 一键导入';
+            importBtn.title = '直接把插件装进已打开的 MySW（主站）';
+            actions.insertBefore(importBtn, actions.firstChild);
+
+            // 一张卡片里只留一个主按钮：导入是主操作，下载降级
+            if (dlBtn) {
+                dlBtn.classList.remove('btn-primary');
+                dlBtn.classList.add('btn-ghost');
+            }
+
+            var statusEl = document.createElement('p');
+            statusEl.className = 'pc-import-status';
+            statusEl.hidden = true;
+            actions.parentNode.insertBefore(statusEl, actions.nextSibling);
+
+            importBtn.addEventListener('click', function () {
+                quickImport(card, importBtn, statusEl);
+            });
+        }
+
+        if (dlBtn) {
+            dlBtn.addEventListener('click', function () {
+                downloadFile(card.__file, card.__code);
+            });
+        }
+
+        if (viewBtn) {
+            viewBtn.addEventListener('click', function () {
+                openModal(card);
+            });
+        }
+    });
+
+    /* ============================================================
+       6) 复制（弹窗内）
+       ============================================================ */
+    function fallbackCopy(text) {
+        try {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed';
+            ta.style.top = '-1000px';
+            document.body.appendChild(ta);
+            ta.select();
+            var ok = document.execCommand('copy');
+            document.body.removeChild(ta);
+            return ok;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function copyText(text) {
+        return new Promise(function (resolve) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text)
+                    .then(function () { resolve(true); })
+                    .catch(function () { resolve(fallbackCopy(text)); });
+            } else {
+                resolve(fallbackCopy(text));
+            }
+        });
+    }
+
+    function flashCopied() {
+        copyBtn.classList.add('copied');
+        copyLabel.textContent = '已复制';
+        clearTimeout(copyResetTimer);
+        copyResetTimer = setTimeout(function () {
+            copyBtn.classList.remove('copied');
+            copyLabel.textContent = '复制代码';
+        }, 1600);
+    }
+
+    copyBtn.addEventListener('click', function () {
+        if (!currentCode) return;
+        copyText(currentCode).then(function (ok) {
+            if (ok) {
+                flashCopied();
+                showToast('插件代码已复制到剪贴板');
+            } else {
+                showToast('复制失败，请手动选中代码复制');
+            }
+        });
+    });
+
+    /* ---------- 弹窗内：下载当前插件 ---------- */
+    document.getElementById('download-modal').addEventListener('click', function () {
+        if (!currentCode || !currentFile) return;
+        downloadFile(currentFile, currentCode);
+    });
+
+    /* ============================================================
+       7) 搜索 / 筛选
+       ============================================================ */
+    var searchInput = document.getElementById('plugin-search');
+    var searchClear = document.getElementById('search-clear');
+    var filterCount = document.getElementById('filter-count');
+    var noResult = document.getElementById('no-result');
+    var noResultText = document.getElementById('no-result-text');
+
+    function applyFilter() {
+        var kw = searchInput.value.trim().toLowerCase();
+        var visible = 0;
+
+        cards.forEach(function (card) {
+            var hit = !kw || card.__haystack.indexOf(kw) !== -1;
+            card.style.display = hit ? '' : 'none';
+            if (hit) visible++;
+        });
+
+        // 占位卡片：只在无搜索词时出现，避免它混进搜索结果里
+        placeholders.forEach(function (ph) {
+            ph.style.display = kw ? 'none' : '';
+        });
+
+        // 搜索框清空按钮
+        if (searchClear) {
+            if (kw) searchClear.removeAttribute('hidden');
+            else searchClear.setAttribute('hidden', '');
+        }
+
+        // 结果提示行
+        if (!kw) {
+            filterCount.setAttribute('hidden', '');
+            filterCount.classList.remove('is-empty');
+            noResult.classList.remove('show');
+            return;
+        }
+
+        filterCount.removeAttribute('hidden');
+        filterCount.classList.toggle('is-empty', visible === 0);
+        filterCount.innerHTML = visible === 0
+            ? '无匹配 · 共 <b>' + totalCount + '</b> 个'
+            : '筛选结果 <b>' + visible + '</b> / ' + totalCount;
+
+        if (visible === 0) {
+            noResultText.textContent = '没有找到包含「' + searchInput.value.trim() + '」的插件，换个关键词试试。';
+            noResult.classList.add('show');
+        } else {
+            noResult.classList.remove('show');
+        }
+    }
+
+    searchInput.addEventListener('input', applyFilter);
+
+    if (searchClear) {
+        searchClear.addEventListener('click', function () {
+            searchInput.value = '';
+            applyFilter();
+            searchInput.focus();
+        });
+    }
+
+    document.getElementById('clear-search').addEventListener('click', function () {
+        searchInput.value = '';
+        applyFilter();
+        searchInput.focus();
+    });
+
+    /* ---------- `/` 快捷键聚焦搜索框 ---------- */
+    function isTypingContext() {
+        var el = document.activeElement;
+        if (!el) return false;
+        var tag = el.tagName;
+        return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== '/') return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (modal.classList.contains('show')) return;
+        if (isTypingContext()) return;
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.select();
+    });
+
+    /* ---------- 首次应用一次过滤，统一初始状态 ---------- */
+    applyFilter();
+
+})();
+</script>
+
+<script src="modal-resize.js"></script>
+<script>
+/* —— 插件市场「查看源码」弹窗拉板：底部拉杆调高、右下角调宽+高，双击恢复，大小记住 —— */
+enableModalResize(document.getElementById('code-modal'), { key: 'plugin-code' });
+</script>
+
+</body>
+</html>

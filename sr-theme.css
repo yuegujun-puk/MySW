@@ -1,0 +1,1661 @@
+/**
+ * sr-theme.css — MySW「星铁主题」（星穹列车风格）v3
+ * · 整页 = 主背景.webp 深蓝星空（#app background）
+ * · 侧栏 = 深色玻璃浮窗（圆角 + 细白描边 + 大阴影，星空透出）
+ * · 对话区 = 白色实底大圆角浮窗（与侧栏之间露出星空间隙）
+ * · 气泡 = 开拓者金 #d3bb8b（bubbles-0 默认皮肤）/ 角色 #ebebeb，
+ * 单侧直角 + -2px 4px #9d9f9f 硬投影（Message.styl box()）
+ * · 昵称 #6b6b6b、头像圆形 #3a3a3a 底（ItemMessage.vue）
+ * · 侧栏会话项 = MessageGroup .item：深色渐变 + 列车水印 + #595556 描边，
+ * 选中浅白底
+ * · footer 分隔线 = 5px(→4px) solid #595556（Menu.vue .footer）
+ * · 弹窗 = Window.styl message()：5px #595556 / 0 50px 0 0 / 外圈描边
+ * · 图标钮 hover = #e3e3e3 圆底 + 5px 白光圈（--meni-icon-shadow）
+ * 两个变体：
+ */
+
+/* ==================================================================
+   1. 变量与页面底
+ */
+body.sr-theme {
+    /* sr-message-maker :root / 组件原值 */
+    --sr-ink: #040406;              /* 主墨色（浅版黑 / 深版反转为白） */
+    --sr-ink-2: #3c3e44;
+    --sr-name: #6b6b6b;
+    --sr-gold-bubble: #d3bb8b;      /* bubbles-0 开拓者气泡 */
+    --sr-gold-bubble-shadow: #b7a06b;
+    --sr-bubble: #ebebeb;           /* 角色气泡 box() */
+    --sr-bubble-shadow: #9d9f9f;
+    --sr-border: #595556;
+    --sr-border-hover: #b5b5b5;
+    --sr-option: #ece9ec;
+    --sr-icon-bg: #e3e3e3;
+    --sr-btn-hover: #e4d89b;
+    --sr-avatar-bg: #3a3a3a;
+    --sr-window: #f4f2f0;           /* 对话窗底 */
+    --sr-window-bar: #efedeb;       /* 窗内标题/搜索条 */
+    --sr-window-line: #d9d6d3;      /* 窗内细线 */
+    --sr-glass: rgba(13, 15, 24, 0.42);   /* 侧栏深玻璃 */
+    --sr-glass-line: rgba(255, 255, 255, 0.16);
+    --sr-panel: #d8d8d8;
+    --sr-panel-deep: #cccacd;
+    --sr-gold: #d3bb8b;
+    --sr-gold-deep: #a8894e;
+    --sr-gold-text: #8c7345;
+    --sr-focus-ring: rgba(211, 187, 139, 0.55);
+
+    --bg-primary: #10141f;
+    --bg-secondary: var(--sr-window);
+    --bg-tertiary: var(--sr-window);
+    --bg-sidebar: var(--sr-glass);
+    --text-primary: var(--sr-ink);
+    --text-secondary: var(--sr-ink-2);
+    --text-muted: var(--sr-name);
+    --accent-gold: var(--sr-gold-deep);
+    --accent-gold-rgb: 211, 187, 139;
+    --border-color: var(--sr-border);
+    --border-light: rgba(89, 85, 86, 0.3);
+    --shadow-lg: 0 10px 36px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.4);
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    /* 字体栈首位 = 自定义字体槽位：未导入自定义字体时由下方 :root 的
+       --my-custom-font 兜底为栈内字体（重复出现不影响回退顺序）；
+       导入后会由注入样式/开关类把 "MySWCustomUIFont" 顶到最前。 */
+    --font-family: var(--my-custom-font, 'Noto Sans SC'), 'HYWenHei-85W', 'HYWenHei', 'Source Han Sans CN', 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+}
+
+/* --my-custom-font 自定义字体槽位的默认值与开关：
+   · :root 默认给栈内字体，保证未开启时 var() 展开依旧合法；
+   · body.mysw-custom-font-on 由 mysw-core.js applyUiFont() 在导入字体后挂上，
+     把自定义字体顶到星铁主题字体栈最前（修复：星铁主题下自定义字体不生效）。 */
+:root { --my-custom-font: 'Noto Sans SC'; }
+body.sr-theme.mysw-custom-font-on { --my-custom-font: 'MySWCustomUIFont'; }
+
+/* 星空整页底 = 主背景.webp */
+body.sr-theme.light-theme {
+    background: url('sr-assets/sr-bg-main.webp') center / cover no-repeat fixed #10141f;
+    color: var(--sr-ink);
+}
+
+body.sr-theme ::-webkit-scrollbar { width: 8px; height: 8px; }
+body.sr-theme ::-webkit-scrollbar-track { background: #3c3f46; }   /* Menu.vue .list 轨道 */
+body.sr-theme ::-webkit-scrollbar-thumb { background: #9ea0a4; }   /* Menu.vue thumb */
+body.sr-theme .sidebar ::-webkit-scrollbar-track { background: #c6c6c6; }
+body.sr-theme .sidebar ::-webkit-scrollbar-thumb { background: #545454; }
+body.sr-theme ::selection { background: var(--sr-gold); color: #17181c; }
+
+/* ==================================================================
+   2. 浮窗式版式：星空上两个独立圆角窗
+ */
+body.sr-theme .app-container {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+/* 侧栏 = 原版菜单浮窗：深色玻璃、星空透出、细白描边 */
+body.sr-theme .sidebar {
+    margin: 14px 6px 14px 14px;
+    height: auto;
+    align-self: stretch;
+    border-radius: 12px;
+    border: 1px solid var(--sr-glass-line);
+    background: var(--sr-glass) !important;
+    backdrop-filter: blur(14px) saturate(1.15);
+    -webkit-backdrop-filter: blur(14px) saturate(1.15);
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
+    color: #eef0f4;
+}
+
+body.sr-theme .sidebar-header {
+    color: #f4f5f7;
+    /* 游戏里标题下的分隔线是半透明细线（scaled 5px ≈ 2px），4px 太厚像色块 */
+    border-bottom: 2px solid var(--sr-border);
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+
+body.sr-theme .sidebar-footer {
+    border-top: 2px solid var(--sr-border);   /* Menu.vue .footer */
+    background: transparent;
+}
+
+/* 对话区 = 原版白色对话浮窗：实底大圆角，与侧栏间隙露星空 */
+body.sr-theme .chat-area {
+    margin: 14px 14px 14px 6px;
+    height: auto;
+    border-radius: 12px;
+    border: 1px solid rgba(10, 12, 20, 0.45);
+    background: var(--sr-window) !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* 用户设了聊天背景图时主题底色必须让位：
+   之前 !important 铺底会压掉 inline 背景图，切到星铁主题背景图就"化身空气" */
+body.sr-theme .chat-area.has-custom-bg {
+    background-color: var(--sr-window);
+    background-image: var(--chat-bg-image, none) !important;
+    /* 上面那条 background 简写是 !important，会把 size 重置成 auto、repeat 重置成 repeat，
+       结果壁纸按原尺寸平铺成一大片——这里必须同样加 !important 才压得住 */
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+}
+
+/* 浅色：遮罩不能用 #2d303a 那层深灰，但也不能像以前那样直接透明
+   （写死 transparent 的结果就是浓度拉到 100% 壁纸照样透出来）。
+   换成本主题的窗口色，透明度仍然听滑杆的 */
+body.sr-theme.light-theme .chat-area::before {
+    background: var(--sr-window, #f4f2f0) !important;
+    opacity: var(--chat-bg-overlay-opacity, 0.35) !important;
+}
+
+/* 让消息层浮在列车水印(::after)之上：水印只在空白处露出，不会叠在气泡上 */
+body.sr-theme .chat-messages { position: relative; z-index: 1; background: transparent; }
+
+/* 对话背景.webp 列车水印（原版 15% 透明度），窗内右下角。
+   游戏里聊天区下方就这一个列车头水印——别处（会话条目）不再重复。
+   之前 0.1 几乎看不见，提到 0.18 并放大一点。 */
+body.sr-theme .chat-area::after {
+    content: '';
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+    width: 240px;
+    height: 107px;
+    background: url('sr-assets/sr-bg-dialog.webp') right bottom / contain no-repeat;
+    opacity: 0.18;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* 窗内标题栏 / 搜索条 / 输入区：浅米白，细线分隔 */
+body.sr-theme .chat-header {
+    background: var(--sr-window-bar);
+    border-bottom: 1px solid var(--sr-window-line);
+    color: #26262c;
+}
+
+body.sr-theme .chat-search-bar {
+    background: var(--sr-window-bar);
+    border-bottom: 1px solid var(--sr-window-line);
+}
+
+body.sr-theme:not(.sr-dark-theme) .chat-search-bar input {
+    background: #ffffff !important;
+    border: 1px solid var(--sr-window-line) !important;
+    color: #26262c !important;
+    box-shadow: none !important;
+    border-radius: 16px;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+body.sr-theme .chat-search-bar .icon-btn { color: #55565c; }
+
+body.sr-theme .chat-input-area {
+    background: #faf9f8;
+    border-top: 1px solid var(--sr-window-line);
+}
+
+/* 输入框 = 原版浅灰胶囊 */
+body.sr-theme .chat-input-area textarea,
+body.sr-theme .chat-input-area input:not([type='range']):not([type='checkbox']):not([type='radio']) {
+    background: #ececea;
+    border: none;
+    border-radius: 18px;
+    color: #17181c;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+body.sr-theme .chat-input-area textarea:focus,
+body.sr-theme .chat-input-area input:focus {
+    box-shadow: 0 0 0 2px var(--sr-focus-ring);
+    outline: none;
+}
+
+body.sr-theme .chat-input-area textarea::placeholder,
+body.sr-theme .chat-input-area input::placeholder { color: #a9abad; }
+
+/* 输入区图标钮：圆形浅灰（原版底栏按钮规格） */
+body.sr-theme .chat-input-area .icon-btn {
+    background: var(--sr-icon-bg);
+    color: #3c3e44;
+    border-radius: 50%;
+}
+
+body.sr-theme .chat-input-area .icon-btn:hover {
+    background: var(--sr-btn-hover);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.75);
+}
+
+/* ==================================================================
+   3. 侧栏内容：会话项 = MessageGroup .item 复刻
+ */
+/* 未选中：深色渐变底 + #595556 描边（原版原值）。
+   注意：不再给条目叠列车水印——游戏里列车头只出现在聊天区右下角一处，
+   每个联系人都印一遍是画蛇添足。 */
+body.sr-theme .character-item,
+body.sr-theme .friend-item,
+body.sr-theme .chat-list-item,
+body.sr-theme .sidebar .list-item {
+    position: relative;
+    border-radius: 6px;
+    border: 2px solid var(--sr-border);
+    background:
+        linear-gradient(to right, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5) 60%, rgba(255, 255, 255, 0.1)) !important;
+    color: #e8e8ea;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+body.sr-theme .character-item:hover,
+body.sr-theme .friend-item:hover,
+body.sr-theme .chat-list-item:hover {
+    border-color: var(--sr-border-hover);   /* --menu-border-hover */
+}
+
+/* 选中 = 原版 .message-highlight：浅白底 + 近白描边(#f3f4f6) + 细白外圈光。
+   不是橙色也不是纯白实底，就是「框外包一圈细细的白」。 */
+body.sr-theme .character-item.active,
+body.sr-theme .friend-item.active,
+body.sr-theme .chat-list-item.active {
+    background: #eaeaea !important;
+    border-color: #f3f4f6;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55);
+    color: #17181c;
+}
+
+body.sr-theme .character-item span,
+body.sr-theme .friend-item .name,
+body.sr-theme .character-item .item-name { color: inherit; }
+
+body.sr-theme .sidebar .section-title,
+body.sr-theme .sidebar .group-label,
+body.sr-theme .sidebar .count-label { color: #b9bcc4; }
+
+body.sr-theme .sidebar-header a,
+body.sr-theme .forum-entry { color: #d6d9df; }
+body.sr-theme .forum-entry:hover { color: var(--sr-gold); }
+
+body.sr-theme .sidebar-tools .tool-btn,
+body.sr-theme .sidebar-tools button { color: #d6d9df; }
+body.sr-theme .sidebar-tools .tool-btn:hover,
+body.sr-theme .sidebar-tools button:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* 侧栏内图标钮：圆形深色玻璃（原版黑圆设置钮） */
+body.sr-theme .sidebar .icon-btn,
+body.sr-theme .sidebar .small-icon-btn {
+    color: #e3e3e3;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+body.sr-theme .sidebar .icon-btn:hover,
+body.sr-theme .sidebar .small-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.25);
+}
+
+body.sr-theme #theme-toggle-btn {
+    background: var(--sr-gold);
+    color: #17181c;
+}
+
+body.sr-theme #theme-toggle-btn:hover { box-shadow: 0 0 0 4px rgba(211, 187, 139, 0.35); }
+
+/* ==================================================================
+   4. 气泡：开拓者金 + 角色白，单直角 + 硬投影
+      反制 JS inline 样式（applyBubbleTextStyle 默认白字+黑描边）
+ */
+/* 角色气泡 = box() .text 原值（圆角比例按原版缩放：0 25px 25px ≈ 0 10px） */
+body.sr-theme .message .bubble {
+    border-radius: 0 10px 10px 10px !important;
+    background-color: var(--sr-bubble) !important;
+    background-image: none !important;
+    box-shadow: -2px 4px var(--sr-bubble-shadow) !important;
+    color: var(--sr-ink) !important;
+    text-shadow: none !important;
+    border: none;
+    backdrop-filter: none;
+    line-height: 1.55;
+}
+
+/* 开拓者（用户）气泡 = bubbles-0 原值 #d3bb8b */
+body.sr-theme .message.mine .bubble {
+    border-radius: 10px 0 10px 10px !important;
+    background-color: var(--sr-gold-bubble) !important;
+    box-shadow: 2px 4px var(--sr-gold-bubble-shadow) !important;
+}
+
+body.sr-theme .message .bubble pre {
+    background: #2c2c2e;
+    border: 2px solid var(--sr-border);
+    border-radius: 8px;
+    color: #e8e8ea;
+    text-shadow: none !important;
+}
+
+body.sr-theme .bubble code {
+    background: rgba(89, 85, 86, 0.14);
+    color: #7a3b3b;
+    text-shadow: none !important;
+}
+
+body.sr-theme .bubble pre code { background: transparent; color: inherit; }
+
+body.sr-theme .bubble blockquote {
+    border-left: 4px solid var(--sr-gold-deep);
+    background: rgba(211, 187, 139, 0.28);
+    color: var(--sr-ink);
+    text-shadow: none !important;
+}
+
+body.sr-theme .bubble a { color: #7a5c1e; text-shadow: none !important; }
+
+/* 昵称 = .name 原值；时间戳浅灰（星空上需轻投影） */
+body.sr-theme .nickname {
+    color: var(--sr-name) !important;
+    font-weight: 700;
+    text-shadow: none !important;
+}
+
+body.sr-theme .message-meta,
+body.sr-theme .message .meta,
+body.sr-theme .message-time { color: #9b9da1 !important; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+
+/* 头像 = 圆形 + #3a3a3a 底（ItemMessage.vue） */
+body.sr-theme .avatar {
+    border: 2px solid var(--sr-border);
+    background: var(--sr-avatar-bg);
+}
+
+body.sr-theme .avatar:hover { box-shadow: 0 0 0 3px var(--sr-gold); }
+
+/* 消息操作条（重新生成/朗读等小钮的容器）：
+   之前给了白色/深色底 + 边框，整条横杠杵在气泡下面——就是那个
+   「不知道干嘛的白条子（深色变黑条子）」。容器本身应当全透明，
+   只留小按钮自己的形状。 */
+body.sr-theme .message-actions,
+body.sr-theme .bubble-actions {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+body.sr-theme .message.system { color: #cfd2da !important; }
+body.sr-theme .message.system .bubble { color: #cfd2da !important; }
+
+body.sr-theme .typing-indicator,
+body.sr-theme .typing-dot { background: var(--sr-bubble); color: var(--sr-name); }
+
+/* ==================================================================
+   5. 弹窗 = Window.styl message() 原规格
+ */
+/* 弹窗窗框：官方 Window 规格里本体无粗边，只有一圈半透明细外环；
+   之前本体 5px + 外环 5px 叠成两层厚框（「系统设置」灰框粗粗的来源）。
+   统一收到 2px 细线。 */
+body.sr-theme .modal-content,
+body.sr-theme .modal,
+body.sr-theme .popup-window {
+    background: var(--sr-window);
+    border: 2px solid rgba(150, 150, 150, 0.45);
+    border-radius: 0 50px 0 0;
+    color: var(--sr-ink);
+    box-shadow: 0 0 20px 5px rgba(0, 0, 0, 0.3);
+}
+
+body.sr-theme .modal-content::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: -8px;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    border: 2px solid rgba(180, 180, 180, 0.35);
+    clip-path: polygon(0 0, 10px 0, 100% calc(100% - 10px), 100% 100%, 0 100%);
+    pointer-events: none;
+}
+
+body.sr-theme .modal-header,
+body.sr-theme .modal-content h2,
+body.sr-theme .modal-content h3 { color: var(--sr-ink); border-color: var(--sr-window-line); }
+body.sr-theme .modal-footer { border-color: var(--sr-window-line); }
+
+/* 浮层菜单：深玻璃（原版下拉/菜单浮在星空上的观感） */
+body.sr-theme .context-menu,
+body.sr-theme .dropdown-menu,
+body.sr-theme .mention-menu,
+body.sr-theme .global-search-results,
+body.sr-theme .avatar-context-menu {
+    background: rgba(20, 22, 32, 0.92);
+    border: 3px solid var(--sr-border);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    color: #eef0f4;
+    backdrop-filter: blur(10px);
+}
+
+body.sr-theme .context-menu-item,
+body.sr-theme .dropdown-item,
+body.sr-theme .mention-menu-item,
+body.sr-theme .avatar-menu-item,
+body.sr-theme .search-result-item { color: #eef0f4; border-radius: 4px; }
+
+body.sr-theme .context-menu-item:hover,
+body.sr-theme .dropdown-item:hover,
+body.sr-theme .mention-menu-item:hover,
+body.sr-theme .mention-menu-item.active,
+body.sr-theme .avatar-menu-item:hover,
+body.sr-theme .search-result-item:hover { background: var(--sr-gold); color: #17181c; }
+
+body.sr-theme .search-result-group-title { color: var(--sr-gold); }
+body.sr-theme .mention-menu-text small { color: #a9adb8; }
+
+/* ==================================================================
+   6. 通用控件
+ */
+body.sr-theme .btn,
+body.sr-theme button.primary-btn,
+body.sr-theme .command-item,
+body.sr-theme .option-btn {
+    background: var(--sr-option);
+    /* 错位修复：原来是 2px 边框，站点行等固定高度(s26px)小按钮内部被挤爆、
+       整行溢出换行。星铁原版描边观感用 1px 即可保留，且不再撑破布局。 */
+    border: 1px solid var(--sr-border-hover);
+    border-radius: 6px;
+    color: #17181c;
+    font-weight: 700;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.18);
+}
+
+body.sr-theme .btn:hover,
+body.sr-theme button.primary-btn:hover,
+body.sr-theme .command-item:hover,
+body.sr-theme .option-btn:hover {
+    background: var(--sr-btn-hover);
+    border-color: var(--sr-border);
+    box-shadow: 2px 2px 10px var(--sr-gold);
+}
+
+/* 语义色按钮修复：上面的通用 .btn 规则特异性 (0,1,1)，会把 mysw-core.css 里
+   的 .btn-danger / .btn-outline / .btn-success 全部盖成主题浅底，
+   红色危险键看起来和普通键一样。这里按 (0,2,1)/(0,3,1) 把语义补回来，
+   浅色 / 深色（sr-dark-theme）两版都给，避免又被深色变体盖掉。 */
+body.sr-theme .btn.btn-danger,
+body.sr-theme.sr-dark-theme .btn.btn-danger {
+    background-color: #7a3232;
+    border-color: #8d3a3a;
+    color: #f6e7e7;
+}
+
+body.sr-theme .btn.btn-danger:hover,
+body.sr-theme.sr-dark-theme .btn.btn-danger:hover {
+    background-color: #8d3a3a;
+    border-color: #a34444;
+    color: #fff;
+    box-shadow: 2px 2px 10px rgba(122, 50, 50, 0.6);
+}
+
+body.sr-theme .btn.btn-success,
+body.sr-theme.sr-dark-theme .btn.btn-success {
+    background-color: #2f5a45;
+    border-color: #3a6d54;
+    color: #e8f2ec;
+}
+
+body.sr-theme .btn.btn-outline {
+    background: transparent;
+    border: 1px solid var(--sr-border);
+    color: inherit;
+    box-shadow: none;
+}
+
+body.sr-theme .btn.btn-outline:hover {
+    background: var(--sr-btn-hover);
+    border-color: var(--sr-border);
+    color: #17181c;
+    box-shadow: 2px 2px 10px var(--sr-gold);
+}
+
+body.sr-theme.sr-dark-theme .btn.btn-outline {
+    background: transparent;
+    border-color: var(--sr-border-hover);
+    color: #eef0f4;
+}
+
+body.sr-theme.sr-dark-theme .btn.btn-outline:hover {
+    background: var(--sr-gold);
+    border-color: var(--sr-border);
+    color: #17181c;
+}
+
+/* 窗外（星空上）的通用输入框 */
+body.sr-theme input:not([type='range']):not([type='checkbox']):not([type='radio']),
+body.sr-theme textarea,
+body.sr-theme select {
+    background: rgba(255, 255, 255, 0.92);
+    /* 错位修复：2px → 1px，与上方 .btn 统一，避免输入框与同行按钮高度/宽度不齐 */
+    border: 1px solid var(--sr-border-hover);
+    border-radius: 6px;
+    color: #17181c;
+}
+
+body.sr-theme input:focus,
+body.sr-theme textarea:focus,
+body.sr-theme select:focus {
+    border-color: var(--sr-border);
+    box-shadow: 0 0 0 3px var(--sr-focus-ring);
+    outline: none;
+}
+
+body.sr-theme input[type='checkbox'],
+body.sr-theme input[type='radio'],
+body.sr-theme input[type='range'] { accent-color: var(--sr-gold-deep); }
+
+body.sr-theme .toggle-switch,
+body.sr-theme .switch { background: #b3b0b1; }
+body.sr-theme .toggle-switch.checked,
+body.sr-theme .switch.checked,
+body.sr-theme .toggle-switch.on,
+body.sr-theme .switch.on { background: var(--sr-gold-deep); }
+
+body.sr-theme .tag,
+body.sr-theme .badge,
+body.sr-theme .chip {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--sr-border-hover);
+    color: #d6d9df;
+}
+
+body.sr-theme details summary,
+body.sr-theme .fold-panel-title,
+body.sr-theme .settings-group-title { color: inherit; font-weight: 800; }
+
+/* toast = 原版窗口风格 */
+body.sr-theme .toast,
+body.sr-theme .notification {
+    background: rgba(20, 22, 32, 0.92);
+    border: 3px solid var(--sr-border);
+    border-radius: 0 12px 0 0;
+    color: #eef0f4;
+    box-shadow: 0 0 20px 5px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(8px);
+}
+
+body.sr-theme .loading-spinner { border-color: var(--sr-border-hover); border-top-color: var(--sr-gold); }
+
+body.sr-theme .panel,
+body.sr-theme .card,
+body.sr-theme .settings-panel {
+    background: var(--sr-window);
+    border-color: var(--sr-window-line);
+    color: var(--sr-ink);
+}
+
+body.sr-theme.light-theme .si-card { background: rgba(0, 0, 0, 0.04); border-color: rgba(89, 85, 86, 0.3); }
+body.sr-theme.light-theme .si-list { background: rgba(0, 0, 0, 0.03); border-color: rgba(89, 85, 86, 0.3); }
+body.sr-theme.light-theme .si-key, body.sr-theme.light-theme .si-card span { color: var(--sr-name); }
+
+/* ==================================================================
+   7. 深色变体：星铁·深（body.sr-dark-theme，不挂 light-theme）
+      对话窗同样变深色玻璃，气泡深灰/金，其余继承上方基础层
+ */
+body.sr-theme.sr-dark-theme {
+    --sr-ink: #f0f1f4;
+    --sr-ink-2: #c3c6cd;
+    --sr-name: #9ba0ab;
+    /* 窗体透明度从 0.82 提到 0.94：之前星空透字，深底花、文本难读 */
+    --sr-window: rgba(15, 17, 24, 0.94);
+    --sr-window-bar: rgba(19, 21, 30, 0.96);
+    --sr-window-line: rgba(255, 255, 255, 0.12);
+    /* 气泡回到游戏原色：角色 = 浅灰白 + 深字，开拓者 = 开拓者金 + 深字。
+       之前的深灰泡(#3a3d46)/暗金泡又脏又难读，游戏里根本没有这种配色。 */
+    --sr-bubble: #e9e9ea;
+    --sr-bubble-shadow: #8a8c90;
+    --sr-gold-bubble: #d3bb8b;
+    --sr-gold-bubble-shadow: #6e5c33;
+    --text-primary: var(--sr-ink);
+    --text-secondary: var(--sr-ink-2);
+    --text-muted: var(--sr-name);
+    --bg-secondary: var(--sr-window);
+    --bg-tertiary: var(--sr-window);
+}
+
+/* 深色版星空更沉 */
+body.sr-theme.sr-dark-theme { background: url('sr-assets/sr-bg-main.webp') center / cover no-repeat fixed #0b0e17; }
+
+body.sr-theme.sr-dark-theme .chat-area:not(.has-custom-bg) {
+    background: rgba(13, 15, 21, 0.97) !important;
+    border: 1px solid var(--sr-glass-line);
+    /* 毛玻璃 blur 会把亮星空平均进来，深底被提亮、文字发灰；
+       窗体已接近实底，blur 收小到 6px 只保留质感 */
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+body.sr-theme.sr-dark-theme .chat-header,
+body.sr-theme.sr-dark-theme .chat-search-bar {
+    background: var(--sr-window-bar);
+    color: var(--sr-ink);
+    border-color: var(--sr-window-line);
+}
+
+body.sr-theme.sr-dark-theme .chat-input-area { background: rgba(17, 19, 27, 0.9); border-color: var(--sr-window-line); }
+
+body.sr-theme.sr-dark-theme #chat-search-input,
+body.sr-theme.sr-dark-theme .chat-search-bar input,
+body.sr-theme.sr-dark-theme .chat-input-area textarea,
+body.sr-theme.sr-dark-theme .chat-input-area input:not([type='range']):not([type='checkbox']):not([type='radio']) {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid var(--sr-window-line) !important;
+    color: var(--sr-ink) !important;
+    box-shadow: none !important;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+body.sr-theme.sr-dark-theme .chat-search-bar input::placeholder,
+body.sr-theme.sr-dark-theme .chat-input-area textarea::placeholder { color: #7f848f; }
+
+body.sr-theme.sr-dark-theme .chat-input-area .icon-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #d6d9df;
+}
+
+body.sr-theme.sr-dark-theme .chat-input-area .icon-btn:hover {
+    background: var(--sr-gold);
+    color: #17181c;
+    box-shadow: 0 0 0 4px rgba(211, 187, 139, 0.3);
+}
+
+/* 深色版气泡：底色已随变量回到游戏原色（浅灰白/开拓者金），
+   文字同步改回深色，彻底解决之前「深灰泡配浅字」的脏与难读 */
+body.sr-theme.sr-dark-theme .message .bubble { color: #1b1c20 !important; }
+body.sr-theme.sr-dark-theme .message.mine .bubble { color: #1d1503 !important; }
+body.sr-theme.sr-dark-theme .bubble blockquote { color: #1b1c20; }
+body.sr-theme.sr-dark-theme .bubble code { background: rgba(89, 85, 86, 0.16); color: #7a3b3b; }
+body.sr-theme.sr-dark-theme .bubble a { color: #7a5c1e; }
+
+body.sr-theme.sr-dark-theme .message-actions,
+body.sr-theme.sr-dark-theme .bubble-actions {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+/* 深色版窗内部件文字反白 */
+body.sr-theme.sr-dark-theme .chat-header,
+body.sr-theme.sr-dark-theme .chat-search-bar .icon-btn { color: #d6d9df; }
+
+body.sr-theme.sr-dark-theme .modal-content,
+body.sr-theme.sr-dark-theme .modal,
+body.sr-theme.sr-dark-theme .popup-window {
+    background: rgba(22, 24, 34, 0.97);
+    color: var(--sr-ink);
+}
+
+body.sr-theme.sr-dark-theme .panel,
+body.sr-theme.sr-dark-theme .card,
+body.sr-theme.sr-dark-theme .settings-panel {
+    background: rgba(24, 26, 36, 0.95);
+    border-color: var(--sr-window-line);
+    color: var(--sr-ink);
+}
+
+body.sr-theme.sr-dark-theme .btn,
+body.sr-theme.sr-dark-theme button.primary-btn,
+body.sr-theme.sr-dark-theme .command-item,
+body.sr-theme.sr-dark-theme .option-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--sr-border-hover);
+    color: #eef0f4;
+}
+
+body.sr-theme.sr-dark-theme .btn:hover,
+body.sr-theme.sr-dark-theme button.primary-btn:hover,
+body.sr-theme.sr-dark-theme .command-item:hover,
+body.sr-theme.sr-dark-theme .option-btn:hover {
+    background: var(--sr-gold);
+    color: #17181c;
+}
+
+body.sr-theme.sr-dark-theme .tag,
+body.sr-theme.sr-dark-theme .badge,
+body.sr-theme.sr-dark-theme .chip { background: rgba(255, 255, 255, 0.08); color: #d6d9df; }
+
+body.sr-theme.sr-dark-theme .sidebar {
+    background: rgba(10, 12, 18, 0.55) !important;
+}
+
+/* 深色版选中会话项：与浅色版同款「细白一圈」选中态（原版 .message-highlight），
+   之前的大金底太扎眼，也不是游戏里的样子 */
+body.sr-theme.sr-dark-theme .character-item.active,
+body.sr-theme.sr-dark-theme .friend-item.active,
+body.sr-theme.sr-dark-theme .chat-list-item.active {
+    background: #eaeaea !important;
+    border-color: #f3f4f6;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55);
+    color: #17181c;
+}
+
+/* 深色版滚动条 */
+body.sr-theme.sr-dark-theme .sidebar ::-webkit-scrollbar-track { background: #26282f; }
+body.sr-theme.sr-dark-theme .sidebar ::-webkit-scrollbar-thumb { background: #5a5d66; }
+
+/**
+ * 毛玻璃开关（html.glass-off，来自 设置 → 界面外观 → 毛玻璃效果）
+ * 这个主题的侧栏是「深玻璃」：--sr-glass 是 42% 不透明的深色 + blur(14px)。
+ * 只关掉 blur 是不够的 —— 底色仍然透明，后面内容照旧透出来，看着还是玻璃。
+ */
+html.glass-off body.sr-theme {
+    --sr-glass: #171923;          /* 原来是 rgba(13,15,24,.42)，这里给同色相实色 */
+    --sr-glass-line: rgba(255, 255, 255, 0.09);
+    --bg-sidebar: #171923;
+}
+html.glass-off body.sr-theme .sidebar {
+    background: var(--sr-glass) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* 好友/会话卡片本身就是「半透明黑渐变」叠在玻璃侧栏上，光把 --sr-glass 变实
+   还不够 —— 卡片自己还是透的。这里把同一套左右渐变改成不透明色，
+   保持「左深右略亮」的观感，但不再透出后面的星空。 */
+html.glass-off body.sr-theme .friend-item,
+html.glass-off body.sr-theme .chat-list-item,
+html.glass-off body.sr-theme .sidebar .list-item {
+    background: linear-gradient(to right, #0f1119, #0f1119 60%, #23262f) !important;
+}
+
+/**
+ * 论坛（forum.html）星铁皮肤
+ * · 整页    = 同一张星空底 webp（fixed），保证从短信切到论坛不跳色
+ * · 左右栏  = 深色玻璃浮窗（圆角 + 细白描边 + 大阴影）
+ * · 中间列  = 白色实底大圆角「窗」，帖卡是窗内的浅灰卡片
+ * · 导航项  = MessageGroup .item 同款：深色渐变 + 3px #595556 描边，选中白底
+ * · 主按钮  = 开拓者金 #d3bb8b + 硬投影
+ * · 深色变体（sr-dark）= 面板转深玻璃、帖卡转深灰、文字反白
+ * 层叠顺序：本段在 forum.css 之后加载（index/forum 的 link 顺序），
+ * 同特异性下本段胜出；带 !important 的只用在需要压过 JS 内联色的地方。
+ */
+body.forum-page.sr-theme {
+    --sr-f-panel: rgba(13, 15, 24, 0.42);
+    --sr-f-panel-solid: #171923;
+    --sr-f-window: var(--sr-window);
+    --sr-f-card: #efedeb;
+    --sr-f-card-2: #e4e1de;
+    --sr-f-ink: #17181c;
+    --sr-f-ink-2: #3c3e44;
+    --sr-f-line: var(--sr-window-line);
+
+    --forum-bg: #10141f;
+    --forum-panel: var(--sr-f-panel);
+    --forum-panel2: var(--sr-f-card);
+    --forum-text: #eef0f4;
+    --forum-muted: #b9bcc4;
+    --forum-gold: var(--sr-gold);
+    --forum-line: #d9d6d3;   /* 论坛弹窗内部的分隔线（forum.css 读这个变量） */
+
+    background: url('sr-assets/sr-bg-main.webp') center / cover no-repeat fixed #10141f;
+    color: #eef0f4;
+}
+
+/* 三栏：左右玻璃浮窗 + 中间白窗，之间露出星空 */
+body.forum-page.sr-theme .forum-shell {
+    gap: 6px;
+    padding: 14px;
+    box-sizing: border-box;
+}
+
+body.forum-page.sr-theme .forum-side,
+body.forum-page.sr-theme .forum-right {
+    background: var(--sr-f-panel) !important;
+    border: 1px solid var(--sr-glass-line);
+    border-radius: 16px;
+    backdrop-filter: blur(14px) saturate(1.15);
+    -webkit-backdrop-filter: blur(14px) saturate(1.15);
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
+    color: #eef0f4;
+}
+
+body.forum-page.sr-theme .forum-main {
+    background: var(--sr-window);
+    border: 1px solid rgba(10, 12, 20, 0.45);
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    padding: 20px 22px;
+    color: var(--sr-f-ink);
+}
+
+/* 品牌区：金 + 细分隔线（原版标题线是半透明细线，2px 足够） */
+body.forum-page.sr-theme .forum-brand {
+    color: var(--sr-gold);
+    border-bottom: 2px solid var(--sr-border);
+    padding-bottom: 10px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+
+body.forum-page.sr-theme .forum-brand i { color: var(--sr-gold); }
+body.forum-page.sr-theme .forum-brand a {
+    color: #e8eaef;
+    border: 1px solid var(--sr-glass-line);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+}
+body.forum-page.sr-theme .forum-brand a:hover { background: var(--sr-gold); border-color: var(--sr-gold); color: #17181c; }
+
+/* 左侧导航 = 主站会话项复刻（无列车水印，边框 2px 细线） */
+body.forum-page.sr-theme .forum-nav,
+body.forum-page.sr-theme .forum-side-bottom button {
+    position: relative;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5) 60%, rgba(255, 255, 255, 0.1));
+    border: 2px solid var(--sr-border);
+    border-radius: 6px;
+    color: #e8e8ea;
+    margin-bottom: 6px;
+    overflow: hidden;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+body.forum-page.sr-theme .forum-nav:hover,
+body.forum-page.sr-theme .forum-side-bottom button:hover { border-color: var(--sr-border-hover); }
+
+body.forum-page.sr-theme .forum-nav.active {
+    background: #eaeaea !important;
+    border-color: #f3f4f6;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55);
+    color: #17181c;
+    font-weight: 800;
+}
+
+body.forum-page.sr-theme .forum-nav.active i { color: #17181c; }
+body.forum-page.sr-theme .forum-side-bottom { border-top: 2px solid var(--sr-border); }
+
+/* 中间列标题 */
+body.forum-page.sr-theme .forum-main h1,
+body.forum-page.sr-theme .forum-main header h1 { color: #26262c; font-weight: 800; letter-spacing: 0.02em; }
+body.forum-page.sr-theme .forum-main header p { color: var(--sr-name); }
+
+/* 按钮：开拓者金 / 描边 */
+body.forum-page.sr-theme .forum-primary {
+    background: var(--sr-gold);
+    border: 1px solid var(--sr-gold-deep);
+    border-radius: 6px;
+    color: #17181c;
+    font-weight: 800;
+    box-shadow: 2px 2px 0 var(--sr-gold-deep);
+}
+
+body.forum-page.sr-theme .forum-primary:hover { background: #e2cf9f; box-shadow: 2px 2px 0 var(--sr-gold-deep), 0 0 0 3px var(--sr-focus-ring); }
+
+/* 次按钮分两种底色场合，必须分别写：
+   · 中间白窗里 = 深字浅底（跟着白色对话窗走）
+   · 右侧玻璃栏里 = 金色描边 + 浅金字（深底上深字会直接看不见） */
+body.forum-page.sr-theme .forum-main .forum-secondary {
+    background: transparent;
+    border: 1px solid var(--sr-border-hover);
+    border-radius: 6px;
+    color: #17181c;
+}
+
+body.forum-page.sr-theme .forum-main .forum-secondary:hover { background: var(--sr-gold); border-color: var(--sr-gold); color: #17181c; }
+
+body.forum-page.sr-theme .forum-right .forum-secondary {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(211, 187, 139, 0.55);
+    border-radius: 6px;
+    color: #f0e2c0;
+}
+
+body.forum-page.sr-theme .forum-right .forum-secondary:hover {
+    background: var(--sr-gold);
+    border-color: var(--sr-gold);
+    color: #17181c;
+}
+
+/* 工具栏：白窗内的浅灰控件（与主站搜索条一致） */
+body.forum-page.sr-theme .forum-search input,
+body.forum-page.sr-theme .forum-toolbar select {
+    background: #ffffff !important;
+    border: 1px solid var(--sr-window-line) !important;
+    border-radius: 16px;
+    color: #26262c !important;
+    box-shadow: none !important;
+}
+
+body.forum-page.sr-theme .forum-toolbar select { border-radius: 8px; }
+
+body.forum-page.sr-theme .forum-search input:focus,
+body.forum-page.sr-theme .forum-toolbar select:focus {
+    border-color: var(--sr-gold-deep) !important;
+    box-shadow: 0 0 0 2px var(--sr-focus-ring) !important;
+}
+
+body.forum-page.sr-theme .forum-search i { color: #9b9da1; }
+
+body.forum-page.sr-theme .forum-ghost-btn {
+    background: #ffffff;
+    border: 1px solid var(--sr-window-line);
+    border-radius: 8px;
+    color: #3c3e44;
+}
+
+body.forum-page.sr-theme .forum-ghost-btn:hover,
+body.forum-page.sr-theme .forum-ghost-btn.on { border-color: var(--sr-gold-deep); color: var(--sr-gold-text); }
+
+body.forum-page.sr-theme .forum-filter-tip {
+    background: #f7f5f3;
+    border: 1px dashed #c9c5c1;
+    color: var(--sr-name);
+}
+
+/* 帖子卡片：窗内浅灰卡 + 细描边；hover 金边 */
+body.forum-page.sr-theme .post-card,
+body.forum-page.sr-theme .post-preview {
+    background: var(--sr-f-card);
+    border: 1px solid #d9d6d3;
+    border-radius: 10px 4px 10px 10px;
+    color: var(--sr-f-ink-2);
+    box-shadow: none;
+    transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+body.forum-page.sr-theme .post-card:hover,
+body.forum-page.sr-theme .post-preview:hover {
+    border-color: var(--sr-gold-deep);
+    box-shadow: 2px 2px 12px rgba(168, 137, 78, 0.22);
+}
+
+body.forum-page.sr-theme .post-card h2 { color: #1d1e22; }
+body.forum-page.sr-theme .post-card .post-text { color: #3c3e44; }
+body.forum-page.sr-theme .post-author b { color: #1d1e22; }
+body.forum-page.sr-theme .post-author small,
+body.forum-page.sr-theme .post-time,
+body.forum-page.sr-theme .post-meta-line { color: #8b8d91; }
+
+body.forum-page.sr-theme .post-author img { border: 2px solid #d9d6d3; background: var(--sr-avatar-bg); }
+body.forum-page.sr-theme .post-image { border: 1px solid #d9d6d3; border-radius: 12px 4px 12px 12px; }
+
+body.forum-page.sr-theme .post-actions button { color: #7a7c80; }
+body.forum-page.sr-theme .post-actions button:hover { color: var(--sr-gold-text); }
+body.forum-page.sr-theme .post-actions button.liked { color: #b8862f; }
+body.forum-page.sr-theme .post-actions button.bookmarked { color: #b8862f; }
+
+/* 小标签：白窗里用描边小胶囊 */
+body.forum-page.sr-theme .forum-tag {
+    border: 1px solid #c9c5c1;
+    border-radius: 999px;
+    color: #55565c;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+body.forum-page.sr-theme .board-tag { border-color: var(--sr-gold-deep); color: var(--sr-gold-text); background: rgba(211, 187, 139, 0.22); }
+body.forum-page.sr-theme .owner-tag { border-color: #7fb6dd; color: #2d6b96; }
+body.forum-page.sr-theme .pin-tag { border-color: #d99a9a; color: #9c3f3f; }
+body.forum-page.sr-theme .lock-tag { border-color: #b5b5b5; color: #77787c; }
+
+/* 评论区 */
+body.forum-page.sr-theme .comments { border-top: 1px solid #d9d6d3; }
+body.forum-page.sr-theme .comment-composer {
+    background: #f7f5f3;
+    border: 1px solid #d9d6d3;
+    border-radius: 12px;
+}
+
+body.forum-page.sr-theme .comment-composer textarea,
+body.forum-page.sr-theme .forum-settings-section textarea {
+    background: #ffffff;
+    border: 1px solid #d9d6d3;
+    border-radius: 10px;
+    color: #26262c;
+}
+
+body.forum-page.sr-theme .comment-composer textarea:focus { border-color: var(--sr-gold-deep); box-shadow: 0 0 0 2px var(--sr-focus-ring); }
+body.forum-page.sr-theme .comment { color: #3c3e44; }
+body.forum-page.sr-theme .comment b { color: #1d1e22; }
+body.forum-page.sr-theme .comment-text { color: #3c3e44; }
+body.forum-page.sr-theme .comment > img { border: 2px solid #d9d6d3; }
+body.forum-page.sr-theme .comment-children { border-left: 2px solid #d9d6d3; }
+body.forum-page.sr-theme .comment-nested { background: #e9e6e3; }
+body.forum-page.sr-theme .floor-tag { background: #ffffff; border: 1px solid #d9d6d3; color: #77787c; }
+body.forum-page.sr-theme .comment-actions button:hover { color: var(--sr-gold-text); }
+body.forum-page.sr-theme .comment-actions button.liked { color: #b8862f; }
+
+/* 右侧栏：玻璃上放半透明深色小块 */
+body.forum-page.sr-theme .forum-right section {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--sr-glass-line);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+body.forum-page.sr-theme .forum-right h3 {
+    color: #f4f5f7;
+    border-bottom: 2px solid var(--sr-border);
+    padding-bottom: 8px;
+    font-weight: 800;
+}
+
+body.forum-page.sr-theme .forum-right h3 i { color: var(--sr-gold); }
+body.forum-page.sr-theme .forum-tip { color: #b9bcc4; }
+
+body.forum-page.sr-theme .hot-item,
+body.forum-page.sr-theme .active-item {
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.16);
+    color: #e6e7ea;
+}
+
+body.forum-page.sr-theme .hot-item:hover,
+body.forum-page.sr-theme .active-item:hover { color: var(--sr-gold); }
+body.forum-page.sr-theme .hot-item em,
+body.forum-page.sr-theme .active-item em { color: var(--sr-gold); }
+body.forum-page.sr-theme .active-item img { border: 2px solid var(--sr-border); }
+
+/* 私信 */
+body.forum-page.sr-theme .dm-contacts { background: rgba(255, 255, 255, 0.04); border-right: 2px solid var(--sr-border); }
+body.forum-page.sr-theme .dm-contact { border-radius: 6px; }
+body.forum-page.sr-theme .dm-contact:hover { background: rgba(255, 255, 255, 0.1); }
+body.forum-page.sr-theme .dm-contact.active {
+    background: #eaeaea;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55);
+    color: #17181c;
+}
+body.forum-page.sr-theme .dm-bubble { background: #e9e7e5; border: 1px solid #d9d6d3; color: #26262c; }
+body.forum-page.sr-theme .dm-bubble.mine { background: var(--sr-gold-bubble); border-color: var(--sr-gold-bubble-shadow); color: #17181c; }
+body.forum-page.sr-theme .dm-composer { background: transparent; border-top: 2px solid var(--sr-border); }
+body.forum-page.sr-theme .dm-composer textarea { background: #ffffff; border: 1px solid #d9d6d3; color: #26262c; }
+
+/* 个人主页 */
+body.forum-page.sr-theme .profile-head { border-bottom: 2px solid var(--sr-border); }
+body.forum-page.sr-theme .profile-head img { border: 3px solid var(--sr-border); }
+body.forum-page.sr-theme .profile-stats button { color: #3c3e44; }
+body.forum-page.sr-theme .profile-stats button:hover { color: var(--sr-gold-text); }
+body.forum-page.sr-theme .profile-tabs { border-bottom: 1px solid #d9d6d3; }
+body.forum-page.sr-theme .profile-tabs button { color: #8b8d91; }
+body.forum-page.sr-theme .profile-tabs button.active { color: var(--sr-gold-text); border-color: var(--sr-gold-deep); }
+body.forum-page.sr-theme .profile-user-row:hover { background: rgba(211, 187, 139, 0.16); }
+
+/* 论坛弹窗：Window.styl message() 规格（5px 描边 + 0 50px 0 0 圆角） */
+body.forum-page.sr-theme .forum-dialog {
+    background: var(--sr-window);
+    border: 5px solid var(--sr-border);
+    border-radius: 0 50px 0 0;
+    color: var(--sr-ink);
+    box-shadow: 0 0 20px 5px rgba(0, 0, 0, 0.3);
+}
+
+body.forum-page.sr-theme .forum-dialog h2 {
+    color: var(--sr-ink);
+    border-bottom: 1px solid var(--sr-window-line);
+    padding-bottom: 10px;
+}
+
+body.forum-page.sr-theme .forum-dialog label { color: var(--sr-ink-2); }
+body.forum-page.sr-theme .forum-dialog input,
+body.forum-page.sr-theme .forum-dialog textarea,
+body.forum-page.sr-theme .forum-dialog select {
+    background: #ffffff;
+    border: 1px solid var(--sr-boundary, #d9d6d3);
+    border-radius: 8px;
+    color: #26262c;
+}
+
+body.forum-page.sr-theme .forum-close { color: var(--sr-name); }
+body.forum-page.sr-theme .forum-close:hover { color: #17181c; }
+
+/* 回到顶部 / toast */
+body.forum-page.sr-theme .forum-fab {
+    background: var(--sr-gold);
+    border: 1px solid var(--sr-gold-deep);
+    color: #17181c;
+    box-shadow: 2px 2px 0 var(--sr-gold-deep);
+}
+
+body.forum-page.sr-theme .forum-fab:hover { box-shadow: 2px 2px 0 var(--sr-gold-deep), 0 0 0 4px var(--sr-focus-ring); }
+
+body.forum-page.sr-theme #forum-toast > *,
+body.forum-page.sr-theme .show-toast {
+    background: rgba(20, 22, 32, 0.94);
+    border: 3px solid var(--sr-border);
+    border-radius: 0 12px 0 0;
+    color: #eef0f4;
+}
+
+body.forum-page.sr-theme .forum-right::-webkit-scrollbar-track,
+body.forum-page.sr-theme #hot-mini::-webkit-scrollbar-track,
+body.forum-page.sr-theme #active-mini::-webkit-scrollbar-track { background: #3c3f46; }
+body.forum-page.sr-theme .forum-right::-webkit-scrollbar-thumb,
+body.forum-page.sr-theme #hot-mini::-webkit-scrollbar-thumb,
+body.forum-page.sr-theme #active-mini::-webkit-scrollbar-thumb { background: #9ea0a4; }
+
+/* ---------- 深色变体：星铁·深 ---------- */
+body.forum-page.sr-theme.sr-dark-theme {
+    --sr-f-panel: rgba(10, 12, 18, 0.55);
+    --sr-f-window: rgba(17, 19, 27, 0.82);
+    --sr-f-card: #1b1e26;
+    --sr-f-card-2: #22252e;
+    --sr-f-ink: #f0f1f4;
+    --sr-f-ink-2: #c3c6cd;
+    --forum-text: #f0f1f4;
+    --forum-muted: #9ba0ab;
+    --forum-line: rgba(255, 255, 255, 0.12);
+    background: url('sr-assets/sr-bg-main.webp') center / cover no-repeat fixed #0b0e17;
+}
+
+body.forum-page.sr-theme.sr-dark-theme .forum-main {
+    background: var(--sr-window);
+    border-color: var(--sr-glass-line);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    color: #f0f1f4;
+}
+
+body.forum-page.sr-theme.sr-dark-theme .forum-main header h1 { color: #f2f3f6; }
+body.forum-page.sr-theme.sr-dark-theme .forum-main header p { color: #9ba0ab; }
+
+body.forum-page.sr-theme.sr-dark-theme .post-card,
+body.forum-page.sr-theme.sr-dark-theme .post-preview {
+    background: var(--sr-f-card);
+    border-color: var(--sr-window-line);
+    color: #c3c6cd;
+}
+
+body.forum-page.sr-theme.sr-dark-theme .post-card:hover,
+body.forum-page.sr-theme.sr-dark-theme .post-preview:hover {
+    border-color: var(--sr-gold);
+    box-shadow: 0 0 0 1px rgba(211, 187, 139, 0.25);
+}
+
+body.forum-page.sr-theme.sr-dark-theme .post-card h2,
+body.forum-page.sr-theme.sr-dark-theme .post-author b { color: #f2f3f6; }
+body.forum-page.sr-theme.sr-dark-theme .post-card .post-text { color: #c3c6cd; }
+body.forum-page.sr-theme.sr-dark-theme .post-author small,
+body.forum-page.sr-theme.sr-dark-theme .post-time,
+body.forum-page.sr-theme.sr-dark-theme .post-meta-line { color: #8b909c; }
+body.forum-page.sr-theme.sr-dark-theme .post-author img { border-color: var(--sr-window-line); }
+body.forum-page.sr-theme.sr-dark-theme .post-image { border-color: var(--sr-window-line); }
+body.forum-page.sr-theme.sr-dark-theme .post-actions button { color: #9ba0ab; }
+
+body.forum-page.sr-theme.sr-dark-theme .forum-tag {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #c3c6cd;
+}
+
+body.forum-page.sr-theme.sr-dark-theme .board-tag { color: var(--sr-gold); border-color: rgba(211, 187, 139, 0.55); background: rgba(211, 187, 139, 0.14); }
+
+body.forum-page.sr-theme.sr-dark-theme .forum-search input,
+body.forum-page.sr-theme.sr-dark-theme .forum-toolbar select {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: var(--sr-window-line) !important;
+    color: #f0f1f4 !important;
+}
+
+body.forum-page.sr-theme.sr-dark-theme .forum-ghost-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--sr-window-line);
+    color: #d6d9df;
+}
+
+body.forum-page.sr-theme.sr-dark-theme .forum-filter-tip {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--sr-window-line);
+    color: #9ba0ab;
+}
+
+body.forum-page.sr-theme.sr-dark-theme .comments { border-top-color: var(--sr-window-line); }
+body.forum-page.sr-theme.sr-dark-theme .comment { color: #c3c6cd; }
+body.forum-page.sr-theme.sr-dark-theme .comment b { color: #f2f3f6; }
+body.forum-page.sr-theme.sr-dark-theme .comment-text { color: #c3c6cd; }
+body.forum-page.sr-theme.sr-dark-theme .comment-composer { background: rgba(255, 255, 255, 0.05); border-color: var(--sr-window-line); }
+body.forum-page.sr-theme.sr-dark-theme .comment-composer textarea { background: rgba(0, 0, 0, 0.3); border-color: var(--sr-window-line); color: #f0f1f4; }
+body.forum-page.sr-theme.sr-dark-theme .comment-nested { background: rgba(0, 0, 0, 0.22); }
+body.forum-page.sr-theme.sr-dark-theme .comment-children { border-left-color: var(--sr-window-line); }
+body.forum-page.sr-theme.sr-dark-theme .floor-tag { background: rgba(255, 255, 255, 0.08); border-color: var(--sr-window-line); color: #9ba0ab; }
+
+body.forum-page.sr-theme.sr-dark-theme .forum-dialog {
+    background: rgba(22, 24, 34, 0.97);
+    color: #f0f1f4;
+}
+
+body.forum-page.sr-theme.sr-dark-theme .forum-dialog h2 { color: #f0f1f4; border-bottom-color: var(--sr-window-line); }
+body.forum-page.sr-theme.sr-dark-theme .forum-dialog input,
+body.forum-page.sr-theme.sr-dark-theme .forum-dialog textarea,
+body.forum-page.sr-theme.sr-dark-theme .forum-dialog select {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--sr-window-line);
+    color: #f0f1f4;
+}
+
+body.forum-page.sr-theme.sr-dark-theme .dm-bubble { background: rgba(255, 255, 255, 0.1); border-color: var(--sr-window-line); color: #f0f1f4; }
+body.forum-page.sr-theme.sr-dark-theme .dm-bubble.mine { background: var(--sr-gold-bubble); color: #1d1503; }
+body.forum-page.sr-theme.sr-dark-theme .dm-contacts { background: rgba(0, 0, 0, 0.25); }
+body.forum-page.sr-theme.sr-dark-theme .dm-composer textarea { background: rgba(255, 255, 255, 0.08); border-color: var(--sr-window-line); color: #f0f1f4; }
+
+/* 毛玻璃关闭时（html.glass-off）：左右栏与中间窗一起转实底 */
+html.glass-off body.forum-page.sr-theme .forum-side,
+html.glass-off body.forum-page.sr-theme .forum-right {
+    background: var(--sr-f-panel-solid) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+html.glass-off body.forum-page.sr-theme.sr-dark-theme .forum-main,
+html.glass-off body.forum-page.sr-theme.sr-dark-theme .forum-side,
+html.glass-off body.forum-page.sr-theme.sr-dark-theme .forum-right {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #14161e !important;
+}
+
+/* 窄屏（论坛三栏塌成一栏：左侧变成顶部横向图标条）：
+   桌面端那套 3px 描边的会话卡片在横排时会变成一排厚边框积木，
+   这里收成 1px，保留描边观感但不抢空间。 */
+@media (max-width: 900px) {
+    body.forum-page.sr-theme .forum-nav,
+    body.forum-page.sr-theme .forum-side-bottom button {
+        border-width: 1px;
+        border-radius: 8px;
+        margin-bottom: 0;
+    }
+
+    body.forum-page.sr-theme .forum-nav.active { background: var(--sr-gold) !important; }
+    body.forum-page.sr-theme .forum-shell { padding: 8px; }
+}
+
+/* ==================================================================
+   懒人模式快捷回复（主站 / 论坛共用）
+   星铁这边没有现成参考，按 sr-message-maker 的「条目卡」语言来做：
+   直角 + 单侧收边 + 2px 描边 + 硬投影，选中态用金色；
+   深色变体（sr-dark）底改成半透明白、字反白，保持同一套手感。
+ */
+body.sr-theme .quick-replies {
+    gap: 8px;
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+
+body.sr-theme .quick-reply-btn {
+    background: var(--sr-option);
+    border: 2px solid var(--sr-border-hover);
+    border-radius: 0 10px 0 0;
+    color: #17181c;
+    font-weight: 700;
+    max-width: 100%;
+    box-shadow: 2px 2px 0 rgba(89, 85, 86, 0.35);
+}
+
+body.sr-theme .quick-reply-btn:hover {
+    background: var(--sr-btn-hover);
+    border-color: var(--sr-border);
+    color: #17181c;
+    box-shadow: 2px 2px 10px var(--sr-gold);
+    transform: none;
+}
+
+/* 深色变体 */
+body.sr-theme.sr-dark-theme .quick-replies {
+    border-color: var(--sr-border);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+body.sr-theme.sr-dark-theme .quick-reply-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--sr-border-hover);
+    color: #eef0f4;
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
+}
+
+body.sr-theme.sr-dark-theme .quick-reply-btn:hover {
+    background: var(--sr-gold);
+    border-color: var(--sr-gold);
+    color: #17181c;
+    box-shadow: 2px 2px 10px var(--sr-gold);
+}
+
+/* 论坛里聊天记录区的快捷回复同理（论坛私信没有这套按钮，这里只兜底） */
+body.forum-page.sr-theme .quick-reply-btn {
+    border-radius: 0 10px 0 0;
+}
+
+/**
+ * v4 · Starrail-Flutter-UI-kit 校准
+ * · SRCard 卡片：只有右上角圆角(20)，其余直角；左上偏移 4px 的一圈
+ * 1px 半透明白外框线（srCardFrameOffset / srCardFrameBorder）；
+ * 标题行 1px 分隔线 rgba(0,0,0,.21)（srCardTitleRowDivider）
+ * · 按钮高亮 = 金渐变 #FEE276→#FFEC90→#FEF4AC，hover #FEC85B，
+ * 边框 rgba(0,0,0,.21)（srButtonBackgroundHighlightedGradient）
+ * · 导航条选中 = 纯白底黑字、边框 rgba(255,255,255,.95)；
+ * 未选中底 rgba(255,255,255,.15)（SRNavigationBarItem.dark）
+ * · 高亮橙 #F09739（srHighlighted）：文字选区 / checkbox / 焦点
+ * · 进度条暗金 #9D8563（srProgressBarForeground）
+ * · 阴影 0 2px 4px rgba(0,0,0,.2)（srBoxShadow）
+ */
+
+body.sr-theme {
+    --srui-highlight: #f09739;      /* srHighlighted */
+    --srui-highlight-plus: #f8d176; /* srHighlightedPlus */
+    --srui-gold-btn: #fec85b;       /* srButtonBackgroundHighlighted */
+    --srui-card-line: rgba(255, 255, 255, 0.21); /* srCardFrameBorder */
+    --srui-title-line: rgba(0, 0, 0, 0.21);      /* srCardTitleRowDivider */
+    --srui-progress: #9d8563;       /* srProgressBarForeground */
+    --srui-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* srBoxShadow */
+}
+
+/* ---- SRCard 卡片签名样式：右上圆角 + 左上偏移外框线 ----
+   原版：内容块向右下偏移 4px，框线贴左上（顶边 y=4、左边 x=0、
+   右边 w-4、底边 h）。CSS 等效：本体 padding 左4/下4，::after
+   框线定位 top4/right4/bottom0/left0，圆角只给右上。 */
+body.sr-theme .laboratory-panel,
+body.sr-theme .plugin-permissions,
+body.sr-theme .card {
+    position: relative;
+    border-radius: 0 20px 0 0 !important;
+    padding-left: 4px;
+    padding-bottom: 4px;
+    box-shadow: var(--srui-shadow);
+    overflow: visible;
+}
+
+body.sr-theme .laboratory-panel::after,
+body.sr-theme .plugin-permissions::after,
+body.sr-theme .card::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    bottom: 0;
+    left: 0;
+    border: 1px solid var(--srui-card-line);
+    border-radius: 0 16px 0 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+body.sr-theme .laboratory-panel > *,
+body.sr-theme .plugin-permissions > *,
+body.sr-theme .card > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* 星铁·浅：卡底用原版 srCardBackground #E5E5E5（95%） */
+body.sr-theme.light-theme .laboratory-panel,
+body.sr-theme.light-theme .plugin-permissions,
+body.sr-theme.light-theme .card {
+    background: rgba(229, 229, 229, 0.95);
+    border-color: transparent;
+}
+
+/* 卡片内标题行分隔线（h3/h4 底边 1px 原版分隔线色） */
+body.sr-theme .laboratory-panel h3,
+body.sr-theme .card h3 {
+    border-bottom: 1px solid var(--srui-title-line);
+    padding-bottom: 8px;
+}
+
+/* ---- 会话条目 = SRNavigationBarItem.dark 规格 ----
+   未选中 rgba(255,255,255,.15)；选中纯白底黑字、边框 .95 白 */
+body.sr-theme .character-item,
+body.sr-theme .friend-item,
+body.sr-theme .chat-list-item,
+body.sr-theme .sidebar .list-item {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+body.sr-theme .character-item:hover,
+body.sr-theme .friend-item:hover,
+body.sr-theme .chat-list-item:hover {
+    background: rgba(255, 255, 255, 0.24) !important;
+}
+
+body.sr-theme .character-item.active,
+body.sr-theme .friend-item.active,
+body.sr-theme .chat-list-item.active {
+    background: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4);
+    color: #000000;
+}
+
+body.sr-theme.sr-dark-theme .character-item.active,
+body.sr-theme.sr-dark-theme .friend-item.active,
+body.sr-theme.sr-dark-theme .chat-list-item.active {
+    background: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.95);
+    color: #000000;
+}
+
+/* 按钮保持之前的深底金字（组件库的金渐变按钮实测观感不佳，已回退；
+   v4 段的卡片框线 / 导航条选中 / 橙色点缀等其余元素不受影响） */
+
+/* ---- 文字选区 / 焦点 = srHighlighted 橙 ---- */
+body.sr-theme ::selection {
+    background: rgba(240, 151, 57, 0.5);
+    color: inherit;
+}
+
+body.sr-theme .form-group input:focus,
+body.sr-theme .form-group select:focus,
+body.sr-theme .form-group textarea:focus {
+    border-color: var(--srui-highlight);
+    box-shadow: 0 0 0 3px rgba(240, 151, 57, 0.25);
+}
+
+body.sr-theme input[type='checkbox'], body.sr-theme input[type='radio'] {
+    accent-color: var(--srui-highlight);
+}
+
+body.sr-theme input[type='range'] {
+    accent-color: var(--srui-progress);
+}
+
+/* 设置 tab 激活下划线 = 纯高亮金 */
+body.sr-theme .tab-button.active::after {
+    background: var(--srui-highlight-plus);
+}
+
+/* ---- 滚动条细一点（srScrollbarThickness 4px） ---- */
+body.sr-theme .chat-messages::-webkit-scrollbar,
+body.sr-theme .modal-body::-webkit-scrollbar {
+    width: 5px;
+}
+
+body.sr-theme .chat-messages::-webkit-scrollbar-thumb {
+    background-color: var(--srui-progress);
+}
+
+/* 文本阴影（srTextShadow：1px 1px 4px rgba(0,0,0,.1)） */
+body.sr-theme .bubble,
+body.sr-theme .character-item,
+body.sr-theme .friend-item {
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ==================================================================
+   视觉小说模式（VN）
+   ------------------------------------------------------------------
+   底子那套 VN 样式是给深蓝夜空设计的；浅色下只用 body.light-theme
+   做了「白底反色」，但漏了底部翻页条、情绪徽标和选项，
+   于是出现「白字压白盒」「浅黄压浅黄」这类看不见的情况。
+   这里按星铁的 Window 语言补齐：白窗 + 3px #595556 描边 +
+   单侧收圆 + 硬投影，深色变体换玻璃窗。
+   ================================================================== */
+
+body.sr-theme .vn-stage { background: var(--sr-window); }
+
+/* 对话盒：星铁窗口（描边 + 单侧收圆 + 硬阴影） */
+body.sr-theme .vn-dialogue-box {
+    background: var(--sr-window);
+    border: 3px solid var(--sr-border);
+    border-radius: 0 22px 0 0;
+    color: var(--sr-ink);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* 停在最新一句：底部一条金线（不用改描边，避免整框发亮） */
+body.sr-theme .vn-dialogue-box.is-latest { border-color: var(--sr-border); }
+body.sr-theme .vn-dialogue-box.is-latest::before {
+    background: linear-gradient(90deg, transparent, var(--sr-gold-deep), transparent);
+    opacity: .85;
+}
+body.sr-theme .vn-dialogue-box::after {
+    background: linear-gradient(90deg, transparent, var(--sr-window-line), transparent);
+}
+
+body.sr-theme .vn-text { color: var(--sr-ink); text-shadow: none; }
+body.sr-theme .vn-name { color: var(--sr-gold-text); text-shadow: none; }
+body.sr-theme .vn-name--mine { color: #2d6b96; }
+body.sr-theme .vn-name--sys { color: var(--sr-name); }
+body.sr-theme .vn-name-avatar { border-color: var(--sr-window-line); background: #fff; }
+
+/* 情绪徽标：深金字 + 浅金底（浅黄压浅黄会看不见） */
+body.sr-theme .vn-badge {
+    --vn-emo-color: var(--sr-gold-text);
+    background: rgba(211, 187, 139, .28);
+    border-color: rgba(168, 137, 78, .55);
+    color: var(--sr-gold-text);
+}
+
+/* 顶部工具条：白窗小胶囊 + 深描边 */
+body.sr-theme .vn-chip {
+    background: rgba(255, 255, 255, .92);
+    border: 1px solid var(--sr-border);
+    border-radius: 6px;
+    color: #3c3e44;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+body.sr-theme .vn-chip:hover,
+body.sr-theme .vn-chip.active {
+    background: var(--sr-gold);
+    border-color: var(--sr-gold-deep);
+    color: #17181c;
+    transform: none;
+}
+body.sr-theme .vn-chip.vn-exit { border-color: var(--sr-gold-deep); color: var(--sr-gold-text); }
+body.sr-theme .vn-chip.vn-exit:hover { background: var(--sr-gold-deep); color: #fff; }
+
+/* 底部翻页条：白底深字（原来沿用深色主题的白字，压在白盒上等于看不见） */
+body.sr-theme .vn-controls button {
+    background: #fff;
+    border: 1px solid var(--sr-window-line);
+    border-radius: 6px;
+    color: #3c3e44;
+}
+body.sr-theme .vn-controls button:hover {
+    background: var(--sr-btn-hover);
+    border-color: var(--sr-gold-deep);
+    color: #17181c;
+}
+body.sr-theme .vn-page-ind {
+    background: #fff;
+    border: 1px dashed var(--sr-gold-deep);
+    border-radius: 6px;
+    color: var(--sr-gold-text);
+}
+
+/* 选项：白卡 + 深描边 + 硬投影（与星铁的选项卡同一套） */
+body.sr-theme .vn-choice-item {
+    background: #fff;
+    border: 2px solid var(--sr-border-hover);
+    border-radius: 0 14px 0 0;
+    color: #17181c;
+    box-shadow: 2px 2px 0 rgba(89, 85, 86, .3);
+}
+body.sr-theme .vn-choice-item:hover,
+body.sr-theme .vn-choice-item:focus-visible {
+    background: var(--sr-btn-hover);
+    border-color: var(--sr-border);
+    color: #17181c;
+}
+body.sr-theme .vn-choice-key {
+    background: #fff;
+    border: 1px solid var(--sr-window-line);
+    color: #3c3e44;
+}
+body.sr-theme .vn-choice-tip { color: var(--sr-name); }
+
+/* 提示条 / 记录面板 / 表情弹层 */
+body.sr-theme .vn-hint { background: var(--sr-window); color: var(--sr-ink-2); border-color: var(--sr-window-line); }
+body.sr-theme .vn-log-panel,
+body.sr-theme .vn-em-pop { background: rgba(247, 245, 243, .98); color: var(--sr-ink-2); border-color: var(--sr-window-line); }
+body.sr-theme .vn-log-item { color: var(--sr-ink-2); }
+body.sr-theme .vn-log-text { color: var(--sr-name); }
+body.sr-theme .vn-em-item { background: #fff; border-color: var(--sr-window-line); color: var(--sr-ink-2); }
+
+/* ---------- 星铁·深：玻璃窗版本 ---------- */
+body.sr-theme.sr-dark-theme .vn-stage { background: #0b0e17; }
+body.sr-theme.sr-dark-theme .vn-dialogue-box {
+    background: rgba(17, 19, 27, .9);
+    border: 3px solid var(--sr-border);
+    border-radius: 0 22px 0 0;
+    color: #f0f1f4;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, .6);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+body.sr-theme.sr-dark-theme .vn-text { color: #f0f1f4; }
+body.sr-theme.sr-dark-theme .vn-name { color: var(--sr-gold); }
+body.sr-theme.sr-dark-theme .vn-badge {
+    --vn-emo-color: var(--sr-gold);
+    background: rgba(211, 187, 139, .16);
+    border-color: rgba(211, 187, 139, .5);
+    color: var(--sr-gold);
+}
+body.sr-theme.sr-dark-theme .vn-chip {
+    background: rgba(255, 255, 255, .08);
+    border-color: rgba(255, 255, 255, .2);
+    color: #eef0f4;
+}
+body.sr-theme.sr-dark-theme .vn-chip:hover,
+body.sr-theme.sr-dark-theme .vn-chip.active {
+    background: var(--sr-gold);
+    border-color: var(--sr-gold);
+    color: #17181c;
+}
+body.sr-theme.sr-dark-theme .vn-controls button {
+    background: rgba(255, 255, 255, .08);
+    border-color: rgba(255, 255, 255, .2);
+    color: #eef0f4;
+}
+body.sr-theme.sr-dark-theme .vn-page-ind {
+    background: rgba(255, 255, 255, .06);
+    border-color: rgba(211, 187, 139, .5);
+    color: var(--sr-gold);
+}
+body.sr-theme.sr-dark-theme .vn-choice-item {
+    background: rgba(255, 255, 255, .08);
+    border-color: var(--sr-border-hover);
+    color: #eef0f4;
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, .45);
+}
+body.sr-theme.sr-dark-theme .vn-choice-item:hover {
+    background: var(--sr-gold);
+    border-color: var(--sr-gold);
+    color: #17181c;
+}
+body.sr-theme.sr-dark-theme .vn-log-panel,
+body.sr-theme.sr-dark-theme .vn-em-pop { background: rgba(22, 24, 34, .97); color: #c3c6cd; }
+
+/* 内容广告：白卡 + 深虚线 + 单侧收圆（星铁的卡片语言） */
+body.sr-theme .adlab-inline {
+    background: #fff;
+    border: 1px dashed var(--sr-border-hover);
+    border-radius: 0 14px 0 0;
+    color: var(--sr-ink);
+}
+body.sr-theme .adlab-inline-tag { background: var(--sr-gold-deep); color: #fff; }
+body.sr-theme .adlab-inline-text { color: var(--sr-ink-2); }
+body.sr-theme.sr-dark-theme .adlab-inline { background: rgba(255, 255, 255, .06); color: #eef0f4; }
+body.sr-theme.sr-dark-theme .adlab-inline-text { color: #c3c6cd; }

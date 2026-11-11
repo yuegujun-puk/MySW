@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>角色卡市场 · My SW</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src https://cdn.jsdelivr.net data:; img-src 'self' data: blob: https:; connect-src 'self' https: http://127.0.0.1:* http://localhost:* http://*.local:*; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="description" content="My SW 角色卡市场：内置角色与预置角色卡的一站式管理（批量改分组、移除、删除），也能挑选、预览并添加新的角色卡。">
+<link rel="canonical" href="https://mysw-yg.pages.dev/character.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="My SW">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="角色卡市场 · My SW">
+<meta property="og:description" content="管理已添加的角色、挑选想加的角色卡：My SW 的角色卡市场。">
+<meta property="og:image" content="https://bbs-static.miyoushe.com/static/2026/08/11/8ca0cb781565d2bb8350054bc8c57191_5612658286973808923.png?x-oss-process=image/resize,s_630/quality,q_80/auto-orient,0/interlace,1/format,jpg">
+<meta property="og:image:width" content="630">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://mysw-yg.pages.dev/character.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://bbs-static.miyoushe.com/static/2026/08/11/8ca0cb781565d2bb8350054bc8c57191_5612658286973808923.png?x-oss-process=image/resize,s_630/quality,q_80/auto-orient,0/interlace,1/format,jpg">
+<script type="application/ld+json">
+[{"@context":"https://schema.org","@type":"CollectionPage","name":"角色卡市场 · My SW","inLanguage":"zh-CN","url":"https://mysw-yg.pages.dev/character.html","dateModified":"2026-10-18"}]
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+<link rel="stylesheet" href="mysw-core.css">
+<link rel="stylesheet" href="character-market.css">
+<!-- 绝区零皮肤（只有深色版）：在 character-market.css 之后加载，
+     靠 body.market-page.zzz-theme 生效；未选该主题时本文件完全不起作用。 -->
+<link rel="stylesheet" href="zzz-theme.css">
+<!-- 角色列表要展示几十张 CDN 头像：提前建连/解析域名，能明显减少头像逐个亮起的等待。 -->
+<link rel="preconnect" href="https://bbs-static.miyoushe.com">
+<link rel="dns-prefetch" href="https://bbs-static.miyoushe.com">
+<link rel="preconnect" href="https://upload-bbs.mihoyo.com">
+<link rel="dns-prefetch" href="https://upload-bbs.mihoyo.com">
+<link rel="preconnect" href="https://static.kivo.wiki">
+<link rel="dns-prefetch" href="https://static.kivo.wiki">
+<script>
+/* 与 forum.html 一致：用户关过毛玻璃就把 glass-off 打在最前面，避免首屏闪一下磨砂。 */
+(function () {
+    try {
+        var s = JSON.parse(localStorage.getItem('chatSettings') || '{}');
+        if (s.glassEffectEnabled === false) document.documentElement.classList.add('glass-off');
+    } catch (e) {}
+})();
+</script>
+<script src="i18n.js"></script>
+</head>
+<body class="market-page">
+<script>
+/* 浅色 / 绝区零主题沿用主站的 themeMode，必须在首屏内容前贴到 body 上，否则会闪一下深色。
+   （star 星铁两档这里不挂皮，按下面对应的深浅档渲染即可） */
+(function () {
+    try {
+        var m = localStorage.getItem('themeMode');
+        if (m === 'light' || m === 'sr') document.body.classList.add('light-theme');
+        if (m === 'zzz') document.body.classList.add('zzz-theme');
+    } catch (e) {}
+})();
+</script>
+
+<header class="market-topbar">
+    <a class="market-brand" href="index.html" title="回到短信"><i class="ri-disc-line"></i> My SW <span>角色卡市场</span></a>
+    <nav class="market-nav">
+        <a href="index.html"><i class="ri-message-3-line"></i> 短信</a>
+        <a href="forum.html"><i class="ri-discuss-line"></i> 论坛</a>
+        <a href="plugin-marketplace.html"><i class="ri-puzzle-line"></i> 插件市场</a>
+        <a href="docs.html"><i class="ri-book-2-line"></i> 文档</a>
+    </nav>
+    <button class="icon-btn small-icon-btn" id="market-theme-btn" type="button" title="切换深色/浅色主题" aria-label="切换深色/浅色主题"><i class="ri-sun-line"></i></button>
+</header>
+
+<main class="market-main">
+    <div class="market-tabs" role="tablist" aria-label="角色卡市场视图">
+        <button class="market-tab active" type="button" role="tab" data-tab="mine"><i class="ri-user-3-line"></i> 我的角色 <em id="tab-count-mine">0</em></button>
+        <button class="market-tab" type="button" role="tab" data-tab="market"><i class="ri-store-2-line"></i> 角色卡市场 <em id="tab-count-market">0</em></button>
+        <button class="market-tab" type="button" role="tab" data-tab="groups"><i class="ri-folder-3-line"></i> 分组管理</button>
+    </div>
+
+    <p class="market-tip" id="market-tip">
+        <i class="ri-information-line"></i>
+        角色提示词只在「你点进某个角色的聊天」时才加载。没添加、没用到的角色，它的设定根本不会被下载，也不会占用你的上下文。
+    </p>
+
+    <!-- ============ 我的角色 ============ -->
+    <section class="market-panel" data-panel="mine">
+        <div class="market-toolbar">
+            <label class="market-search"><i class="ri-search-line"></i><input type="search" id="mine-search" placeholder="搜索角色名 / 备注 / 分组" aria-label="搜索我的角色"></label>
+            <select id="mine-group" aria-label="按分组筛选"></select>
+            <select id="mine-sort" aria-label="排序方式">
+                <option value="recent">最近聊过</option>
+                <option value="name">按名称</option>
+                <option value="group">按分组</option>
+                <option value="added">添加顺序</option>
+            </select>
+            <button class="market-ghost" type="button" id="mine-restore-btn" hidden title="把移出主站的角色加回来"><i class="ri-arrow-go-back-line"></i> 恢复移出 <em id="mine-restore-count">0</em></button>
+            <button class="market-ghost" type="button" id="mine-select-all"><i class="ri-checkbox-multiple-line"></i> 全选</button>
+            <button class="market-ghost" type="button" id="mine-clear-sel" hidden><i class="ri-close-line"></i> 取消选择</button>
+        </div>
+        <div class="market-batchbar" id="mine-batchbar" hidden>
+            <span class="market-batch-count">已选 <b id="mine-sel-count">0</b> 个</span>
+            <button class="market-ghost" type="button" data-batch="group"><i class="ri-folder-transfer-line"></i> 移动到分组</button>
+            <button class="market-ghost" type="button" data-batch="newgroup"><i class="ri-folder-add-line"></i> 新建分组并移入</button>
+            <button class="market-ghost" type="button" data-batch="groupchat"><i class="ri-group-line"></i> 开启群聊</button>
+            <button class="market-ghost" type="button" data-batch="remove"><i class="ri-user-unfollow-line"></i> 移出主站</button>
+            <button class="market-ghost danger" type="button" data-batch="delete"><i class="ri-delete-bin-2-line"></i> 彻底删除</button>
+        </div>
+        <div class="market-grid" id="mine-grid" role="list"></div>
+    </section>
+
+    <!-- ============ 角色卡市场 ============ -->
+    <section class="market-panel" data-panel="market" hidden>
+        <div class="market-toolbar">
+            <label class="market-search"><i class="ri-search-line"></i><input type="search" id="market-search" placeholder="搜索角色名 / 作品 / 标签" aria-label="搜索角色卡"></label>
+            <select id="market-source" aria-label="按来源筛选">
+                <option value="all">全部来源</option>
+                <option value="preset">预置角色卡</option>
+                <option value="builtin">站内内置</option>
+            </select>
+            <select id="market-work" aria-label="按作品筛选">
+                <option value="all">全部作品</option>
+            </select>
+            <select id="market-sort" aria-label="排序方式">
+                <option value="hot">推荐优先</option>
+                <option value="name">按名称</option>
+                <option value="size">按角色卡大小</option>
+            </select>
+            <button class="market-ghost" type="button" id="market-check-updates"><i class="ri-refresh-line"></i> 检查更新<em id="market-update-count" hidden>0</em></button>
+            <button class="market-ghost" type="button" id="market-open-site"><i class="ri-add-circle-line"></i> 自制角色卡</button>
+        </div>
+        <div class="market-grid" id="market-grid" role="list"></div>
+    </section>
+
+    <!-- ============ 分组管理 ============ -->
+    <section class="market-panel" data-panel="groups" hidden>
+        <div class="market-toolbar">
+            <button class="market-ghost" type="button" id="group-add"><i class="ri-folder-add-line"></i> 新建分组</button>
+            <span class="market-hint" id="group-hint">分组与主站共用：这里改动后，短信里的角色列表会立刻跟着变。</span>
+        </div>
+        <div class="market-group-list" id="group-list"></div>
+    </section>
+</main>
+
+<div class="market-modal" id="market-modal" hidden>
+    <div class="market-dialog" role="dialog" aria-modal="true">
+        <button class="market-dialog-close" id="market-modal-close" type="button" aria-label="关闭"><i class="ri-close-line"></i></button>
+        <h2 id="market-modal-title"></h2>
+        <div class="market-dialog-body" id="market-modal-body"></div>
+    </div>
+</div>
+
+<div id="market-toast" role="status" aria-live="polite"></div>
+
+<!-- 只读依赖：角色索引（内置角色的名字 / 头像）与提示词按需加载器。
+     这里刻意不引 script-loader.js —— 那是主站的脚本开关，市场页不需要它。 -->
+<script src="api-protocol.js"></script><script src="mysw-pages.js"></script>
+<script src="app-dialogs.js"></script>
+<script src="modal-resize.js"></script>
+<script src="market.js"></script>
+<script src="ad-lab.js" defer></script>
+</body>
+</html>

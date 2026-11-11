@@ -1,0 +1,169 @@
+:root{--forum-bg:#1a1c23;--forum-panel:#262933;--forum-panel2:#2d303a;--forum-text:#eee;--forum-muted:#a9acb5;--forum-gold:var(--accent-gold,#e6c78a);--forum-font-family:Arial,"Microsoft Yahei",sans-serif}*{box-sizing:border-box}.forum-page{margin:0;background:var(--forum-bg);color:var(--forum-text);font-family:var(--forum-font-family)}.forum-shell{width:100%;max-width:none;min-height:100vh;margin:auto;display:grid;grid-template-columns:230px minmax(520px,1fr) 280px}.forum-side,.forum-right{background:var(--forum-panel);padding:20px 14px;border-right:1px solid #3b3f4b}.forum-right{border-right:0;border-left:1px solid #3b3f4b}.forum-brand{font-size:1.35rem;font-weight:bold;color:var(--forum-gold);display:flex;align-items:center;gap:8px;margin:4px 5px 26px}.forum-brand a{margin-left:auto;color:#ddd;font-size:.72rem;text-decoration:none;border:1px solid #555;border-radius:14px;padding:5px 7px}.forum-nav,.forum-side-bottom button{display:flex;width:100%;gap:10px;align-items:center;border:0;background:none;color:#d8d9df;padding:12px;border-radius:9px;text-align:left;font-size:.96rem;cursor:pointer}.forum-nav:hover,.forum-nav.active{background:#393d49;color:var(--forum-gold)}.forum-side-bottom{position:sticky;top:calc(100vh - 120px);margin-top:34px;border-top:1px solid #454956;padding-top:12px}.forum-main{padding:24px;min-width:0;min-height:100vh;height:100vh;display:flex;flex-direction:column;overflow:hidden}.forum-main header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}.forum-main h1{font-size:1.35rem;margin:0 0 5px}.forum-main header p{margin:0;color:var(--forum-muted);font-size:.86rem}.forum-primary,.forum-secondary{border:0;border-radius:9px;background:var(--forum-gold);color:#242630;padding:10px 14px;font-weight:bold;cursor:pointer}.forum-secondary{width:100%;background:transparent;border:1px solid var(--forum-gold);color:var(--forum-gold);font-size:.82rem;margin-top:8px}.forum-feed{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:5px}.post-card{background:var(--forum-panel);border:1px solid #3a3e4a;border-radius:12px;padding:16px;margin-bottom:14px}.post-author{display:flex;gap:10px;align-items:center}.post-author img{width:38px;height:38px;object-fit:cover;border-radius:50%;background:#444}.post-author img.profile-link{cursor:pointer}.post-author img.profile-link:hover{outline:2px solid var(--forum-gold)}.profile-head{display:flex;align-items:center;gap:13px;margin-bottom:17px}.profile-head img{width:62px;height:62px;border-radius:50%;object-fit:cover;background:#444}.profile-stats{display:flex;gap:18px;color:var(--forum-muted);font-size:.86rem}.profile-stats button{border:0;background:none;color:inherit;padding:0;font:inherit;cursor:pointer}.profile-stats button:hover{color:var(--forum-gold)}.profile-follow{margin-left:auto;width:auto;font-size:.8rem}.profile-user-list{max-height:60vh;overflow-y:auto;padding-right:4px}.profile-user-row{width:100%;display:flex;align-items:center;gap:10px;padding:10px 6px;border:0;border-bottom:1px solid #454955;background:transparent;color:#eee;text-align:left;cursor:pointer}.profile-user-row:hover{background:#393d49}.profile-user-row img{width:40px;height:40px;border-radius:50%;object-fit:cover;background:#444}.profile-user-row b,.profile-user-row small{display:block}.profile-user-row small{margin-top:3px;color:var(--forum-muted);font-size:.74rem}.profile-bio{margin:5px 0;color:var(--forum-muted);font-size:.85rem}.birthday-title{font-size:.72rem;color:#ffcf62;border:1px solid #ffcf62;border-radius:999px;padding:2px 7px;vertical-align:middle}.profile-edit{margin-left:auto;width:auto;font-size:.8rem}.profile-tabs{display:flex;gap:8px;margin:14px 0}.profile-tabs button{border:1px solid #555;background:transparent;color:#ddd;border-radius:16px;padding:6px 10px;cursor:pointer}.profile-tabs button.active{border-color:var(--forum-gold);color:var(--forum-gold)}.post-author b{font-size:.95rem}.post-author small,.post-time{color:var(--forum-muted);font-size:.75rem}.post-card h2{font-size:1.07rem;margin:13px 0 8px}.post-preview{cursor:pointer}.post-preview:hover{border-color:#6a6250}.post-card .post-text{line-height:1.65;color:#e1e2e6;white-space:pre-wrap}.post-clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.comments{margin-top:22px;padding-top:14px;border-top:1px solid #454955}.comments h3{font-size:1rem;margin:0 0 8px;color:var(--forum-gold)}.post-image{max-width:100%;max-height:360px;border-radius:9px;margin-top:12px}.post-actions{display:flex;gap:18px;margin-top:15px;color:var(--forum-muted);font-size:.88rem}.post-actions button{border:0;background:none;color:inherit;cursor:pointer;padding:0}.post-actions button:hover{color:var(--forum-gold)}.post-actions button.post-delete,.post-actions button.post-delete:hover{color:#f06b78}.post-delete-confirm{background:#c84c5a;color:#fff}.post-actions button.liked{color:#f06b78}.forum-right section{padding:5px 4px 20px;border-bottom:1px solid #414550;margin-bottom:20px}.forum-right h3{font-size:1rem;color:var(--forum-gold);margin:0 0 13px}.hot-item{display:block;color:#e6e6ea;text-decoration:none;border-bottom:1px dashed #484c57;padding:9px 0;font-size:.84rem;cursor:pointer}.hot-item em{color:var(--forum-gold);font-style:normal}.forum-tip{color:var(--forum-muted);font-size:.8rem;line-height:1.6}.forum-modal{position:fixed;inset:0;background:rgba(0,0,0,.64);z-index:99;display:flex;align-items:center;justify-content:center;padding:15px}.forum-modal[hidden]{display:none!important}.forum-dialog{position:relative;background:#292d38;border:1px solid #515664;border-radius:14px;width:min(650px,100%);max-height:90vh;overflow:auto;padding:22px}.forum-dialog h2{margin:0 25px 18px 0;color:var(--forum-gold);font-size:1.15rem}.forum-close{position:absolute;right:12px;top:12px;border:0;background:none;color:#ddd;font-size:1.3rem;cursor:pointer}.forum-dialog input,.forum-dialog textarea,.forum-dialog select{width:100%;margin:7px 0 13px;padding:10px;background:#20232c;border:1px solid #565b68;border-radius:7px;color:#eee;font:inherit}.forum-dialog textarea{min-height:130px;resize:vertical}.forum-dialog label{font-size:.85rem;color:#ddd}.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}.comment{margin:12px 0 0 46px;padding:10px;background:#22252e;border-radius:8px;font-size:.88rem;display:flex;gap:9px}.comment>img{width:32px;height:32px;object-fit:cover;border-radius:50%;cursor:pointer}.comment small{display:block;color:var(--forum-muted);font-size:.72rem;margin:2px 0 5px}.comment b{color:var(--forum-gold)}.role-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #454955}#role-list{max-height:52vh;overflow-y:auto;padding-right:5px}.forum-dialog .modal-actions{position:sticky;bottom:-22px;background:#292d38;padding:14px 0 2px;margin-bottom:-2px;border-top:1px solid #454955}.forum-settings-section{margin:14px 0;padding:12px;border:1px dashed #555b69;border-radius:8px}.forum-settings-section>b{color:var(--forum-gold);font-size:.9rem}.forum-settings-section .forum-secondary{width:auto;margin-top:4px}.dm-edit-list{max-height:55vh;overflow-y:auto;padding-right:4px}.dm-edit-list .context-item{display:flex;align-items:center;gap:9px;padding:10px 4px;border-bottom:1px solid #454955}.dm-edit-list .context-role{flex:0 0 auto;font-size:.76rem;font-weight:bold}.dm-edit-list .role-mine{color:var(--forum-gold)}.dm-edit-list .role-other{color:#b9c7e9}.dm-edit-list .context-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e5e6e9;font-size:.84rem}.dm-context-actions{display:flex;gap:4px}.dm-context-actions button{border:0;background:transparent;color:var(--forum-muted);padding:4px;cursor:pointer;font-size:1rem}.dm-context-actions .dm-context-edit:hover{color:var(--forum-gold)}.dm-context-actions .dm-context-delete:hover{color:#f06b78}.role-row img{width:34px;height:34px;border-radius:50%;object-fit:cover}.role-row input[type=range]{margin:0 0 0 auto;width:110px}.empty{color:var(--forum-muted);text-align:center;padding:50px 10px}.dm-layout{display:grid;grid-template-columns:220px minmax(0,1fr);height:100%;min-height:0;border:1px solid #3d424e;border-radius:12px;overflow:hidden;background:#22252e}.dm-contacts{min-height:0;max-height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;border-right:1px solid #414652;padding:7px}.dm-contacts::-webkit-scrollbar{width:6px}.dm-contacts::-webkit-scrollbar-thumb{background:#626875;border-radius:999px}.dm-contact{width:100%;display:flex;gap:9px;align-items:center;padding:10px 7px;border:0;border-radius:8px;background:transparent;color:#eee;text-align:left;cursor:pointer}.dm-contact:hover,.dm-contact.active{background:#393d49}.dm-contact.reordering{opacity:.55;outline:1px dashed var(--forum-gold);cursor:grabbing;user-select:none}.dm-contact{user-select:none;-webkit-user-drag:none}.dm-contact img{-webkit-user-drag:none}.dm-contact img,.dm-head img{width:38px;height:38px;border-radius:50%;object-fit:cover;background:#444}.dm-contact span{min-width:0}.dm-contact b,.dm-contact small,.dm-head small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dm-contact small,.dm-head small{margin-top:3px;color:var(--forum-muted);font-size:.74rem}.dm-chat{display:flex;min-width:0;min-height:0;flex-direction:column;overflow:hidden}.dm-head{display:flex;gap:9px;align-items:center;padding:11px 14px;border-bottom:1px solid #414652}.dm-messages{flex:1;min-height:0;overflow-y:auto;padding:15px;background:#1d2028;overscroll-behavior:contain}.dm-bubble{width:fit-content;max-width:78%;padding:9px 11px;margin:0 0 10px;border-radius:10px;line-height:1.5;white-space:pre-wrap}.dm-bubble.mine{margin-left:auto;background:#695e43;color:#fff}.dm-bubble.other{background:#363a46}.dm-bubble img{max-width:100%;max-height:220px;border-radius:6px;margin-top:6px}.dm-composer{display:flex;align-items:center;gap:8px;padding:10px;border-top:1px solid #414652;background:#292d38}.dm-composer textarea{flex:1;min-height:42px;max-height:100px;padding:9px;background:#20232c;border:1px solid #535968;border-radius:7px;color:#eee;resize:vertical;font:inherit}.dm-image{cursor:pointer;color:var(--forum-gold);font-size:1.3rem}.dm-image input{display:none}@media(max-width:560px){.dm-layout{grid-template-columns:86px minmax(0,1fr);height:calc(100vh - 145px);min-height:380px}.dm-contact{justify-content:center}.dm-contact span{display:none}.dm-contacts{padding:6px}.dm-head{padding:9px}.dm-bubble{max-width:88%}}#forum-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#3a3f4b;color:#fff;border:1px solid var(--forum-gold);border-radius:20px;padding:9px 16px;opacity:0;pointer-events:none;transition:.2s;z-index:100}.show-toast{opacity:1!important}@media(max-width:900px){.forum-shell{grid-template-columns:76px minmax(0,1fr)}.forum-main{height:100vh}.forum-right{display:none}.forum-side{padding:15px 8px}.forum-brand{font-size:0}.forum-brand i{font-size:1.5rem}.forum-brand a{display:none}.forum-nav{font-size:0;justify-content:center}.forum-nav i{font-size:1.3rem}.forum-side-bottom button{font-size:0;justify-content:center}.forum-side-bottom i{font-size:1.25rem}}@media(max-width:560px){.forum-shell{grid-template-columns:1fr}.forum-main{height:calc(100vh - 52px);min-height:0}.forum-side{position:sticky;top:0;z-index:5;height:auto;padding:8px;display:flex;align-items:center;gap:3px;border-bottom:1px solid #444}.forum-brand,.forum-side-bottom{display:none}.forum-nav{width:auto;padding:10px}.forum-main{padding:15px}.forum-main header{align-items:flex-start}.forum-main header h1{font-size:1.14rem}.forum-primary{padding:9px;font-size:0}.forum-primary i{font-size:1.2rem}.comment{margin-left:14px}}
+/* ============================================================
+   论坛 v2 追加样式（贴吧化改造）
+   新增：工具栏（搜索 / 分区 / 排序）、收藏视图、浏览数与楼层号、
+   楼中楼评论、评论点赞、今日活跃榜、回到顶部按钮、数据导入导出。
+   注意：forum.css 前面那段是压缩过的一行式样式，此段追加在后面，
+   同特异性下会胜出，因此可以覆盖旧规则（例如 hot-item 从 <a> 改成 <button>）。
+ */
+
+/* ---------- 顶部工具栏 ---------- */
+.forum-toolbar{display:flex;align-items:center;gap:8px;margin:0 0 14px;flex-wrap:wrap;flex:0 0 auto}
+.forum-toolbar[hidden]{display:none}
+.forum-search{position:relative;flex:1 1 220px;min-width:160px;display:flex;align-items:center}
+.forum-search i{position:absolute;left:11px;color:var(--forum-muted);pointer-events:none;font-size:.95rem}
+.forum-search input{width:100%;padding:9px 11px 9px 34px;border-radius:999px;background:#20232c;border:1px solid #494e5c;color:#eee;font:inherit;font-size:.86rem;outline:none}
+.forum-search input:focus{border-color:var(--forum-gold)}
+.forum-toolbar select{flex:0 0 auto;padding:9px 11px;border-radius:9px;background:#20232c;border:1px solid #494e5c;color:#eee;font:inherit;font-size:.84rem;outline:none;cursor:pointer}
+.forum-toolbar select:focus{border-color:var(--forum-gold)}
+.forum-ghost-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 13px;border-radius:9px;border:1px solid #4a4f5d;background:#252934;color:#d8dae2;font:inherit;font-size:.83rem;cursor:pointer;white-space:nowrap;transition:border-color .15s ease,color .15s ease,transform .15s ease}
+.forum-ghost-btn:hover{border-color:var(--forum-gold);color:var(--forum-gold)}
+.forum-ghost-btn:active{transform:scale(.96)}
+.forum-ghost-btn.on{border-color:var(--forum-gold);color:var(--forum-gold)}
+.forum-ghost-btn.inline{padding:3px 9px;font-size:.76rem;margin-left:8px}
+.forum-filter-tip{display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:8px 12px;margin-bottom:12px;border:1px dashed #4d5361;border-radius:9px;background:#232733;color:var(--forum-muted);font-size:.82rem}
+
+/* ---------- 帖子卡片补充 ---------- */
+.post-author .pa-main{min-width:0;flex:1}
+.post-author .pa-main b{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.post-author .pa-main small{display:flex;align-items:center;gap:5px;flex-wrap:wrap;color:var(--forum-muted);font-size:.74rem;margin-top:3px}
+.link-text{cursor:pointer}
+.link-text:hover{color:var(--forum-gold);text-decoration:underline}
+.forum-tag{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:999px;border:1px solid #575d6b;color:#c3c8d4;font-size:.7rem;font-weight:normal;white-space:nowrap}
+.board-tag{border-color:rgba(230,199,138,.45);color:var(--forum-gold)}
+.owner-tag{border-color:rgba(120,200,255,.45);color:#8ecbff}
+.pin-tag{border-color:rgba(255,138,138,.5);color:#ff9b9b}
+.lock-tag{border-color:#6b7180;color:#a9aebb}
+.post-meta-line{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;color:var(--forum-muted);font-size:.76rem}
+.post-meta-line i{margin-right:3px}
+.post-actions{flex-wrap:wrap;row-gap:10px}
+.post-actions button{display:inline-flex;align-items:center;gap:4px;font-size:.86rem}
+.post-actions button.bookmarked,.post-actions button.bookmarked:hover{color:#ffcf62}
+.profile-stat-plain{color:var(--forum-muted);font-size:.86rem}
+
+/* 列表里的热门帖子条目（由 <a> 改为 <button>，必须显式清掉按钮默认样式） */
+.hot-item{width:100%;border:0;border-bottom:1px dashed #484c57;background:transparent;text-align:left;font:inherit;color:#e6e6ea}
+.hot-item:hover{color:var(--forum-gold)}
+
+/* ---------- 帖子详情工具栏 ---------- */
+.post-detail-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+
+/* ---------- 评论区 / 楼中楼 ---------- */
+.comment-composer{margin:12px 0 6px;padding:10px;border:1px solid #454b58;border-radius:10px;background:#232733}
+.comment-composer textarea{width:100%;min-height:56px;padding:9px 11px;border-radius:8px;background:#1b1e26;border:1px solid #4d5260;color:#eee;font:inherit;font-size:.88rem;resize:vertical;outline:none}
+.comment-composer textarea:focus{border-color:var(--forum-gold)}
+.comment-composer-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:8px}
+.comment-composer-actions .forum-primary{padding:8px 14px;font-size:.84rem}
+.comment-list{margin-top:10px}
+.comment{align-items:flex-start}
+.comment-body{flex:1;min-width:0}
+.comment-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.comment-head small{display:inline;margin:2px 0 0;color:var(--forum-muted);font-size:.72rem}
+.floor-tag{padding:0 6px;border-radius:6px;background:#2c313d;border:1px solid #474d5b;color:#a8aebb;font-size:.7rem}
+.comment-text{margin-top:5px;line-height:1.65;color:#dfe1e7;white-space:pre-wrap;word-break:break-word}
+.comment-actions{display:flex;gap:14px;margin-top:7px;color:var(--forum-muted);font-size:.76rem}
+.comment-actions button{display:inline-flex;align-items:center;gap:4px;border:0;background:none;color:inherit;padding:0;cursor:pointer;font:inherit;font-size:.76rem}
+.comment-actions button:hover{color:var(--forum-gold)}
+.comment-actions button.liked,.comment-actions button.liked:hover{color:#ff8fb0}
+.comment-actions button.comment-delete:hover{color:#f06b78}
+.comment-children{margin-top:10px;padding-left:12px;border-left:2px solid #3f4552}
+.comment-nested{margin-left:0;background:#1f232c}
+
+/* ---------- 今日活跃榜 ---------- */
+.active-item{width:100%;display:flex;align-items:center;gap:8px;padding:9px 0;border:0;border-bottom:1px dashed #484c57;background:transparent;color:#e6e6ea;font:inherit;font-size:.84rem;text-align:left;cursor:pointer}
+.active-item:hover{color:var(--forum-gold)}
+.active-item em{flex:0 0 auto;color:var(--forum-gold);font-style:normal}
+.active-item img{flex:0 0 auto;width:28px;height:28px;border-radius:50%;object-fit:cover;background:#444}
+.active-item span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.active-item small{flex:0 0 auto;color:var(--forum-muted)}
+
+/* ---------- 回到顶部 ---------- */
+.forum-fab{position:fixed;right:20px;bottom:24px;width:44px;height:44px;border-radius:50%;border:1px solid var(--forum-gold);background:#2b2f3b;color:var(--forum-gold);font-size:1.2rem;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:40;box-shadow:0 10px 26px rgba(0,0,0,.45);transition:transform .18s cubic-bezier(.22,1.12,.28,1),box-shadow .18s ease}
+.forum-fab[hidden]{display:none}
+.forum-fab:active{transform:scale(.92)}
+.forum-fab:hover{box-shadow:0 12px 30px rgba(230,199,138,.24)}
+
+/* ---------- 论坛设置里的分区编辑 ---------- */
+.forum-settings-section textarea{width:100%;padding:9px 11px;border-radius:8px;background:#20232c;border:1px solid #565b68;color:#eee;font:inherit;font-size:.86rem;resize:vertical}
+
+/* ---------- 窄屏适配 ---------- */
+@media(max-width:900px){
+  .forum-main header{margin-bottom:12px}
+  .forum-toolbar{gap:6px}
+  .forum-search{flex:1 1 100%}
+  .forum-fab{right:12px;bottom:16px;width:40px;height:40px}
+}
+@media(max-width:560px){
+  .forum-toolbar{margin-bottom:10px}
+  .forum-toolbar select{flex:1 1 auto}
+  .post-actions{gap:12px;font-size:.82rem}
+  .comment{margin-left:6px}
+  .comment>img{width:28px;height:28px}
+  .comment-children{padding-left:8px}
+  .post-detail-toolbar .forum-ghost-btn{flex:1 1 auto;justify-content:center}
+}
+/* ============================================================
+   右侧栏可滚动 + 排行榜独立滚动条
+   问题:.forum-right 没有高度约束也没有 overflow,内容超出视口后
+         底部按钮(更改字体 / 导出 / 导入等)被裁掉、无法点击。
+   做法:桌面端把整个外壳锁定为一屏高,右侧栏自己滚动;
+         两个排行区(热门帖子、今日活跃榜)各自限高并带独立滚动条。
+ */
+
+@media (min-width: 901px) {
+    .forum-shell { height: 100vh; min-height: 0; overflow: hidden; }
+    .forum-side { overflow-y: auto; min-height: 0; }
+    .forum-right {
+        min-height: 0;
+        height: 100%;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding-right: 10px;
+    }
+}
+
+.forum-right {
+    scrollbar-width: thin;
+    scrollbar-color: #5a6070 transparent;
+}
+.forum-right::-webkit-scrollbar { width: 6px; }
+.forum-right::-webkit-scrollbar-track { background: transparent; }
+.forum-right::-webkit-scrollbar-thumb { background: #5a6070; border-radius: 999px; }
+.forum-right::-webkit-scrollbar-thumb:hover { background: var(--forum-gold); }
+
+/* 排行榜:限高 + 独立滚动条 */
+#hot-mini,
+#active-mini {
+    max-height: 240px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: #5a6070 transparent;
+}
+#hot-mini::-webkit-scrollbar,
+#active-mini::-webkit-scrollbar { width: 5px; }
+#hot-mini::-webkit-scrollbar-track,
+#active-mini::-webkit-scrollbar-track { background: transparent; }
+#hot-mini::-webkit-scrollbar-thumb,
+#active-mini::-webkit-scrollbar-thumb { background: #5a6070; border-radius: 999px; }
+#hot-mini::-webkit-scrollbar-thumb:hover,
+#active-mini::-webkit-scrollbar-thumb:hover { background: var(--forum-gold); }
+
+/**
+ * 弹窗底部按钮区修正
+ * 问题：`.forum-secondary` 在基础样式里被写成了 `width:100%`（那是给
+ * 右侧栏里「整行次按钮」用的），可弹窗的操作区是 flex 行，
+ */
+.forum-dialog .modal-actions .forum-secondary {
+    width: auto;
+    flex: 0 0 auto;
+}
+.forum-dialog .modal-actions .forum-primary {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+.forum-dialog .modal-actions {
+    background: inherit;
+    border-top-color: var(--forum-line, #454955);
+}

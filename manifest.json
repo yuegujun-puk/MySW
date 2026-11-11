@@ -1,7 +1,7 @@
 {
   "name": "My SW - AI 角色聊天",
   "short_name": "My SW",
-  "description": "与 AI 角色进行沉浸式对话的聊天应用",
+  "description": "My SW 纯前端 AI 角色聊天站：免注册，聊天记录与 API Key 只存本机。",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1a1c23",
@@ -9,13 +9,13 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "https://bbs-static.miyoushe.com/static/2026/03/10/5d88c416c7e2588575a518c3eb5899b9_5125423398751524747.jpg?x-oss-process=image/resize,s_150/quality,q_80/auto-orient,0/interlace,1/format,jpg",
+      "src": "https://bbs-static.miyoushe.com/static/2026/08/11/8ca0cb781565d2bb8350054bc8c57191_5612658286973808923.png?x-oss-process=image/resize,s_150/quality,q_80/auto-orient,0/interlace,1/format,jpg",
       "sizes": "150x150",
       "type": "image/jpeg",
       "purpose": "any maskable"
     },
     {
-      "src": "https://bbs-static.miyoushe.com/static/2026/03/10/5d88c416c7e2588575a518c3eb5899b9_5125423398751524747.jpg",
+      "src": "https://bbs-static.miyoushe.com/static/2026/08/11/8ca0cb781565d2bb8350054bc8c57191_5612658286973808923.png?x-oss-process=image/resize,s_512/quality,q_80/auto-orient,0/interlace,1/format,jpg",
       "sizes": "512x512",
       "type": "image/jpeg",
       "purpose": "any maskable"

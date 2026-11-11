@@ -1,0 +1,7 @@
+# My SW · 纯前端 AI 角色聊天
+# 全站内容均可抓取；聊天记录、角色数据与 API Key 都只存在访客本机，服务端没有用户数据。
+User-agent: *
+Allow: /
+
+# 站点地图（主站 + 官网）
+Sitemap: https://mysw-yg.pages.dev/sitemap.xml

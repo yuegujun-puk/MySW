@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang='zh-CN'>
+<head>
+<meta charset='utf-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1,viewport-fit=cover'>
+<title>隐私政策与用户协议 · My SW</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name='robots' content='noindex,follow'>
+<style>
+:root{--bg:#1a1c23;--panel:#262933;--text:#e6e8ee;--muted:#a9acb5;--gold:#e6c78a;--line:#3b3f4b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Microsoft YaHei','PingFang SC',Arial,sans-serif;line-height:1.85;font-size:16px}
+.wrap{max-width:820px;margin:0 auto;padding:32px 22px 60px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+header h1{margin:0;font-size:1.5rem;color:var(--gold)}
+header a.back{color:var(--text);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.9rem}
+nav.toc{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap}
+nav.toc a{color:var(--gold);text-decoration:none;border:1px solid rgba(230,199,138,.4);border-radius:999px;padding:6px 14px;font-size:.9rem}
+section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px 28px;margin-bottom:24px;scroll-margin-top:20px}
+section h2{margin:0 0 12px;font-size:1.25rem;color:var(--gold)}
+section h3{margin:20px 0 6px;font-size:1.02rem}
+section p,section li{color:var(--text)}
+section ol,section ul{padding-left:1.4em}
+.meta{color:var(--muted);font-size:.88rem;margin:0 0 12px}
+.note{border-left:3px solid var(--gold);padding:10px 14px;background:rgba(230,199,138,.08);border-radius:6px;color:var(--muted);font-size:.92rem}
+footer{color:var(--muted);font-size:.85rem;text-align:center;margin-top:28px}
+@media (max-width:560px){.wrap{padding:22px 14px 40px}section{padding:20px 18px}}
+</style>
+<script src="i18n.js"></script>
+</head>
+<body>
+<div class='wrap'>
+<header><h1>隐私政策与用户协议</h1><a class='back' href='index.html'>返回 My SW</a></header>
+<nav class='toc'><a href='#privacy'>隐私政策</a><a href='#terms'>用户协议</a></nav>
+
+<section id='privacy'>
+<h2>隐私政策</h2>
+<p class='meta'>版本 1.0 · 适用于 My SW 网站(含官网、主站、论坛、插件市场与文档页)</p>
+<p class='note'>本政策说明本站如何处理你的信息。阅读后如不同意,请不要使用本网站。</p>
+
+<h3>一、我们是谁</h3>
+<p>My SW 是由个人维护的非官方二次创作项目,运行在浏览器中的纯前端 AI 角色聊天应用。下文中的「我们」「本站」指本项目的维护者;「你」指访问或使用本站的人。</p>
+
+<h3>二、我们不收集什么</h3>
+<ol>
+<li>本站是静态网站,维护者不运行用于收集用户数据的后端服务器。</li>
+<li>本站不要求注册、不要求登录,也不会要求你提供手机号、身份证件或支付信息。</li>
+<li>你的聊天内容、角色设定、世界书、长期记忆、API Key 等数据不会上传到维护者的服务器。</li>
+<li>本站代码中不包含向维护者回传用户行为数据的统计脚本或广告 SDK。</li>
+</ol>
+
+<h3>三、数据保存在哪里</h3>
+<p>你使用本站时产生的数据,默认全部保存在你自己的浏览器与设备上,主要包括:</p>
+<ul>
+<li>localStorage:界面设置、角色列表、聊天记录、API 配置等文本数据;</li>
+<li>IndexedDB:图片、语音、知识库文档与向量、自定义素材等较大的数据;</li>
+<li>Cache Storage 与 Service Worker:为支持离线打开而缓存的页面与脚本文件。</li>
+</ul>
+<p>这些数据只存在于你的设备上。清除浏览器中本站的站点数据,即可删除上述全部本地数据,删除后无法恢复,建议先通过「设置」中的导出功能备份。</p>
+
+<h3>四、数据何时会离开你的设备</h3>
+<ol>
+<li><b>AI 接口</b>:你自行配置并启用第三方 AI 接口后,对话内容、角色设定以及你选择发送的图片或语音,会按你的配置发送到该接口服务商。这些服务商如何处理数据由其自行决定,请查阅其隐私政策。本站不替你选择服务商,也无法控制其数据处理方式。</li>
+<li><b>主动提交的内容</b>:如你主动使用插件市场投稿、论坛等需要上传内容的功能,被提交的内容以该功能页面的说明为准。</li>
+<li><b>第三方静态资源</b>:页面会从 CDN 加载图标字体与脚本库,角色头像与部分素材来自第三方图床。浏览器访问这些地址时,服务方可能获得你的 IP 地址、浏览器标识等常规网络请求信息。</li>
+</ol>
+
+<h3>五、我们不会做的事</h3>
+<ul>
+<li>不出售、不出租、不交换你的任何数据;</li>
+<li>不向广告商提供数据;</li>
+<li>不在未经你同意的情况下读取你本地保存的内容并上传。</li>
+</ul>
+
+<h3>六、你的控制权</h3>
+<ul>
+<li>你可以在「设置」中查看、修改、导出或清除本地数据;</li>
+<li>你可以随时停止使用本站,停止使用后维护者不会保留你的任何本地数据,因为这些数据本来就不在服务器上;</li>
+<li>你可以随时停用某个第三方 AI 接口,停用后本站不再向其发送数据。</li>
+</ul>
+
+<h3>七、安全提示</h3>
+<p>本地数据的安全主要取决于你的设备与浏览器。API Key 等配置目前以明文形式保存在本机存储中,请不要在公共电脑或与他人共用的设备上填写密钥,使用完毕后可在设置中清除。</p>
+
+<h3>八、未成年人</h3>
+<p>本站生成的内容由 AI 模型产生,可能包含不适合未成年人的内容。未满十八周岁的用户请在监护人指导下使用,并避免向 AI 提供个人敏感信息。</p>
+
+<h3>九、政策更新与联系</h3>
+<p>我们可能会根据功能变化更新本政策,更新后的版本会发布在本页面,并在版本号中注明。如对本政策有疑问或需要反馈,可发送邮件至 yuegujun-yg@outlook.com。</p>
+</section>
+
+<section id='terms'>
+<h2>用户协议</h2>
+<p class='meta'>版本 1.0 · 访问或使用 My SW 网站即视为你已阅读并同意本协议</p>
+<p class='note'>如果你不同意本协议,请不要使用本网站。</p>
+
+<h3>一、接受条款</h3>
+<p>当你打开、浏览或使用本站的任何功能时,即表示你已阅读、理解并同意受本协议约束。本协议与《隐私政策》共同构成你与本站之间的约定。</p>
+
+<h3>二、服务性质</h3>
+<ol>
+<li>本站是非官方的二次创作项目,与米哈游、库洛游戏及相关作品均无隶属、合作、授权或背书关系。</li>
+<li>本站中出现的角色名称、形象与世界观设定,其知识产权归原作方及权利人所有,本站仅作为爱好者的非商业展示与交流。</li>
+<li>本站不是任何官方产品,也不代表任何官方的立场、剧情或设定。</li>
+</ol>
+
+<h3>三、服务内容与变更</h3>
+<ol>
+<li>本站按「现状」提供服务,功能、界面、预置内容可能随时调整、暂停或下线,恕不另行通知。</li>
+<li>本站可能提供离线使用能力,离线缓存的内容可能不是最新版本,请以联网版本为准。</li>
+</ol>
+
+<h3>四、账号与数据</h3>
+<ol>
+<li>本站不需要注册账号,你的数据主要保存在你自己的设备上。</li>
+<li>因清除浏览器数据、更换设备、系统故障等原因造成的数据丢失,由你自行承担。建议定期使用导出功能备份重要的角色与聊天记录。</li>
+</ol>
+
+<h3>五、第三方 AI 接口与费用</h3>
+<ol>
+<li>本站本身不提供 AI 模型服务。你需要自行配置第三方接口,并自行遵守该服务商的条款。</li>
+<li>因接口调用产生的费用、额度消耗、速率限制或服务中断,由你与该服务商之间处理,本站不承担相关责任。</li>
+<li>AI 接口的可用性、回复质量与合规性不由本站保证。</li>
+</ol>
+
+<h3>六、用户行为规范</h3>
+<p>你在使用本站时不得:</p>
+<ol>
+<li>利用本站制作、传播违反法律法规的内容,包括但不限于色情、暴力、恐怖、仇恨、歧视、诈骗或危害国家安全的信息;</li>
+<li>侵犯他人的隐私、名誉、肖像或知识产权;</li>
+<li>冒充官方、冒充他人或误导其他用户;</li>
+<li>以爬取、攻击、逆向、注入等方式干扰、破坏本站或他人的使用;</li>
+<li>向未成年人传播不适宜的内容。</li>
+</ol>
+
+<h3>七、AI 生成内容</h3>
+<ol>
+<li>本站中的回复、角色台词、论坛帖子、语音与图片等内容由第三方 AI 模型生成,可能不准确、不完整、带有偏见或不当。</li>
+<li>AI 生成内容不代表本站维护者、原作方或任何官方的观点,也不构成医疗、法律、财务或其他专业建议。重要事项请咨询具有资质的专业人士。</li>
+<li>你应自行判断并对基于 AI 内容所作的决定负责。</li>
+</ol>
+
+<h3>八、用户创作与投稿</h3>
+<ol>
+<li>你创建或导入的角色卡、世界书、插件、帖子等内容由你自行负责,其合法性由你保证。</li>
+<li>如你将内容投稿至插件市场等公共区域,即表示你授予本站在展示、分发该内容所必需的范围内的非独占使用许可。</li>
+<li>如发现违规内容,本站维护者有权将其下架或删除。</li>
+</ol>
+
+<h3>九、知识产权</h3>
+<ol>
+<li>本站自有代码与文字内容的权利归维护者所有,其使用须遵守相应的开源或授权条款。</li>
+<li>原作素材、角色形象与商标的权利归其各自权利人所有。如权利人认为本站内容侵犯其权利,请发送邮件至 yuegujun-yg@outlook.com 说明情况,我们将核实后及时处理。</li>
+</ol>
+
+<h3>十、免责声明与责任限制</h3>
+<ol>
+<li>在法律允许的最大范围内,本站不对因使用或无法使用本站而产生的任何直接或间接损失承担责任,包括但不限于数据丢失、费用支出、业务中断或第三方接口造成的损害。</li>
+<li>本站不保证服务不间断、无错误或与你的设备完全兼容。</li>
+</ol>
+
+<h3>十一、终止与处理</h3>
+<p>如你违反本协议,本站维护者有权下架相关内容,或停止向你提供特定功能。你仍可自行停止使用本站,停止使用不影响你此前已经产生的权利义务。</p>
+
+<h3>十二、适用法律与争议解决</h3>
+<p>本协议适用中华人民共和国法律。因本协议或本站使用产生的争议,双方应首先友好协商解决;协商不成的,可向维护者所在地有管辖权的人民法院提起诉讼。</p>
+
+<h3>十三、协议更新与联系</h3>
+<p>我们可能会修改本协议,修改后的版本会发布在本页面,并更新版本号。继续使用本站即视为接受修改后的协议。如有疑问,请发送邮件至 yuegujun-yg@outlook.com。</p>
+</section>
+
+<footer>My SW · 非官方二次创作 · <a href='index.html' style='color:#e6c78a'>返回首页</a></footer>
+</div>
+</body>
+</html>

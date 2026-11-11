@@ -1,0 +1,1651 @@
+/**
+ * zzz-theme.css — 绝区零主题（新艾利都 · 短信 / 绳网），仅深色
+ *
+ * 配色按游戏内截图逐像素取样：
+ *   · 底：#000~#303030 中性灰阶梯，不掺色相
+ *   · 我方气泡 #2050d8 —— 蓝只用于气泡与懒人选项框；按钮 / 输入框 / 发送键
+ *     都是黑底 + 深灰细边 + 白字，主操作按钮用白底黑字药丸
+ *   · 选中 #aed437 描边（仅选中与 hover 出现绿，默认一律灰）；提醒 #e8e008；
+ *     关闭 / 未读 #e03b2a
+ *   · 形状：联系人行 = 胶囊、气泡 22px、聊天区 = 22px 独立面板（四边留 10px 缝）、
+ *     窗口 26px、卡片 22px
+ *
+ * 挂 body.zzz-theme，须在 mysw-core.css 之后加载。
+ * 覆盖主站 / 论坛 / 角色市场；插件市场是独立单文件页，不接管。
+ */
+
+/* ==================================================================
+   1. 设计令牌
+ */
+body.zzz-theme {
+    /* 中性灰阶梯：整套界面只用这一组灰，不掺色相 */
+    --zzz-black: #000000;
+    --zzz-bg: #0a0a0b;
+    --zzz-shell: #0e0e10;
+    --zzz-panel: #121214;
+    --zzz-panel-2: #17171a;
+    --zzz-pill: #1d1d20;
+    --zzz-pill-hover: #26262a;
+    --zzz-line: rgba(255, 255, 255, 0.12);
+    --zzz-line-2: rgba(255, 255, 255, 0.22);
+    --zzz-line-3: rgba(255, 255, 255, 0.38);
+
+    --zzz-ink: #f5f5f7;
+    --zzz-ink-2: #c8c8ce;
+    --zzz-muted: #8a8a92;
+
+    /* 语义色：蓝=我方/主操作，绿=选中，黄=提醒，红=关闭/未读 */
+    /* 蓝只用于两处：我方气泡、懒人模式选项框（图 1/图 2 实测）。
+       按钮、输入框、发送键都不是蓝的 —— 它们是黑底 + 深灰细边 + 白字。 */
+    --zzz-blue: #2050d8;
+    --zzz-lime: #aed437;
+    --zzz-lime-dim: rgba(174, 212, 55, 0.14);
+    --zzz-yellow: #e8e008;
+    --zzz-red: #e03b2a;
+
+    /* 织物肌理：截图里聊天区那层「磨砂感」其实是 45°/-45° 两组细线交叉出的
+       菱形帆布纹（周期约 4px、亮度差 4%），不是毛玻璃。这里用两层渐变还原，
+       再叠一层 120px 的 SVG 颗粒（一次性栅格化后平铺，不走 GPU 滤波）。 */
+    --zzz-weave:
+        repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.030) 0 1px, transparent 1px 4px),
+        repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.030) 0 1px, transparent 1px 4px);
+    --zzz-weave-soft:
+        repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.017) 0 1px, transparent 1px 4px),
+        repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.017) 0 1px, transparent 1px 4px);
+    --zzz-grain: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E");
+
+    /* 圆角：原版「什么都圆」—— 行与按钮是整颗胶囊，气泡单行时也接近胶囊，
+       窗口/面板 22-26px。上一版按 18/20/12 给，整体偏方。 */
+    --zzz-r-pill: 999px;
+    --zzz-r-card: 26px;
+    --zzz-r-panel: 22px;
+    --zzz-r-bubble: 22px;
+
+    /* 覆盖主站全局变量：本主题只有深色，值给死 */
+    --bg-primary: var(--zzz-bg);
+    --bg-secondary: var(--zzz-shell);
+    --bg-tertiary: var(--zzz-panel);
+    --bg-sidebar: #0f0f11;
+    --text-primary: var(--zzz-ink);
+    --text-secondary: var(--zzz-ink-2);
+    --text-muted: var(--zzz-muted);
+    /* 全局强调色给中性白：这条变量被聊天头部、系统提示、插件徽标等一堆组件继承，
+       设成彩色就等于「到处染色」。绝区零界面上没有这种全局强调色。 */
+    --accent-gold: #e8e8ec;
+    --accent-gold-rgb: 232, 232, 236;
+    --border-color: var(--zzz-line);
+    --border-light: rgba(255, 255, 255, 0.07);
+    --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.8);
+    --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.65);
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 22px;
+    --font-family: var(--my-custom-font, 'Noto Sans SC'), 'HYWenHei-85W', 'Source Han Sans CN', 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+}
+
+body.zzz-theme.mysw-custom-font-on { --my-custom-font: 'MySWCustomUIFont'; }
+
+/* 整页底：纯黑，只在四角留一点极弱的提亮，模拟游戏里窗口后面的暗景 */
+body.zzz-theme.light-theme,
+body.zzz-theme {
+    background-color: var(--zzz-black);
+    background-image: radial-gradient(ellipse 120% 80% at 50% 0%, #141416 0%, #050506 55%, #000 100%);
+    background-attachment: fixed;
+    color: var(--zzz-ink);
+}
+
+body.zzz-theme ::-webkit-scrollbar { width: 8px; height: 8px; }
+body.zzz-theme ::-webkit-scrollbar-track { background: transparent; }
+body.zzz-theme ::-webkit-scrollbar-thumb { background: #333338; border-radius: 999px; }
+body.zzz-theme ::-webkit-scrollbar-thumb:hover { background: #4a4a52; }
+body.zzz-theme ::selection { background: var(--zzz-lime); color: #10120a; }
+
+/* ==================================================================
+   2. 外壳与侧栏
+   游戏里的窗口是「黑底 + 一圈很细的亮边 + 大圆角」，浮在更黑的背景上。
+   侧栏不再做绿色标题块，只保留一条细分隔线。
+ */
+body.zzz-theme .app-container {
+    background: var(--zzz-shell);
+    border: 2px solid var(--zzz-line);
+    border-radius: var(--zzz-r-card);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(0, 0, 0, 0.9);
+    overflow: hidden;
+}
+
+body.zzz-theme .sidebar {
+    background-color: #141416 !important;
+    background-image: var(--zzz-weave) !important;
+    border: none;
+    border-right: 1px solid var(--zzz-line);
+    border-radius: 0;
+    color: var(--zzz-ink);
+    padding: 14px 12px 12px;
+}
+
+/* 标题：白字 + 左侧一枚小小的绿点（不铺底色） */
+body.zzz-theme .sidebar-header {
+    background: transparent;
+    color: var(--zzz-ink);
+    border-bottom: 1px solid var(--zzz-line);
+    margin: 0 0 12px;
+    padding: 4px 2px 12px;
+    position: relative;
+}
+
+body.zzz-theme .sidebar-header > i {
+    color: var(--zzz-lime);
+    font-size: 1.05em;
+}
+
+body.zzz-theme .sidebar-title {
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: var(--zzz-ink);
+}
+
+body.zzz-theme .sidebar-header::before { display: none; }
+
+/* 标题里的小入口 / 主题按钮：圆形描边小键，hover 才点亮 */
+body.zzz-theme .sidebar-header .forum-entry,
+body.zzz-theme .sidebar-header .icon-btn,
+body.zzz-theme .sidebar-header .small-icon-btn {
+    background: transparent;
+    border: 1px solid var(--zzz-line-2);
+    border-radius: var(--zzz-r-pill);
+    color: var(--zzz-ink-2);
+    padding: 3px 10px;
+    font-weight: 600;
+    transition: background .15s, color .15s, border-color .15s;
+}
+
+body.zzz-theme .sidebar-header .icon-btn,
+body.zzz-theme .sidebar-header .small-icon-btn { padding: 0; width: 30px; height: 30px; }
+
+body.zzz-theme .sidebar-header .forum-entry:hover,
+body.zzz-theme .sidebar-header .icon-btn:hover,
+body.zzz-theme .sidebar-header .small-icon-btn:hover {
+    background: var(--zzz-lime);
+    border-color: var(--zzz-lime);
+    color: #10120a !important;
+}
+
+body.zzz-theme .sidebar-footer { border-top: 1px solid var(--zzz-line); background: transparent; }
+body.zzz-theme .sidebar-tools { border-top: 1px solid var(--zzz-line); padding-top: 10px; }
+
+/* 侧栏里的图标键：圆形，默认灰描边 */
+body.zzz-theme .icon-btn,
+body.zzz-theme .small-icon-btn {
+    background: transparent;
+    border: 1px solid var(--zzz-line-2);
+    border-radius: var(--zzz-r-pill);
+    color: var(--zzz-ink-2);
+    transition: background .15s, color .15s, border-color .15s;
+}
+
+body.zzz-theme .icon-btn:hover,
+body.zzz-theme .small-icon-btn:hover {
+    background: var(--zzz-lime);
+    border-color: var(--zzz-lime);
+    color: #10120a;
+}
+
+body.zzz-theme #theme-toggle-btn { color: var(--zzz-ink-2); }
+body.zzz-theme #theme-toggle-btn:hover { color: #10120a; }
+
+/* 侧栏搜索框（.search-box）的最终样式写在第 6 节，
+   那里要跟「图标留位」的 padding 一起定义，避免两处互相打架。 */
+
+/* ==================================================================
+   3. 会话列表：整行药丸 + 选中绿描边（游戏里最标志性的一条）
+ */
+body.zzz-theme .friend-item,
+body.zzz-theme .character-item,
+body.zzz-theme .chat-list-item,
+body.zzz-theme .sidebar .list-item {
+    background: #232326 !important;
+    border: 3px solid transparent !important;
+    border-radius: var(--zzz-r-pill) !important;
+    color: var(--zzz-ink-2);
+    padding: 7px 14px 7px 8px;
+    margin-bottom: 7px;
+    transition: border-color .15s, background .15s;
+}
+
+body.zzz-theme .friend-item:hover,
+body.zzz-theme .character-item:hover,
+body.zzz-theme .chat-list-item:hover,
+body.zzz-theme .sidebar .list-item:hover {
+    background: #2a2a2e !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* 选中：保留深底，只把描边和名字换成黄绿 */
+body.zzz-theme .friend-item.active,
+body.zzz-theme .character-item.active,
+body.zzz-theme .chat-list-item.active,
+body.zzz-theme .sidebar .list-item.active {
+    background: #1c1c1e !important;
+    border-color: var(--zzz-lime) !important;
+    color: var(--zzz-ink) !important;
+    box-shadow: none;
+}
+
+body.zzz-theme .friend-item.active .friend-name,
+body.zzz-theme .character-item.active span,
+body.zzz-theme .chat-list-item.active span,
+body.zzz-theme .sidebar .list-item.active span { color: var(--zzz-lime) !important; }
+
+body.zzz-theme .friend-item.active i { color: var(--zzz-lime) !important; }
+
+/* 头像：正圆 + 细环，选中时环也变绿 */
+body.zzz-theme .friend-item .friend-avatar,
+body.zzz-theme .friend-avatar {
+    border-radius: 50%;
+    border: 1px solid var(--zzz-line-3);
+    background: #2a2a2e;
+}
+
+body.zzz-theme .friend-item.active .friend-avatar { border-color: var(--zzz-lime); }
+
+/* 分组头：小号灰字 + 数字胶囊 */
+body.zzz-theme .friend-group-header { color: var(--zzz-muted); }
+
+body.zzz-theme .friend-group-header .group-title {
+    color: var(--zzz-muted);
+    font-weight: 700;
+    font-size: 0.82em;
+    letter-spacing: 0.04em;
+}
+
+body.zzz-theme .friend-group-header .group-title i { color: var(--zzz-muted); }
+
+body.zzz-theme .friend-group-header .group-count {
+    background: var(--zzz-pill);
+    border: 1px solid var(--zzz-line);
+    border-radius: var(--zzz-r-pill);
+    color: var(--zzz-ink-2);
+    padding: 0 7px;
+    font-size: 0.78em;
+    font-weight: 700;
+}
+
+body.zzz-theme .friend-group-header .group-menu-btn { color: var(--zzz-muted); }
+body.zzz-theme .friend-group-header .group-menu-btn:hover { color: var(--zzz-ink); }
+
+/* 侧栏里的「论坛 / 市场」等入口文字 */
+body.zzz-theme .sidebar-header a,
+body.zzz-theme .forum-entry { color: var(--zzz-ink-2); }
+body.zzz-theme .forum-entry:hover { color: #10120a; }
+
+body.zzz-theme .sidebar-tools .tool-btn,
+body.zzz-theme .sidebar-tools button { color: var(--zzz-ink-2); }
+body.zzz-theme .sidebar-tools .tool-btn:hover,
+body.zzz-theme .sidebar-tools button:hover { background: rgba(255, 255, 255, 0.08); color: var(--zzz-lime); }
+
+body.zzz-theme .sidebar .section-title,
+body.zzz-theme .sidebar .group-label,
+body.zzz-theme .sidebar .count-label { color: var(--zzz-muted); font-size: 0.78em; }
+
+/* ==================================================================
+   4. 对话区与气泡
+   反制 JS 内联样式（applyBubbleTextStyle 会写白字 + 黑描边），
+   所以气泡颜色一律 !important。
+ */
+/* 聊天区不是铺满的：它是一块独立的圆角面板，和左侧联系人栏之间留缝，
+   四条边都收圆 —— 这是原版「很圆」观感的主要来源之一。 */
+body.zzz-theme .chat-area:not(.has-custom-bg) {
+    background: #0b0b0c !important;
+}
+
+/* 有自定义背景图时底色让位（同星铁主题的修复） */
+/* 几何（留缝 + 圆角）是「所有」聊天区共用的，不能只挂在 has-custom-bg 上：
+   这几条声明原先悬在规则外面（少了个 {），等于整段没生效，
+   绝区零「独立圆角面板」的观感一直是丢的。 */
+body.zzz-theme .chat-area {
+    margin: 10px;
+    border: 1px solid var(--zzz-line);
+    border-radius: var(--zzz-r-panel);
+    box-shadow: none;
+}
+
+body.zzz-theme .chat-area.has-custom-bg {
+    background-color: #0b0b0c;
+    background-image: var(--chat-bg-image, none) !important;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+body.zzz-theme .chat-area:not(.has-custom-bg)::before {
+    background-color: #0b0b0c !important;
+    background-image: var(--zzz-weave), var(--zzz-grain) !important;
+    background-repeat: repeat, repeat;
+    opacity: 1 !important;
+}
+
+/* 有自定义背景图：遮罩改用用户可调的透明度，织纹让位 */
+body.zzz-theme .chat-area.has-custom-bg::before {
+    background-color: #0b0b0c !important;
+    background-image: none !important;
+    opacity: var(--chat-bg-overlay-opacity, 0.35) !important;
+}
+body.zzz-theme .chat-area::after { display: none; }
+
+body.zzz-theme .chat-header {
+    background: transparent;
+    border-bottom: 1px solid var(--zzz-line);
+    color: var(--zzz-ink);
+    padding-left: 16px;
+    position: relative;
+}
+
+body.zzz-theme .chat-header::before { display: none; }
+
+body.zzz-theme #current-friend-name {
+    color: var(--zzz-ink);
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    font-size: 1.02em;
+}
+
+body.zzz-theme .chat-search-bar {
+    background: #0b0b0c;
+    border-bottom: 1px solid var(--zzz-line);
+}
+
+body.zzz-theme .chat-messages { background: transparent; background-image: none; }
+
+/* 角色气泡：白底黑字（游戏里 NPC 就是白气泡） */
+body.zzz-theme .message .bubble {
+    background-color: #f1f1f3 !important;
+    background-image: none !important;
+    border: none !important;
+    border-radius: var(--zzz-r-bubble) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45) !important;
+    color: #101012 !important;
+    text-shadow: none !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    line-height: 1.6;
+    padding: 10px 15px;
+}
+
+/* 我方气泡：蓝色 + 白字 + 右上角收一个小角 */
+body.zzz-theme .message.mine .bubble {
+    background-color: var(--zzz-blue) !important;
+    border-radius: var(--zzz-r-bubble) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+    color: #ffffff !important;
+}
+
+/* 气泡里的富文本：白泡用深色代码块，蓝泡用更深的蓝 */
+body.zzz-theme .message .bubble pre {
+    background: #101012;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    color: #e8e8ec;
+    text-shadow: none !important;
+}
+
+body.zzz-theme .bubble code {
+    background: rgba(0, 0, 0, 0.08);
+    color: #1a1a1e;
+    border-radius: 4px;
+    text-shadow: none !important;
+}
+
+body.zzz-theme .message.mine .bubble code { background: rgba(0, 0, 0, 0.22); color: #eef1ff; }
+body.zzz-theme .bubble pre code { background: transparent; color: inherit; }
+
+body.zzz-theme .bubble blockquote {
+    border-left: 3px solid #6e6e78;
+    background: rgba(255, 255, 255, 0.06);
+    color: inherit;
+    text-shadow: none !important;
+}
+
+body.zzz-theme .bubble a { color: #1a1a1e; text-decoration: underline; text-shadow: none !important; }
+body.zzz-theme .message.mine .bubble a { color: #e8ecff; }
+
+/* 昵称：小号灰字（游戏里名字比正文小、比正文淡） */
+body.zzz-theme .nickname {
+    color: var(--zzz-muted) !important;
+    font-weight: 600;
+    font-size: 0.8em;
+    letter-spacing: 0;
+    text-shadow: none !important;
+}
+
+body.zzz-theme .message.mine .nickname { color: var(--zzz-muted) !important; }
+
+body.zzz-theme .message-meta,
+body.zzz-theme .message .meta,
+body.zzz-theme .message-time { color: #6f6f77 !important; text-shadow: none; }
+
+/* 头像：正圆 + 细环；我方头像的环是蓝的（knock knock 里就是这样） */
+body.zzz-theme .avatar {
+    border: 2px solid var(--zzz-line-3);
+    border-radius: 50%;
+    background: #26262a;
+}
+
+body.zzz-theme .message.mine .avatar { border-color: #f2f2f5; }
+body.zzz-theme .avatar:hover { border-color: var(--zzz-ink); box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08); }
+
+/* 消息工具条：一排小圆键，平时灰描边 */
+body.zzz-theme .message-actions,
+body.zzz-theme .bubble-actions {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    color: var(--zzz-muted);
+    gap: 4px;
+}
+
+body.zzz-theme .message-actions .regenerate-btn,
+body.zzz-theme .message-actions .ccp-msg-btn,
+body.zzz-theme .message-actions .ct-msg-btn {
+    background: transparent;
+    border: 1px solid var(--zzz-line);
+    border-radius: var(--zzz-r-pill);
+    color: var(--zzz-muted);
+    transition: background .15s, color .15s, border-color .15s;
+}
+
+body.zzz-theme .message-actions .regenerate-btn:hover,
+body.zzz-theme .message-actions .ccp-msg-btn:hover,
+body.zzz-theme .message-actions .ct-msg-btn:hover {
+    background: var(--zzz-lime);
+    border-color: var(--zzz-lime);
+    color: #10120a;
+}
+
+/* 系统提示：不套气泡，居中一行灰字（和游戏里的系统播报一致） */
+body.zzz-theme .message.system { color: var(--zzz-muted) !important; }
+
+body.zzz-theme .message.system .bubble {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: var(--zzz-muted) !important;
+    border-radius: 0 !important;
+    padding: 0;
+}
+
+body.zzz-theme .message.system .bubble i { color: var(--zzz-muted); }
+
+body.zzz-theme .typing-indicator,
+body.zzz-theme .typing-dot { background: var(--zzz-pill); color: var(--zzz-ink-2); }
+
+/* ---------- 输入区：蓝色描边圆角框（图 1 底部那条） ---------- */
+body.zzz-theme .chat-input-area {
+    background-color: #0b0b0c;
+    background-image: var(--zzz-weave);
+    border-top: 1px solid var(--zzz-line);
+}
+
+/* 输入框：纯黑胶囊、几乎不描边（截图实测内部 #010101），聚焦才浮出一圈浅边 */
+body.zzz-theme .chat-input-area textarea,
+body.zzz-theme .chat-input-area input:not([type='range']):not([type='checkbox']):not([type='radio']) {
+    background: #050506 !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    border-radius: var(--zzz-r-pill);
+    color: var(--zzz-ink) !important;
+    box-shadow: none;
+    padding-left: 18px;
+    padding-right: 18px;
+}
+
+body.zzz-theme .chat-input-area textarea:hover,
+body.zzz-theme .chat-input-area input:hover { border-color: rgba(255, 255, 255, 0.14) !important; }
+
+body.zzz-theme .chat-input-area textarea:focus,
+body.zzz-theme .chat-input-area input:focus {
+    border-color: #6e6e78 !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.06);
+    outline: none;
+}
+
+body.zzz-theme .chat-input-area textarea::placeholder,
+body.zzz-theme .chat-input-area input::placeholder { color: #6f6f77; }
+
+/* 发送键：深色圆键 + 细描边（截图里就是个黑药丸），hover 才点亮。
+   图标颜色必须 !important —— 主站的 applyAccentColor() 会把用户自定义主题色
+   直接写成 #send-btn 的行内 color，不压住的话箭头永远是那抹金色。 */
+body.zzz-theme #send-btn {
+    background: #050506;
+    border: 2px solid rgba(255, 255, 255, 0.55);
+    border-radius: var(--zzz-r-pill);
+    color: var(--zzz-ink) !important;
+    box-shadow: none;
+    /* 输入框加了左右内边距后，这一排变挤，发送键会被 flex 压扁成 28px；
+       钉住尺寸并禁止收缩，才是原版那颗圆键。 */
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    padding: 0;
+    /* 这个「发送键」其实是个 <i> 字体图标（remixicon 的字形），
+       它默认是 display:block —— 字形从上/左角开始排，实测墨迹中心偏左上 6.5px，
+       所以必须自己居中：flex 居中把横向对齐，纵向字形本身还差约 1.5px（字体度量），
+       用 translate3d 补掉；顺带这笔 3D 变换会把元素提升成独立合成层，
+       深色底上的次像素抗锯齿彩边（机头橙/机尾蓝）也跟着消失。 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transform: translate3d(0, 1.5px, 0);
+    -webkit-font-smoothing: antialiased;
+}
+
+body.zzz-theme #send-btn:hover {
+    background: var(--zzz-lime);
+    border-color: var(--zzz-lime);
+    color: #10120a !important;
+    box-shadow: none;
+}
+
+body.zzz-theme .chat-input-area .icon-btn {
+    background: transparent;
+    border: 1px solid var(--zzz-line);
+    color: var(--zzz-ink-2);
+}
+
+body.zzz-theme .chat-input-area .icon-btn:hover {
+    background: var(--zzz-lime);
+    border-color: var(--zzz-lime);
+    color: #10120a;
+}
+
+/* ==================================================================
+   5. 懒人模式快捷回复：蓝框 + 白药丸（照 knock knock 的选项块）
+ */
+body.zzz-theme .quick-replies {
+    border: 2px solid var(--zzz-blue);
+    border-radius: var(--zzz-r-panel);
+    padding: 9px;
+    background: rgba(32, 80, 216, 0.08);
+    gap: 7px;
+    flex-direction: column;
+    margin-top: 12px;
+    /* 靠右贴边、别铺满整行：这是「我方」的选择肢，游戏里也在右侧 */
+    margin-left: auto;
+    max-width: 78%;
+}
+
+body.zzz-theme .quick-reply-btn {
+    width: 100%;
+    max-width: 100%;
+    text-align: left;
+    background: #f4f4f6;
+    border: none;
+    border-radius: 14px;
+    color: #101012;
+    font-weight: 600;
+    font-size: 0.88em;
+    padding: 9px 14px;
+    box-shadow: none;
+    transition: background .15s, color .15s;
+}
+
+body.zzz-theme .quick-reply-btn:hover {
+    background: var(--zzz-lime);
+    color: #10120a;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ==================================================================
+   6. 通用控件
+   默认一律「透明底 + 灰描边」，绿色只留给 hover —— 这是游戏里的做法，
+   也是上一版被吐槽「绿太多」的地方。
+ */
+body.zzz-theme .btn,
+body.zzz-theme button.primary-btn,
+body.zzz-theme .command-item,
+body.zzz-theme .option-btn {
+    background: transparent;
+    border: 1px solid var(--zzz-line-2);
+    border-radius: var(--zzz-r-pill);
+    color: var(--zzz-ink);
+    font-weight: 600;
+    padding: 8px 18px;
+    box-shadow: none;
+    transition: background .15s, color .15s, border-color .15s;
+}
+
+body.zzz-theme .btn:hover,
+body.zzz-theme button.primary-btn:hover,
+body.zzz-theme .command-item:hover,
+body.zzz-theme .option-btn:hover,
+body.zzz-theme .btn.btn-outline:hover {
+    background: var(--zzz-lime);
+    border-color: var(--zzz-lime);
+    color: #10120a;
+    box-shadow: none;
+}
+
+/* 主按钮：白底黑字（游戏里确认/发送类都是白药丸），hover 才转绿 */
+body.zzz-theme .btn.btn-primary,
+body.zzz-theme .btn.btn-success,
+body.zzz-theme .btn.btn-test {
+    background: #f2f2f5;
+    border-color: #f2f2f5;
+    color: #101012;
+    font-weight: 700;
+}
+
+body.zzz-theme .btn.btn-primary:hover,
+body.zzz-theme .btn.btn-success:hover,
+body.zzz-theme .btn.btn-test:hover {
+    background: var(--zzz-lime);
+    border-color: var(--zzz-lime);
+    color: #10120a;
+}
+
+body.zzz-theme .btn.btn-danger {
+    background: transparent;
+    border-color: rgba(224, 59, 42, 0.7);
+    color: #ff8578;
+}
+
+body.zzz-theme .btn.btn-danger:hover {
+    background: var(--zzz-red);
+    border-color: var(--zzz-red);
+    color: #fff;
+}
+
+body.zzz-theme .btn.btn-secondary {
+    background: var(--zzz-pill);
+    border-color: var(--zzz-line-2);
+    color: var(--zzz-ink);
+}
+
+body.zzz-theme .btn.btn-secondary:hover { background: var(--zzz-lime); color: #10120a; border-color: var(--zzz-lime); }
+
+body.zzz-theme .btn.btn-outline { background: transparent; border-color: var(--zzz-line-2); color: var(--zzz-ink-2); }
+
+/* 输入控件 */
+/* 注意：这里刻意不写 padding。
+   这条选择器带 :not() 链，特异性比 .search-box / .settings-search-wrap input
+   这类「左侧留出图标位」的规则高，一旦给它加 padding 就会把 35px 的左内边距
+   压成 12px —— 放大镜图标会盖在占位文字上（v2 初版就是这个毛病）。 */
+body.zzz-theme input:not([type='range']):not([type='checkbox']):not([type='radio']),
+body.zzz-theme textarea,
+body.zzz-theme select {
+    background: var(--zzz-panel-2);
+    border: 1px solid var(--zzz-line-2);
+    border-radius: 10px;
+    color: var(--zzz-ink);
+}
+
+/* 侧栏搜索：药丸 + 给放大镜留位 */
+body.zzz-theme .search-box {
+    padding: 8px 14px 8px 36px;
+    border-radius: var(--zzz-r-pill);
+    background: var(--zzz-pill);
+    border-color: var(--zzz-line);
+}
+
+body.zzz-theme .search-box:focus { border-color: #6e6e78; }
+
+body.zzz-theme .search-box::placeholder { color: var(--zzz-muted); }
+
+body.zzz-theme .search-icon {
+    left: 13px;
+    color: var(--zzz-muted);
+    z-index: 2;
+}
+
+body.zzz-theme input::placeholder,
+body.zzz-theme textarea::placeholder { color: #6f6f77; }
+
+body.zzz-theme input:focus,
+body.zzz-theme textarea:focus,
+body.zzz-theme select:focus {
+    border-color: #6e6e78;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.06);
+    outline: none;
+}
+
+body.zzz-theme input[type='checkbox'],
+body.zzz-theme input[type='radio'],
+body.zzz-theme input[type='range'] { accent-color: var(--zzz-lime); }
+
+body.zzz-theme .toggle-switch,
+body.zzz-theme .switch { background: #3a3a40; }
+body.zzz-theme .toggle-switch.checked,
+body.zzz-theme .switch.checked,
+body.zzz-theme .toggle-switch.on,
+body.zzz-theme .switch.on { background: var(--zzz-lime); }
+
+/* 标签 / 徽标：药丸描边；提醒类用黄色 */
+body.zzz-theme .tag,
+body.zzz-theme .badge,
+body.zzz-theme .chip {
+    background: transparent;
+    border: 1px solid var(--zzz-line-2);
+    border-radius: var(--zzz-r-pill);
+    color: var(--zzz-ink-2);
+    padding: 1px 9px;
+}
+
+body.zzz-theme details summary,
+body.zzz-theme .fold-panel-title,
+body.zzz-theme .settings-group-title { color: var(--zzz-ink); font-weight: 700; }
+
+body.zzz-theme .loading-spinner { border-color: #333338; border-top-color: var(--zzz-ink); }
+
+body.zzz-theme .panel,
+body.zzz-theme .card,
+body.zzz-theme .settings-panel {
+    background: var(--zzz-panel);
+    border: 1px solid var(--zzz-line);
+    border-radius: var(--zzz-r-panel);
+    color: var(--zzz-ink);
+}
+
+body.zzz-theme .si-card { background: rgba(255, 255, 255, 0.04); border-color: var(--zzz-line); }
+body.zzz-theme .si-list { background: rgba(255, 255, 255, 0.03); border-color: var(--zzz-line); }
+body.zzz-theme .si-key,
+body.zzz-theme .si-card span { color: var(--zzz-muted); }
+
+/* ==================================================================
+   7. 弹窗与浮层：黑面板 + 细亮边 + 红色关闭键
+ */
+body.zzz-theme .modal-content,
+body.zzz-theme .modal,
+body.zzz-theme .popup-window {
+    background-color: #101012;
+    background-image: var(--zzz-weave);
+    border: 2px solid var(--zzz-line-2);
+    border-radius: var(--zzz-r-card);
+    color: var(--zzz-ink);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
+    overflow: hidden;
+}
+
+body.zzz-theme .modal-header {
+    background: transparent;
+    border-bottom: 1px solid var(--zzz-line);
+    color: var(--zzz-ink);
+}
+
+body.zzz-theme .modal-header::before { display: none; }
+
+body.zzz-theme .modal-header h2,
+body.zzz-theme .modal-content h2,
+body.zzz-theme .modal-content h3 {
+    color: var(--zzz-ink);
+    border-color: var(--zzz-line);
+    font-weight: 800;
+    letter-spacing: 0.01em;
+}
+
+/* 关闭键：红色圆角方键（标题栏右上那颗） */
+body.zzz-theme .close-modal {
+    background: var(--zzz-red);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05em;
+    transition: background .15s;
+}
+
+body.zzz-theme .close-modal:hover { background: #ff5340; color: #fff; }
+
+body.zzz-theme .modal-body { color: var(--zzz-ink-2); }
+body.zzz-theme .modal-footer { border-top: 1px solid var(--zzz-line); background: #0d0d0f; }
+
+/* 设置页签：默认灰字，选中白字 + 绿下划线 */
+body.zzz-theme .settings-tabs { border-bottom: 1px solid var(--zzz-line); }
+
+body.zzz-theme .tab-button { color: var(--zzz-muted); font-weight: 600; }
+body.zzz-theme .tab-button:hover { color: var(--zzz-ink-2); }
+body.zzz-theme .tab-button.active { color: var(--zzz-ink); }
+
+body.zzz-theme .tab-button.active::after {
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    background: var(--zzz-lime);
+}
+
+/* 设置项里写死的金色小标题（如「缓存命中率」）压回白/灰，别再到处发光 */
+body.zzz-theme .modal-content h3[style*='e6c78a'],
+body.zzz-theme .modal-body h3[style*='e6c78a'] { color: var(--zzz-ink) !important; }
+
+/* 浮层菜单 */
+body.zzz-theme .context-menu,
+body.zzz-theme .dropdown-menu,
+body.zzz-theme .mention-menu,
+body.zzz-theme .global-search-results,
+body.zzz-theme .avatar-context-menu {
+    background: #131316;
+    border: 1px solid var(--zzz-line-2);
+    border-radius: 14px;
+    box-shadow: 0 18px 46px rgba(0, 0, 0, 0.85);
+    color: var(--zzz-ink);
+    padding: 5px;
+}
+
+body.zzz-theme .context-menu-item,
+body.zzz-theme .dropdown-item,
+body.zzz-theme .mention-menu-item,
+body.zzz-theme .avatar-menu-item,
+body.zzz-theme .search-result-item {
+    color: var(--zzz-ink-2);
+    border-radius: 9px;
+    padding: 7px 10px;
+}
+
+body.zzz-theme .context-menu-item:hover,
+body.zzz-theme .dropdown-item:hover,
+body.zzz-theme .mention-menu-item:hover,
+body.zzz-theme .mention-menu-item.active,
+body.zzz-theme .avatar-menu-item:hover,
+body.zzz-theme .search-result-item:hover {
+    background: var(--zzz-lime);
+    color: #10120a;
+}
+
+body.zzz-theme .search-result-group-title { color: var(--zzz-muted); font-size: 0.78em; letter-spacing: 0.06em; }
+body.zzz-theme .mention-menu-text small { color: var(--zzz-muted); }
+
+body.zzz-theme .toast,
+body.zzz-theme .notification {
+    background: #131316;
+    border: 1px solid var(--zzz-line-2);
+    border-left: 3px solid var(--zzz-ink-2);
+    border-radius: 12px;
+    color: var(--zzz-ink);
+    box-shadow: 0 18px 46px rgba(0, 0, 0, 0.85);
+}
+
+/* ==================================================================
+   8. 论坛（forum.html）：绳网式卡片流
+   绳网在游戏里是「卡片信息流」：黑底、卡片带细边、标题白粗、
+   只有当前项 / hover 才有彩色描边。
+ */
+body.forum-page.zzz-theme,
+body.forum-page.zzz-theme.light-theme {
+    --forum-bg: #0a0a0b;
+    --forum-panel: #0f0f11;
+    --forum-panel2: #141416;
+    --forum-text: #f5f5f7;
+    --forum-muted: var(--zzz-muted);
+    --forum-gold: var(--zzz-lime);
+    --forum-line: rgba(255, 255, 255, 0.14);
+    --forum-font-family: var(--my-custom-font, 'Noto Sans SC'), 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+
+    background-color: #0a0a0b;
+    background-image: var(--zzz-weave-soft), radial-gradient(ellipse 120% 60% at 50% 0%, #171719 0%, #08080a 60%, #000 100%);
+    background-attachment: scroll;
+    color: var(--zzz-ink);
+}
+
+body.forum-page.zzz-theme .forum-side,
+body.forum-page.zzz-theme .forum-right {
+    background-color: #0f0f11;
+    background-image: var(--zzz-weave-soft);
+    border-color: var(--zzz-line);
+}
+
+body.forum-page.zzz-theme .forum-side { border-right: 1px solid var(--zzz-line); }
+body.forum-page.zzz-theme .forum-right { border-left: 1px solid var(--zzz-line); }
+
+/* 品牌区：白字 + 一枚小绿点，不做粗底线 */
+body.forum-page.zzz-theme .forum-brand {
+    color: var(--zzz-ink);
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--zzz-line);
+    position: relative;
+}
+
+body.forum-page.zzz-theme .forum-brand::after { display: none; }
+body.forum-page.zzz-theme .forum-brand i { color: var(--zzz-lime); }
+
+body.forum-page.zzz-theme .forum-brand a {
+    color: var(--zzz-ink-2);
+    border: 1px solid var(--zzz-line-2);
+    border-radius: var(--zzz-r-pill);
+    background: transparent;
+    padding: 4px 10px;
+}
+
+body.forum-page.zzz-theme .forum-brand a:hover { color: #10120a; background: var(--zzz-lime); border-color: var(--zzz-lime); }
+
+/* 左侧导航：药丸行，选中只描绿边 */
+body.forum-page.zzz-theme .forum-nav,
+body.forum-page.zzz-theme .forum-side-bottom button {
+    background: transparent;
+    border: 2px solid transparent;
+    border-radius: var(--zzz-r-pill);
+    color: var(--zzz-ink-2);
+    font-weight: 600;
+    padding: 9px 14px;
+    transition: background .15s, border-color .15s, color .15s;
+}
+
+body.forum-page.zzz-theme .forum-nav:hover,
+body.forum-page.zzz-theme .forum-side-bottom button:hover {
+    background: var(--zzz-pill);
+    border-color: #3a3a40;
+    color: var(--zzz-ink);
+}
+
+body.forum-page.zzz-theme .forum-nav.active {
+    background: #1a1c16;
+    border-color: var(--zzz-lime);
+    color: var(--zzz-lime);
+    font-weight: 700;
+}
+
+body.forum-page.zzz-theme .forum-nav.active i { color: var(--zzz-lime); }
+body.forum-page.zzz-theme .forum-side-bottom { border-top: 1px solid var(--zzz-line); }
+
+/* 主区标题 */
+body.forum-page.zzz-theme .forum-main h1,
+body.forum-page.zzz-theme .forum-main header h1 {
+    color: var(--zzz-ink);
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    padding-left: 0;
+}
+
+body.forum-page.zzz-theme .forum-main header h1::before { display: none; }
+body.forum-page.zzz-theme .forum-main header p { color: var(--zzz-muted); }
+
+/* 主按钮 = 白底黑字药丸（和游戏里的确认键一致），hover 转绿 */
+body.forum-page.zzz-theme .forum-primary {
+    background: #f2f2f5;
+    border: none;
+    border-radius: var(--zzz-r-pill);
+    color: #101012;
+    font-weight: 700;
+    padding: 10px 20px;
+    box-shadow: none;
+}
+
+body.forum-page.zzz-theme .forum-primary:hover { background: var(--zzz-lime); }
+
+body.forum-page.zzz-theme .forum-secondary {
+    background: transparent;
+    border: 1px solid var(--zzz-line-2);
+    border-radius: var(--zzz-r-pill);
+    color: var(--zzz-ink-2);
+}
+
+body.forum-page.zzz-theme .forum-secondary:hover {
+    background: var(--zzz-lime);
+    border-color: var(--zzz-lime);
+    color: #10120a;
+}
+
+/* 工具栏控件：药丸 */
+body.forum-page.zzz-theme .forum-search input,
+body.forum-page.zzz-theme .forum-toolbar select,
+body.forum-page.zzz-theme .forum-ghost-btn {
+    background: var(--zzz-pill);
+    border: 1px solid var(--zzz-line);
+    border-radius: var(--zzz-r-pill);
+    color: var(--zzz-ink);
+}
+
+body.forum-page.zzz-theme .forum-search input:focus,
+body.forum-page.zzz-theme .forum-toolbar select:focus {
+    border-color: #6e6e78;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.06);
+}
+
+body.forum-page.zzz-theme .forum-ghost-btn:hover,
+body.forum-page.zzz-theme .forum-ghost-btn.on {
+    border-color: var(--zzz-lime);
+    color: var(--zzz-lime);
+    background: var(--zzz-lime-dim);
+}
+
+body.forum-page.zzz-theme .forum-filter-tip {
+    background: var(--zzz-panel);
+    border: 1px dashed var(--zzz-line-2);
+    border-radius: 12px;
+    color: var(--zzz-muted);
+}
+
+/* 帖子卡片：黑卡 + 细边，hover 只提亮描边 */
+body.forum-page.zzz-theme .post-card,
+body.forum-page.zzz-theme .post-preview {
+    background: var(--zzz-panel);
+    border: 1px solid var(--zzz-line);
+    border-radius: var(--zzz-r-panel);
+    color: var(--zzz-ink-2);
+    transition: border-color .15s, background .15s;
+}
+
+body.forum-page.zzz-theme .post-card:hover,
+body.forum-page.zzz-theme .post-preview:hover {
+    border-color: var(--zzz-line-3);
+    background: #17171a;
+    box-shadow: none;
+    transform: none;
+}
+
+body.forum-page.zzz-theme .post-card h2,
+body.forum-page.zzz-theme .post-card .post-text { color: var(--zzz-ink); }
+body.forum-page.zzz-theme .post-card .post-text { color: var(--zzz-ink-2); }
+body.forum-page.zzz-theme .post-author b { color: var(--zzz-ink); }
+body.forum-page.zzz-theme .post-author small,
+body.forum-page.zzz-theme .post-time,
+body.forum-page.zzz-theme .post-meta-line { color: var(--zzz-muted); }
+
+body.forum-page.zzz-theme .post-author img { border-radius: 50%; border: 1px solid var(--zzz-line-3); }
+body.forum-page.zzz-theme .post-image { border-radius: 14px; border: 1px solid var(--zzz-line); }
+
+body.forum-page.zzz-theme .post-actions button { color: var(--zzz-muted); }
+body.forum-page.zzz-theme .post-actions button:hover { color: var(--zzz-ink); }
+body.forum-page.zzz-theme .post-actions button.liked { color: var(--zzz-ink); }
+body.forum-page.zzz-theme .post-actions button.bookmarked { color: var(--zzz-yellow); }
+
+/* 小标签：药丸描边；分区标签用绿，其余保持中性 */
+body.forum-page.zzz-theme .forum-tag {
+    border: 1px solid var(--zzz-line-2);
+    border-radius: var(--zzz-r-pill);
+    color: var(--zzz-ink-2);
+    background: transparent;
+}
+
+/* 分区标签保持中性：帖子卡片上每张都有它，一旦上绿，
+   整个信息流就又被绿色铺满了（绿只留给「当前选中」）。 */
+body.forum-page.zzz-theme .board-tag { border-color: var(--zzz-line-3); color: var(--zzz-ink-2); }
+body.forum-page.zzz-theme .owner-tag { border-color: rgba(84, 140, 255, 0.55); color: #7ea6ff; }
+body.forum-page.zzz-theme .pin-tag { border-color: rgba(224, 59, 42, 0.55); color: #ff8d80; }
+body.forum-page.zzz-theme .lock-tag { border-color: var(--zzz-line-2); color: var(--zzz-muted); }
+
+/* 评论区 */
+body.forum-page.zzz-theme .comments { border-top: 1px solid var(--zzz-line); }
+
+body.forum-page.zzz-theme .comment-composer {
+    background: var(--zzz-panel);
+    border: 1px solid var(--zzz-line);
+    border-radius: var(--zzz-r-panel);
+}
+
+body.forum-page.zzz-theme .comment-composer textarea,
+body.forum-page.zzz-theme .forum-settings-section textarea,
+body.forum-page.zzz-theme .forum-dialog input,
+body.forum-page.zzz-theme .forum-dialog textarea,
+body.forum-page.zzz-theme .forum-dialog select {
+    background: #0b0b0c;
+    border: 1px solid var(--zzz-line-2);
+    border-radius: 10px;
+    color: var(--zzz-ink);
+}
+
+body.forum-page.zzz-theme .comment-composer textarea:focus,
+body.forum-page.zzz-theme .forum-dialog input:focus,
+body.forum-page.zzz-theme .forum-dialog textarea:focus {
+    border-color: #6e6e78;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.06);
+}
+
+body.forum-page.zzz-theme .comment { color: var(--zzz-ink-2); }
+body.forum-page.zzz-theme .comment b { color: var(--zzz-ink); }
+body.forum-page.zzz-theme .comment-text { color: var(--zzz-ink-2); }
+body.forum-page.zzz-theme .comment > img { border-radius: 50%; border: 1px solid var(--zzz-line-3); }
+body.forum-page.zzz-theme .comment-children { border-left: 1px solid var(--zzz-line-2); }
+body.forum-page.zzz-theme .comment-nested { background: #101012; }
+
+body.forum-page.zzz-theme .floor-tag {
+    background: transparent;
+    border: 1px solid var(--zzz-line-2);
+    border-radius: var(--zzz-r-pill);
+    color: var(--zzz-muted);
+}
+
+body.forum-page.zzz-theme .comment-actions button:hover { color: var(--zzz-ink); }
+body.forum-page.zzz-theme .comment-actions button.liked { color: var(--zzz-ink); }
+
+/* 右侧栏 */
+body.forum-page.zzz-theme .forum-right section {
+    background: var(--zzz-panel);
+    border: 1px solid var(--zzz-line);
+    border-radius: var(--zzz-r-panel);
+    padding: 14px;
+    margin-bottom: 12px;
+}
+
+body.forum-page.zzz-theme .forum-right h3 {
+    color: var(--zzz-ink);
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    border-bottom: 1px solid var(--zzz-line);
+    padding-bottom: 9px;
+}
+
+body.forum-page.zzz-theme .forum-right h3 i { color: var(--zzz-muted); }
+body.forum-page.zzz-theme .forum-tip { color: var(--zzz-muted); }
+
+body.forum-page.zzz-theme .hot-item,
+body.forum-page.zzz-theme .active-item {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    color: var(--zzz-ink-2);
+}
+
+body.forum-page.zzz-theme .hot-item:hover,
+body.forum-page.zzz-theme .active-item:hover { color: var(--zzz-ink); background: transparent; }
+body.forum-page.zzz-theme .hot-item em,
+body.forum-page.zzz-theme .active-item em { color: var(--zzz-muted); font-weight: 800; }
+body.forum-page.zzz-theme .active-item img { border-radius: 50%; border: 1px solid var(--zzz-line-3); }
+
+/* 私信：我方蓝泡 */
+body.forum-page.zzz-theme .dm-contacts { background: #0d0d0f; border-right: 1px solid var(--zzz-line); }
+
+body.forum-page.zzz-theme .dm-contact {
+    border: 1px solid transparent;
+    border-radius: 14px;
+}
+
+body.forum-page.zzz-theme .dm-contact:hover { background: var(--zzz-pill); border-color: #3a3a40; }
+body.forum-page.zzz-theme .dm-contact.active { background: #1a1c16; border-color: var(--zzz-lime); color: var(--zzz-lime); }
+
+body.forum-page.zzz-theme .dm-contact img,
+body.forum-page.zzz-theme .dm-head img { border-radius: 50%; border: 1px solid var(--zzz-line-3); }
+
+body.forum-page.zzz-theme .dm-bubble {
+    background: #f1f1f3;
+    border: none;
+    border-radius: var(--zzz-r-bubble);
+    color: #101012;
+}
+
+body.forum-page.zzz-theme .dm-bubble.mine {
+    background: var(--zzz-blue);
+    border-radius: var(--zzz-r-bubble);
+    color: #fff;
+}
+
+body.forum-page.zzz-theme .dm-composer { background: transparent; border-top: 1px solid var(--zzz-line); }
+body.forum-page.zzz-theme .dm-composer textarea {
+    background: #050506;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: var(--zzz-r-pill);
+    color: var(--zzz-ink);
+}
+
+/* 个人主页 */
+body.forum-page.zzz-theme .profile-head { border-bottom: 1px solid var(--zzz-line); }
+body.forum-page.zzz-theme .profile-head img { border-radius: 50%; border: 2px solid var(--zzz-line-3); }
+body.forum-page.zzz-theme .profile-stats button { color: var(--zzz-ink-2); }
+body.forum-page.zzz-theme .profile-stats button:hover { color: var(--zzz-lime); }
+body.forum-page.zzz-theme .profile-tabs { border-bottom: 1px solid var(--zzz-line); }
+body.forum-page.zzz-theme .profile-tabs button { color: var(--zzz-muted); }
+body.forum-page.zzz-theme .profile-tabs button.active { color: var(--zzz-ink); border-color: var(--zzz-lime); }
+body.forum-page.zzz-theme .profile-user-row { border-radius: 12px; }
+body.forum-page.zzz-theme .profile-user-row:hover { background: var(--zzz-pill); }
+body.forum-page.zzz-theme .profile-user-row img { border-radius: 50%; border: 1px solid var(--zzz-line-3); }
+
+/* 论坛弹窗：黑面板 + 红关闭键 */
+body.forum-page.zzz-theme .forum-dialog {
+    background: #101012;
+    border: 2px solid var(--zzz-line-2);
+    border-radius: var(--zzz-r-card);
+    color: var(--zzz-ink);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
+}
+
+body.forum-page.zzz-theme .forum-dialog h2 {
+    color: var(--zzz-ink);
+    font-weight: 800;
+    border-bottom: 1px solid var(--zzz-line);
+    padding-bottom: 12px;
+}
+
+body.forum-page.zzz-theme .forum-dialog label { color: var(--zzz-ink-2); }
+body.forum-page.zzz-theme .forum-close { color: var(--zzz-muted); }
+body.forum-page.zzz-theme .forum-close:hover { color: var(--zzz-red); }
+body.forum-page.zzz-theme .forum-dialog .modal-actions button { border-radius: var(--zzz-r-pill); }
+
+/* 回到顶部 / toast */
+body.forum-page.zzz-theme .forum-fab {
+    background: #131316;
+    border: 1px solid var(--zzz-line-2);
+    border-radius: 50%;
+    color: var(--zzz-ink-2);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.7);
+}
+
+body.forum-page.zzz-theme .forum-fab:hover { background: var(--zzz-lime); border-color: var(--zzz-lime); color: #10120a; }
+
+body.forum-page.zzz-theme #forum-toast > *,
+body.forum-page.zzz-theme .show-toast {
+    background: #131316;
+    border: 1px solid var(--zzz-line-2);
+    border-left: 3px solid var(--zzz-ink-2);
+    border-radius: 12px;
+    color: var(--zzz-ink);
+}
+
+body.forum-page.zzz-theme .forum-right::-webkit-scrollbar-track,
+body.forum-page.zzz-theme #hot-mini::-webkit-scrollbar-track,
+body.forum-page.zzz-theme #active-mini::-webkit-scrollbar-track { background: transparent; }
+body.forum-page.zzz-theme .forum-right::-webkit-scrollbar-thumb,
+body.forum-page.zzz-theme #hot-mini::-webkit-scrollbar-thumb,
+body.forum-page.zzz-theme #active-mini::-webkit-scrollbar-thumb { background: #333338; border-radius: 999px; }
+
+/* ==================================================================
+   9. 角色卡市场（character.html）
+ */
+body.market-page.zzz-theme {
+    --mk-bg: #0a0a0b;
+    --mk-panel: #0f0f11;
+    --mk-panel2: #141416;
+    --mk-line: rgba(255, 255, 255, 0.12);
+    --mk-text: #f5f5f7;
+    --mk-muted: #8a8a92;
+    /* 市场页的「强调色」：中性浅色，别让它整屏染色（绿色只留在页签选中态） */
+    --mk-gold: #c8c8ce;
+
+    background-color: #0a0a0b;
+    background-image: var(--zzz-weave-soft), radial-gradient(ellipse 120% 50% at 50% 0%, #171719 0%, #08080a 60%, #000 100%);
+    color: var(--mk-text);
+}
+
+body.market-page.zzz-theme .market-topbar { background: rgba(10, 10, 11, 0.94); border-bottom: 1px solid var(--mk-line); }
+body.market-page.zzz-theme .market-brand { color: #f5f5f7; }
+body.market-page.zzz-theme .market-brand span { color: #8a8a92; }
+body.market-page.zzz-theme .market-brand i { color: #aed437; }
+body.market-page.zzz-theme .market-nav a { color: #c8c8ce; }
+body.market-page.zzz-theme .market-nav a:hover { color: #aed437; }
+
+/* 页签：药丸，选中只描绿边 */
+body.market-page.zzz-theme .market-tab {
+    background: transparent;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    color: #c8c8ce;
+    font-weight: 600;
+}
+
+body.market-page.zzz-theme .market-tab:hover { background: #1d1d20; border-color: #3a3a40; }
+
+body.market-page.zzz-theme .market-tab.active {
+    background: #1a1c16;
+    border-color: #aed437;
+    color: #aed437;
+}
+
+body.market-page.zzz-theme .market-tab.active em { color: #aed437; }
+
+body.market-page.zzz-theme .market-card,
+body.market-page.zzz-theme .market-group-row,
+body.market-page.zzz-theme .market-dialog {
+    background: #121214;
+    border: 1px solid var(--mk-line);
+    border-radius: var(--zzz-r-panel);
+    color: #f5f5f7;
+}
+
+body.market-page.zzz-theme .market-card:hover { border-color: rgba(255, 255, 255, 0.38); box-shadow: none; }
+
+/* 角色名用白字（原来是 --mk-gold，会整屏泛绿） */
+body.market-page.zzz-theme .market-card .mk-name { color: #f5f5f7; }
+body.market-page.zzz-theme .market-card .mk-sub { color: #8a8a92; }
+
+/* 卡片内的小标签也走中性描边 */
+body.market-page.zzz-theme .market-card .mk-tag,
+body.market-page.zzz-theme .market-card .mk-badge {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    color: #c8c8ce;
+}
+
+/* 选中（批量勾选）才点亮一档 */
+body.market-page.zzz-theme .market-card.selected {
+    border-color: #aed437;
+    background: rgba(174, 212, 55, 0.06);
+}
+
+body.market-page.zzz-theme .market-search input,
+body.market-page.zzz-theme .market-toolbar select,
+body.market-page.zzz-theme .market-ghost {
+    background: #1d1d20;
+    border: 1px solid var(--mk-line);
+    border-radius: 999px;
+    color: #f5f5f7;
+}
+
+body.market-page.zzz-theme .market-ghost:hover { border-color: #aed437; color: #aed437; background: rgba(174, 212, 55, 0.1); }
+
+body.market-page.zzz-theme .market-tip {
+    background: #121214;
+    border: 1px solid var(--mk-line);
+    border-radius: 12px;
+    color: #8a8a92;
+}
+
+body.market-page.zzz-theme .market-tip i { color: #aed437; }
+
+body.market-page.zzz-theme #market-toast > * {
+    background: #131316;
+    border: 1px solid var(--mk-line);
+    border-left: 3px solid #c8c8ce;
+    color: #f5f5f7;
+}
+
+/* ==================================================================
+   10. 主题选择卡（设置 → 界面外观）
+ */
+body.zzz-theme .theme-card {
+    background: transparent;
+    border: 1px solid var(--zzz-line-2);
+    border-radius: 16px;
+    color: var(--zzz-ink-2);
+}
+
+body.zzz-theme .theme-card:hover { border-color: var(--zzz-line-3); color: var(--zzz-ink); }
+
+body.zzz-theme .theme-card.active {
+    border-color: var(--zzz-lime);
+    background: #1a1c16;
+    color: var(--zzz-ink);
+    box-shadow: none;
+}
+
+body.zzz-theme .theme-card.active::after { color: var(--zzz-lime); }
+body.zzz-theme .theme-swatch { border-color: var(--zzz-line-2); }
+
+/* ==================================================================
+   11. 毛玻璃开关（html.glass-off）：本主题本来就没有磨砂，统一关掉
+ */
+html.glass-off body.zzz-theme .modal-overlay,
+html.glass-off body.zzz-theme .context-menu { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+
+/* 关掉「毛玻璃效果」时顺手把磨砂颗粒层去掉（只留帆布织纹）。
+   颗粒是唯一需要额外栅格化的一层，关掉它是最便宜的性能退路。 */
+html.glass-off body.zzz-theme .chat-area::before {
+    background-image: var(--zzz-weave) !important;
+}
+
+/* ==================================================================
+   12. 细节：把游戏里那几处小东西补齐
+ */
+/* 「回到最新消息」：截图里那条是蓝框黑底带 ▼ 的横条，
+   这里保留原有圆形按钮（不改结构，免得和输入区高度计算打架），只借它的蓝框语言。 */
+body.zzz-theme .scroll-to-bottom-btn {
+    background-color: #0b0b0c;
+    border: 2px solid var(--zzz-blue);
+    color: var(--zzz-ink);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+}
+
+body.zzz-theme .scroll-to-bottom-btn:hover {
+    background-color: #14161c;
+    border-color: var(--zzz-blue);
+    color: #fff;
+}
+
+body.zzz-theme .scroll-to-bottom-btn .stb-badge {
+    background: var(--zzz-blue);
+    color: #fff;
+    border: none;
+}
+
+/* 贴纸 / 图片消息：白框圆角（游戏里图片气泡是一圈粗白边） */
+body.zzz-theme .bubble img,
+body.zzz-theme .message-image {
+    border: 3px solid #ffffff;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+/* 文件卡片（本项目自带的消息类型）：深色小卡 + 细边 */
+body.zzz-theme .bubble .file-card,
+body.zzz-theme .bubble .msg-file-card,
+body.zzz-theme .bubble [class*='file-card'] {
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 12px;
+}
+
+/* 待发送附件的小方块 */
+body.zzz-theme .pending-attachments {
+    border: 1px solid var(--zzz-line);
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+body.zzz-theme .pending-attachment-item {
+    background: var(--zzz-pill);
+    border: 1px solid var(--zzz-line-2);
+    border-radius: 12px;
+    color: var(--zzz-ink-2);
+}
+
+body.zzz-theme .pending-attachment-icon { color: var(--zzz-ink-2); }
+
+/* 未读红点 / 计数：红底白字小胶囊 */
+body.zzz-theme .unread-badge,
+body.zzz-theme .unread-count,
+body.zzz-theme .badge-danger,
+body.zzz-theme .friend-unread {
+    background: var(--zzz-red);
+    border: none;
+    border-radius: var(--zzz-r-pill);
+    color: #fff;
+    font-weight: 700;
+}
+
+/* 上下文 token 条 / 状态栏：细药丸，别抢眼 */
+body.zzz-theme .context-token-bar,
+body.zzz-theme .vars-bar,
+body.zzz-theme #chat-vars-bar {
+    background: var(--zzz-panel);
+    border: 1px solid var(--zzz-line);
+    border-radius: var(--zzz-r-pill);
+    color: var(--zzz-muted);
+}
+
+/* 角色卡 / 插件卡片（设置 → 插件 等） */
+body.zzz-theme .plugin-card,
+body.zzz-theme .plugin-settings-item,
+body.zzz-theme .cm-card,
+body.zzz-theme .character-card,
+body.zzz-theme .market-card {
+    background: var(--zzz-panel) !important;
+    border: 1px solid var(--zzz-line) !important;
+    border-radius: 14px;
+    color: var(--zzz-ink);
+}
+
+body.zzz-theme .plugin-card:hover,
+body.zzz-theme .plugin-settings-item:hover,
+body.zzz-theme .cm-card:hover,
+body.zzz-theme .character-card:hover {
+    border-color: var(--zzz-line-3) !important;
+    box-shadow: none;
+}
+
+/* 空状态 / 欢迎页 */
+body.zzz-theme .empty-state,
+body.zzz-theme .welcome-screen { color: var(--zzz-muted); }
+
+/* 窄屏（论坛三栏塌成一栏：左侧导航变成顶部横向图标条）：
+   桌面那套 2px 描边药丸在横排、贴边的情况下，第一枚的描边会被视口裁掉半圈，
+   这里把描边收成 1px 并给容器补一点内边距。 */
+@media (max-width: 900px) {
+    body.forum-page.zzz-theme .forum-side {
+        padding: 10px 10px 6px;
+        border-right: none;
+        border-bottom: 1px solid var(--zzz-line);
+    }
+
+    body.forum-page.zzz-theme .forum-nav,
+    body.forum-page.zzz-theme .forum-side-bottom button {
+        border-width: 1px;
+        padding: 8px 12px;
+    }
+
+    body.forum-page.zzz-theme .forum-main { padding: 14px; }
+}
+
+/* 窄屏：面板留缝和内边距都收一点，否则输入框被挤成两行字 */
+@media (max-width: 640px) {
+    body.zzz-theme .chat-area {
+        margin: 6px;
+        border-radius: 18px;
+    }
+
+    body.zzz-theme .chat-input-area textarea,
+    body.zzz-theme .chat-input-area input:not([type='range']):not([type='checkbox']):not([type='radio']) {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    body.zzz-theme .chat-input-area .icon-btn,
+    body.zzz-theme .chat-input-area .small-icon-btn {
+        width: 30px;
+        height: 30px;
+    }
+
+    body.zzz-theme #send-btn { width: 36px; height: 36px; min-width: 36px; }
+}
+
+/* 全屏模式：外壳铺满窗口，这时再留缝就成了"画中画"，全部贴边 */
+body.zzz-theme.fullscreen-mode .app-container { border: none; border-radius: 0; }
+body.zzz-theme.fullscreen-mode .chat-area { margin: 0; border: none; border-radius: 0; }
+body.zzz-theme.fullscreen-mode .sidebar { border-radius: 0; }
+
+/* ==================================================================
+   视觉小说模式（VN）
+   ------------------------------------------------------------------
+   底子那套 VN 样式是给深蓝夜空（#11131b）配的，套到绝区零会变成
+   「深蓝对话盒 + 金色名牌」，跟纯黑 + 荧光绿完全两条路。
+   这里按绝区零语言重铺：黑面板、灰描边、绿只留给「当前/可点」。
+
+   覆盖范围：舞台底、对话盒、名牌、情绪徽标、顶部工具条、
+   底部翻页条、选项列表、日志面板。
+   ================================================================== */
+
+body.zzz-theme .vn-stage { background: #0a0a0b; }
+
+/* 对话盒：窗内黑面板 + 织纹 + 22px 圆角（与聊天区同一套） */
+body.zzz-theme .vn-dialogue-box {
+    background-color: rgba(18, 18, 20, .94);
+    background-image: var(--zzz-weave);
+    border: 1px solid var(--zzz-line);
+    border-radius: var(--zzz-r-panel);
+    color: #f5f5f7;
+    box-shadow: 0 18px 52px rgba(0, 0, 0, .62);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* 停在最新一句：细绿边（默认一律灰，绿只表示「等你说话」） */
+body.zzz-theme .vn-dialogue-box.is-latest { border-color: rgba(174, 212, 55, .5); }
+body.zzz-theme .vn-dialogue-box.is-latest::before {
+    background: linear-gradient(90deg, transparent, rgba(174, 212, 55, .55), transparent);
+}
+body.zzz-theme .vn-dialogue-box::after {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .16), transparent);
+}
+
+body.zzz-theme .vn-text { color: #f5f5f7; text-shadow: none; }
+body.zzz-theme .vn-name { color: #f5f5f7; text-shadow: none; letter-spacing: .03em; }
+body.zzz-theme .vn-name.vn-name--tinted { color: var(--vn-name-c, #f5f5f7); }
+body.zzz-theme .vn-name--mine { color: #aed437; }
+body.zzz-theme .vn-name--sys { color: #8a8a92; }
+body.zzz-theme .vn-name-avatar { border-color: rgba(255, 255, 255, .28); background: #1d1d20; }
+
+/* 情绪徽标：荧光绿描边小胶囊 */
+body.zzz-theme .vn-badge {
+    --vn-emo-color: #aed437;
+    background: rgba(174, 212, 55, .12);
+    border-color: rgba(174, 212, 55, .45);
+    color: #c8ec1a;
+}
+
+/* 顶部工具条：黑底灰边胶囊，hover 才转绿 */
+body.zzz-theme .vn-chip {
+    background: rgba(20, 20, 22, .82);
+    border: 1px solid rgba(255, 255, 255, .22);
+    border-radius: 999px;
+    color: #f5f5f7;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+body.zzz-theme .vn-chip:hover,
+body.zzz-theme .vn-chip.active {
+    background: #aed437;
+    border-color: #aed437;
+    color: #10120a;
+    transform: none;
+}
+body.zzz-theme .vn-chip.vn-exit { border-color: rgba(224, 59, 42, .55); color: #ff8d80; }
+body.zzz-theme .vn-chip.vn-exit:hover { background: #e03b2a; border-color: #e03b2a; color: #fff; }
+
+/* 底部翻页条 / 页码 */
+body.zzz-theme .vn-controls button {
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid var(--zzz-line-2);
+    border-radius: 999px;
+    color: #f5f5f7;
+}
+body.zzz-theme .vn-controls button:hover {
+    background: rgba(174, 212, 55, .16);
+    border-color: rgba(174, 212, 55, .6);
+    color: #c8ec1a;
+}
+body.zzz-theme .vn-page-ind {
+    background: rgba(255, 255, 255, .05);
+    border: 1px dashed var(--zzz-line-3);
+    border-radius: 999px;
+    color: #c8c8ce;
+}
+
+/* 选项：黑条 + 灰边，hover/选中才亮绿（与懒人模式选项一致） */
+body.zzz-theme .vn-choice-item {
+    background: #17171a;
+    border: 1px solid var(--zzz-line-2);
+    border-radius: 12px;
+    color: #f5f5f7;
+}
+body.zzz-theme .vn-choice-item:hover,
+body.zzz-theme .vn-choice-item:focus-visible {
+    background: #1f2412;
+    border-color: rgba(174, 212, 55, .65);
+    color: #f5f5f7;
+}
+body.zzz-theme .vn-choice-key {
+    background: rgba(255, 255, 255, .08);
+    border: 1px solid var(--zzz-line-2);
+    color: #c8c8ce;
+}
+body.zzz-theme .vn-choice-tip { color: #8a8a92; }
+
+/* 提示条 / 记录面板 / 表情弹层 */
+body.zzz-theme .vn-hint { background: rgba(18, 18, 20, .92); color: #c8c8ce; border-color: var(--zzz-line); }
+body.zzz-theme .vn-log-panel,
+body.zzz-theme .vn-em-pop { background: rgba(18, 18, 20, .97); color: #c8c8ce; border-color: var(--zzz-line); }
+body.zzz-theme .vn-log-item { color: #c8c8ce; }
+body.zzz-theme .vn-log-text { color: #8a8a92; }
+body.zzz-theme .vn-em-item { background: rgba(255, 255, 255, .05); border-color: var(--zzz-line); color: #c8c8ce; }
+
+/* 内容广告：黑卡 + 灰虚线 + 荧光绿角标（与列表项同一套配色） */
+body.zzz-theme .adlab-inline {
+    background: #17171a;
+    border-color: var(--zzz-line-2);
+    color: #f5f5f7;
+}
+body.zzz-theme .adlab-inline-tag { background: #aed437; color: #10120a; }
+body.zzz-theme .adlab-inline-text { color: #c8c8ce; }

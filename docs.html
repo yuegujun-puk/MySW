@@ -1,0 +1,3351 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="docs-html">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>使用文档 · My SW AI 角色聊天</title>
+    <meta name="description" content="My SW AI 角色聊天应用完整使用文档：API 配置、Token 计费、角色创建、世界书、插件系统、棋局实验室等功能说明。">
+    <link rel="canonical" href="https://mysw-yg.pages.dev/docs.html">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="My SW">
+    <meta property="og:locale" content="zh_CN">
+    <meta property="og:title" content="使用文档 · My SW AI 角色聊天">
+    <meta property="og:description" content="从 API 配置到角色创建、从世界书到插件系统：My SW 的完整使用文档。">
+    <meta property="og:image" content="https://bbs-static.miyoushe.com/static/2026/08/11/8ca0cb781565d2bb8350054bc8c57191_5612658286973808923.png?x-oss-process=image/resize,s_630/quality,q_80/auto-orient,0/interlace,1/format,jpg">
+    <meta property="og:image:width" content="630">
+    <meta property="og:image:height" content="630">
+    <meta property="og:url" content="https://mysw-yg.pages.dev/docs.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://bbs-static.miyoushe.com/static/2026/08/11/8ca0cb781565d2bb8350054bc8c57191_5612658286973808923.png?x-oss-process=image/resize,s_630/quality,q_80/auto-orient,0/interlace,1/format,jpg">
+    <script type="application/ld+json">
+    [{
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "My SW 使用文档",
+      "description": "My SW AI 角色聊天应用的完整使用文档：API 配置、角色创建与全部功能说明。",
+      "inLanguage": "zh-CN",
+      "mainEntityOfPage": "https://mysw-yg.pages.dev/docs.html",
+      "dateModified": "2026-10-18"
+    }]
+    </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src https://cdn.jsdelivr.net data:; img-src 'self' data: https:; connect-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <link rel="stylesheet" href="mysw-core.css">
+    <link rel="stylesheet" href="docs.css">
+    <!-- 毛玻璃开关（与主界面共用同一个设置项）：关掉模糊的用户在文档页同样受益 -->
+    <script>
+    (function () {
+        try {
+            var s = JSON.parse(localStorage.getItem('chatSettings') || '{}');
+            if (s.glassEffectEnabled === false) document.documentElement.classList.add('glass-off');
+        } catch (e) {}
+    })();
+    </script>
+<script src="i18n.js"></script><script src="docs-en.js"></script><script src="ad-lab.js" defer></script>
+</head>
+<body class="docs-page">
+
+<!-- 顶部导航 -->
+<header class="docs-topbar">
+    <a class="docs-brand" href="index.html">
+        <i class="ri-book-open-line"></i>
+        <span>My SW 使用文档</span>
+    </a>
+    <nav class="docs-topbar-nav">
+        <a href="index.html"><i class="ri-message-3-line"></i> 返回聊天</a>
+        <a href="forum.html"><i class="ri-discuss-line"></i> 论坛</a>
+        <a href="character.html"><i class="ri-store-2-line"></i> 角色卡市场</a>
+        <a href="plugin-marketplace.html"><i class="ri-shapes-line"></i> 插件市场</a>
+        <a href="#quickstart" class="nav-primary"><i class="ri-rocket-line"></i> 快速开始</a>
+    </nav>
+    <div class="docs-progress" id="docs-progress" aria-hidden="true"></div>
+</header>
+
+<!-- 主体 -->
+<div class="docs-shell">
+
+    <!-- 左侧目录 -->
+    <aside class="docs-sidebar" id="docs-sidebar">
+        <div class="docs-sidebar-head">
+            <label class="docs-search">
+                <i class="ri-search-line" aria-hidden="true"></i>
+                <input type="search" id="docs-toc-search" placeholder="搜索文档…" aria-label="搜索文档目录" autocomplete="off">
+                <span class="docs-search-count" id="docs-toc-count"></span>
+            </label>
+        </div>
+        <div class="docs-sidebar-scroll" id="docs-sidebar-scroll">
+        <ul class="docs-toc">
+            <li class="toc-group">上手指南</li>
+            <li><a href="#intro"><i class="doc-toc-ico ri-book-2-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">📖</span> 项目简介</a></li>
+            <li><a href="#quickstart"><i class="doc-toc-ico ri-rocket-2-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🚀</span> 快速开始</a></li>
+            <li><a href="#where"><i class="doc-toc-ico ri-compass-3-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🧭</span> 功能在哪开（速查）</a></li>
+            <li>
+                <a href="#first-config"><i class="doc-toc-ico ri-settings-3-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">⚙️</span> 初次配置步骤</a>
+                <ul class="docs-toc toc-sub">
+                    <li><a href="#step-open-settings">打开设置</a></li>
+                    <li><a href="#step-api-url">填写 API 地址</a></li>
+                    <li><a href="#step-api-key">填入 API Key</a></li>
+                    <li><a href="#step-model">选择模型</a></li>
+                    <li><a href="#step-test">测试连接</a></li>
+                </ul>
+            </li>
+            <li><a href="#api-key"><i class="doc-toc-ico ri-key-2-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🔑</span> 什么是 API Key</a></li>
+            <li>
+                <a href="#platforms"><i class="doc-toc-ico ri-global-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🌐</span> 常见 API 平台</a>
+                <ul class="docs-toc toc-sub">
+                    <li><a href="#platform-official">官方平台</a></li>
+                    <li><a href="#platform-relay">中转/代理站</a></li>
+                    <li><a href="#platform-local">本地部署</a></li>
+                </ul>
+            </li>
+            <li>
+                <a href="#billing"><i class="doc-toc-ico ri-money-cny-circle-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">💰</span> 计费方式详解</a>
+                <ul class="docs-toc toc-sub">
+                    <li><a href="#billing-token">按 Token 计费</a></li>
+                    <li><a href="#billing-count">按次计费</a></li>
+                    <li><a href="#billing-subscription">包月/订阅</a></li>
+                    <li><a href="#billing-compare">方式对比</a></li>
+                    <li><a href="#price-check">怎么查最新价格</a></li>
+                </ul>
+            </li>
+            <li><a href="#starter-guide"><i class="doc-toc-ico ri-focus-3-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🎯</span> 新手怎么用（搭配建议）</a></li>
+            <li><a href="#token-what"><i class="doc-toc-ico ri-bar-chart-box-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">📊</span> 什么是 Token</a></li>
+            <li class="toc-group">角色与玩法</li>
+            <li>
+                <a href="#characters"><i class="doc-toc-ico ri-user-smile-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🎭</span> 创建与编辑角色</a>
+                <ul class="docs-toc toc-sub">
+                    <li><a href="#feature-flags">增强功能开关</a></li>
+                    <li><a href="#export-character">导出角色卡</a></li>
+                    <li><a href="#compat-tavern">与酒馆等站点兼容</a></li>
+                    <li><a href="#text-chat-import">粘贴文本导入对话</a></li>
+                    <li><a href="#deepseek-import">从 DeepSeek 导入</a></li>
+                    <li><a href="#wb-advanced">世界书高级触发</a></li>
+                    <li><a href="#ctx-token">上下文 Token 与冻结</a></li>
+                    <li><a href="#swipe">消息滑动（多版本）</a></li>
+                    <li><a href="#chat-vars">变量与状态栏</a></li>
+                    <li><a href="#group-auto">群聊自动模式</a></li>
+                    <li><a href="#alt-greetings">多开场白</a></li>
+                </ul>
+            </li>
+            <li><a href="#character-market"><i class="doc-toc-ico ri-store-2-line" aria-hidden="true"></i> 角色卡市场</a></li>
+            <li><a href="#threads"><i class="doc-toc-ico ri-node-tree" aria-hidden="true"></i> 对话线程（多存档）</a></li>
+            <li><a href="#rp-as"><i class="doc-toc-ico ri-user-voice-line" aria-hidden="true"></i> 语C（我来演一个角色）</a></li>
+            <li><a href="#worldbook"><i class="doc-toc-ico ri-bookmark-3-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">📚</span> 世界书</a></li>
+            <li>
+                <a href="#vnmode"><i class="doc-toc-ico ri-film-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🎬</span> 视觉小说模式</a>
+                <ul class="docs-toc toc-sub">
+                    <li><a href="#vn-entry">进入与退出</a></li>
+                    <li><a href="#vn-assets">立绘与背景素材</a></li>
+                    <li><a href="#vn-emotion">情绪识别</a></li>
+                    <li><a href="#vn-fullscreen">全屏舞台</a></li>
+                    <li><a href="#vn-keys">快捷键</a></li>
+                </ul>
+            </li>
+            <li><a href="#gal"><i class="doc-toc-ico ri-book-2-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">📝</span> GAL 工作室（做视觉小说）</a></li>
+            <li>
+                <a href="#features"><i class="doc-toc-ico ri-sparkling-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">✨</span> 功能介绍</a>
+                <ul class="docs-toc toc-sub">
+                    <li><a href="#feature-chat">聊天相关</a></li>
+                    <li><a href="#feature-roleplay">角色扮演</a></li>
+                    <li><a href="#feature-advanced">高级功能</a></li>
+                    <li><a href="#feature-extra">其它实验室与辅助功能</a></li>
+                    <li><a href="#feature-data">数据管理</a></li>
+                    <li><a href="#feature-storage">查看存储使用情况</a></li>
+                    <li><a href="#feature-switches">功能开关（按功能关）</a></li>
+                    <li><a href="#feature-scripts">加载 JS 文件设置</a></li>
+                    <li><a href="#feature-refresh">刷新网站</a></li>
+                </ul>
+            </li>
+            <li class="toc-group">功能与插件</li>
+            <li><a href="#impatient"><i class="doc-toc-ico ri-alarm-warning-line" aria-hidden="true"></i> 急死我了（AI 催回话）</a></li>
+            <li>
+                <a href="#plugins"><i class="doc-toc-ico ri-plug-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🔌</span> 插件编写指南</a>
+                <ul class="docs-toc toc-sub">
+                    <li><a href="#plugin-permissions">权限与沙箱：插件能碰什么</a></li>
+                    <li><a href="#plugin-quickstart">最小可用插件</a></li>
+                    <li><a href="#plugin-register">register() 字段</a></li>
+                    <li><a href="#plugin-perms">权限系统</a></li>
+                    <li><a href="#plugin-hooks">四种钩子</a></li>
+                    <li><a href="#plugin-api">受控 API 通道</a></li>
+                    <li><a href="#plugin-dom">受控 DOM 通道</a></li>
+                    <li><a href="#plugin-assets">ZIP 插件包资源</a></li>
+                    <li><a href="#plugin-import">导入与调试</a></li>
+                    <li><a href="#plugin-ai">用 AI 编写插件</a></li>
+                    <li><a href="#plugin-examples">完整示例</a></li>
+                </ul>
+            </li>
+            <li><a href="#affinity"><i class="doc-toc-ico ri-heart-3-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">💗</span> 好感度系统</a></li>
+            <li><a href="#ad-lab"><i class="doc-toc-ico ri-tv-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">📺</span> 广告跳跳乐</a></li>
+            <li>
+                <a href="#learn-tutor"><i class="doc-toc-ico ri-graduation-cap-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🎓</span> 学习辅导</a>
+                <ul class="docs-toc toc-sub">
+                    <li><a href="#learn-modes">三种讲解模式</a></li>
+                    <li><a href="#learn-teacher">老师人设</a></li>
+                    <li><a href="#learn-mistakes">错题本与学习档案</a></li>
+                </ul>
+            </li>
+            <li>
+                <a href="#board-games"><i class="doc-toc-ico ri-checkbox-blank-circle-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">⚫</span> 五子棋与围棋</a>
+                <ul class="docs-toc toc-sub">
+                    <li><a href="#gomoku-howto">怎么下五子棋</a></li>
+            <li><a href="#undercover"><i class="doc-toc-ico ri-user-search-line" aria-hidden="true"></i> 谁是卧底</a></li>
+            <li><a href="#werewolf"><i class="doc-toc-ico ri-moon-clear-line" aria-hidden="true"></i> 狼人杀</a></li>
+                    <li><a href="#go-howto">怎么下围棋</a></li>
+                </ul>
+            </li>
+            <li class="toc-group">扩展与社区</li>
+            <li><a href="#forum"><i class="doc-toc-ico ri-discuss-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🗨️</span> 论坛功能</a></li>
+            <li>
+                <a href="#voice-clone"><i class="doc-toc-ico ri-mic-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🎙️</span> 声音工坊：克隆与音高</a>
+                <ul class="docs-toc toc-sub">
+                    <li><a href="#voice-pitch">音高怎么生效</a></li>
+                    <li><a href="#voice-clone-how">克隆一个音色</a></li>
+                    <li><a href="#voice-clone-errors">常见返回码</a></li>
+                </ul>
+            </li>
+            <li>
+                <a href="#extensions"><i class="doc-toc-ico ri-shapes-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🧩</span> 扩展模块</a>
+                <ul class="docs-toc toc-sub">
+                    <li><a href="#ext-regex">正则脚本</a></li>
+                    <li><a href="#ext-translate">聊天翻译</a></li>
+                    <li><a href="#ext-presets">提示词预设</a></li>
+                    <li><a href="#ext-scripts">消息脚本</a></li>
+                    <li><a href="#ext-checkpoints">聊天检查点</a></li>
+                    <li><a href="#ext-vectormem">聊天向量记忆</a></li>
+                    <li><a href="#ext-databank">数据银行</a></li>
+                    <li><a href="#ext-imagegen">AI 图像生成</a></li>
+                    <li><a href="#ext-live2d">VN Live2D 立绘</a></li>
+                    <li><a href="#ext-persona">AI 生成人设</a></li>
+                    <li><a href="#ext-english">AI 英文模式</a></li>
+                </ul>
+            </li>
+            <li class="toc-group">帮助</li>
+            <li><a href="#faq"><i class="doc-toc-ico ri-question-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">❓</span> 常见问题</a></li>
+        </ul>
+        </div>
+    </aside>
+
+    <!-- 移动端目录遮罩 -->
+    <div class="docs-sidebar-overlay" id="docs-sidebar-overlay"></div>
+
+    <!-- 主内容 -->
+    <main class="docs-main">
+    <article class="docs-article">
+
+        <h1 id="intro"><i class="doc-h-ico ri-book-2-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">📖</span> My SW 使用文档</h1>
+        <p>欢迎使用 <strong>My SW</strong>！这是一个完全运行在浏览器本地的 AI 角色聊天应用，所有数据（聊天记录、角色、自定义内容）都保存在你的设备上，不会上传到任何服务器。本文档将带你从零开始，<em>即使是第一次接触 AI 的真新手</em>，也能顺利配置并开始使用。不过，使用MySW的代价是变成猫娘哦~</p>
+
+        <div class="info-card tip">
+            <div class="info-card-title"><i class="ri-shield-check-line"></i> 隐私优先</div>
+            <p>本应用不会存储你的 API Key 到任何服务器。你在「系统设置」中填写的 Key 仅保存在你当前浏览器的本地存储（localStorage）中，清除浏览器数据会一并清除。</p>
+        </div>
+
+        <h2 id="quickstart"><i class="doc-h-ico ri-rocket-2-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🚀</span> 快速开始（5 分钟）</h2>
+        <p>如果你是急性子，只想立刻开始聊天，按下面三步走即可：</p>
+        <ol class="step-list">
+            <li>
+                <strong>注册一个 API 平台账号并充值</strong>
+                <span>推荐从 <code>OpenRouter</code>、<code>硅基流动</code>、<code>DeepSeek 官方</code> 等平台开始，注册简单、支持支付宝/微信。</span>
+            </li>
+            <li>
+                <strong>在 API 平台创建一个 Key</strong>
+                <span>进入「API Keys」页面，点击「Create new key」，复制以 <code>sk-</code> 开头的那串字符。</span>
+            </li>
+            <li>
+                <strong>回到本应用，依次填入 API 地址、Key、模型</strong>
+                <span>点右下角齿轮 ⚙️ →「AI 配置」标签 → 填好三项 → 点「保存设置」。</span>
+            </li>
+        </ol>
+
+        <p>看到这里已经够了，下面是更详细的手把手教学，<em>强烈建议新手通读</em>。</p>
+
+        <hr>
+
+        <h2 id="where"><i class="doc-h-ico ri-compass-3-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🧭</span> 功能在哪开（速查）</h2>
+        <p>这个站的功能散在十几个地方，找起来确实费劲。下面按「你在找什么」排，每条都写死了路径。</p>
+        <div class="info-card tip"><div class="info-card-title"><i class="ri-magic-line" aria-hidden="true"></i>如果你只想快点找到</div>
+        <p>设置弹窗右上角有个<b>「搜索设置项」</b>框 —— 输「主题」「Token」「记忆」「备份」这类词，会直接跳到对应页并高亮那一项，比在十几个标签里翻快得多。</p>
+        <p>下面的路径统一简写成 <code>⚙ 设置</code>，指主站右上角那个齿轮；手机上是左上角 ☰ → 底部的齿轮。</p></div>
+
+        <label class="where-search">
+            <i class="ri-search-line" aria-hidden="true"></i>
+            <input type="search" id="where-search" autocomplete="off"
+                   placeholder="搜功能名，例如：主题 / Token / 备份"
+                   aria-label="搜索功能位置">
+            <span class="where-count" id="where-count"></span>
+        </label>
+
+        <details class="where-group" data-where-group="0" open>
+            <summary data-count="11"><span>界面与外观</span></summary>
+            <div class="where-list">
+                <div class="where-row">
+                    <div class="where-name field-name">换界面主题</div>
+                    <div class="where-path field-desc">⚙ 设置 → 界面外观 → 界面主题（深色 / 浅色 / 星铁·浅 / 星铁·深 / 绝区零；也可以点侧边栏顶部的 ☀ 循环切换）</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">自定义主题色</div>
+                    <div class="where-path field-desc">⚙ 设置 → 界面外观 → 自定义主题色</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">换字体</div>
+                    <div class="where-path field-desc">⚙ 设置 → 界面外观 → 更改界面字体</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">左上角「短信」改名 / 换图标</div>
+                    <div class="where-path field-desc">⚙ 设置 → 界面外观 → 站点标识（文字与图标）</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">聊天背景图、背景模糊度</div>
+                    <div class="where-path field-desc">⚙ 设置 → 界面外观 → 聊天背景</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">气泡颜色、圆角、气泡背景图</div>
+                    <div class="where-path field-desc">⚙ 设置 → 界面外观 → 聊天气泡样式（配合「自定义聊天气泡背景」「气泡文字样式」）</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">头像框</div>
+                    <div class="where-path field-desc">⚙ 设置 → 界面外观 → 自定义头像框</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">关掉动画</div>
+                    <div class="where-path field-desc">⚙ 设置 → 界面外观 → 动效模式</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">全屏</div>
+                    <div class="where-path field-desc">聊天窗口右上角 ⛶ 图标；或 ⚙ 设置 → 界面外观 → 全屏模式</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">角色列表的排列顺序</div>
+                    <div class="where-path field-desc">⚙ 设置 → 界面外观 → 角色列表排序</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">界面语言（中文 / English）</div>
+                    <div class="where-path field-desc">⚙ 设置 → 更多 → 界面语言 · Language</div>
+                </div>
+            </div>
+        </details>
+        <details class="where-group" data-where-group="1" open>
+            <summary data-count="15"><span>聊天与回复</span></summary>
+            <div class="where-list">
+                <div class="where-row">
+                    <div class="where-name field-name">回复太短 / 太长</div>
+                    <div class="where-path field-desc">⚙ 设置 → 聊天设置 → 最大回复 Token 限制</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">它记不住前面说过的话</div>
+                    <div class="where-path field-desc">⚙ 设置 → 聊天设置 → 最大上下文轮数</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">打字机效果（流式输出）</div>
+                    <div class="where-path field-desc">⚙ 设置 → 聊天设置 → 流式输入</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">看它「想了什么」</div>
+                    <div class="where-path field-desc">⚙ 设置 → 聊天设置 → 显示推理模型的思考</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">思考强度、思考预算</div>
+                    <div class="where-path field-desc">⚙ 设置 → AI 配置 → 生成参数 → 思考强度</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">别思考，直接回答</div>
+                    <div class="where-path field-desc">⚙ 设置 → 聊天设置 → 跳过思考，直接回答（更快）</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">一条回复拆成几段</div>
+                    <div class="where-path field-desc">⚙ 设置 → 聊天设置 → 启用消息分段</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">它会主动来找我说话</div>
+                    <div class="where-path field-desc">⚙ 设置 → 聊天设置 → 启用主动关怀模式 / 上线生成一条消息</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">我来演一个角色（语C）</div>
+                    <div class="where-path field-desc">⚙ 设置 → 聊天设置 → 语C模式（我来演一个角色）</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">哪些消息不发给 AI</div>
+                    <div class="where-path field-desc">输入框左上角「冻结管理」；或在 ⚙ 设置 → 聊天设置 → 编辑当前对话上下文</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">同一条回复保留多个版本</div>
+                    <div class="where-path field-desc">鼠标停在 AI 回复上，气泡下方出现 ‹ › 箭头</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">生成这段对话的摘要</div>
+                    <div class="where-path field-desc">聊天窗口右上角 🗒 图标</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">聊天统计看板</div>
+                    <div class="where-path field-desc">聊天窗口右上角 📊 图标</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">清空当前对话</div>
+                    <div class="where-path field-desc">聊天窗口右上角 🗑 图标</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">把一段文字粘进来变成对话</div>
+                    <div class="where-path field-desc">聊天窗口右上角「粘贴文本导入对话」图标</div>
+                </div>
+            </div>
+        </details>
+        <details class="where-group" data-where-group="2" open>
+            <summary data-count="7"><span>AI 接口与模型</span></summary>
+            <div class="where-list">
+                <div class="where-row">
+                    <div class="where-name field-name">填 API 地址、Key、模型名</div>
+                    <div class="where-path field-desc">⚙ 设置 → AI 配置 → 当前使用的站点</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">存多个站点，失败自动换下一个</div>
+                    <div class="where-path field-desc">⚙ 设置 → AI 配置 → 站点列表与请求顺序</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">让它能看图</div>
+                    <div class="where-path field-desc">⚙ 设置 → AI 配置 → 多模态视觉</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">朗读回复（TTS）</div>
+                    <div class="where-path field-desc">⚙ 设置 → AI 配置 → 语音合成（TTS）</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">语音输入（STT）</div>
+                    <div class="where-path field-desc">⚙ 设置 → AI 配置 → 语音转文字（STT）</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">给某个功能单独配模型</div>
+                    <div class="where-path field-desc">⚙ 设置 → AI 配置 → 功能专用模型（可选）</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">随机性、topP、超时</div>
+                    <div class="where-path field-desc">⚙ 设置 → AI 配置 → 生成参数</div>
+                </div>
+            </div>
+        </details>
+        <details class="where-group" data-where-group="3" open>
+            <summary data-count="5"><span>记忆 / 知识 / 人设</span></summary>
+            <div class="where-list">
+                <div class="where-row">
+                    <div class="where-name field-name">长期记忆</div>
+                    <div class="where-path field-desc">⚙ 设置 → 长期记忆 → 启用长期记忆</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">知识库</div>
+                    <div class="where-path field-desc">⚙ 设置 → 知识库 → 使用策略 → 启用知识库功能</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">世界书</div>
+                    <div class="where-path field-desc">⚙ 设置 → 世界书</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">「我」的人设（Persona）</div>
+                    <div class="where-path field-desc">⚙ 设置 → 世界书 → 用户人设（Persona）</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">改角色的提示词、开场白</div>
+                    <div class="where-path field-desc">左侧角色列表右键角色 → 编辑；或打开角色卡后点「编辑」</div>
+                </div>
+            </div>
+        </details>
+        <details class="where-group" data-where-group="4" open>
+            <summary data-count="5"><span>数据与备份</span></summary>
+            <div class="where-list">
+                <div class="where-row">
+                    <div class="where-name field-name">自动备份</div>
+                    <div class="where-path field-desc">⚙ 设置 → 导入导出 → 启用自动备份</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">导入角色卡</div>
+                    <div class="where-path field-desc">⚙ 设置 → 导入导出 → 导入角色卡</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">导入聊天记录</div>
+                    <div class="where-path field-desc">⚙ 设置 → 导入导出 → 导入角色聊天记录</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">导出全部数据</div>
+                    <div class="where-path field-desc">⚙ 设置 → 导入导出 → 导出</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">页面出问题了，想清缓存重来</div>
+                    <div class="where-path field-desc">⚙ 设置 → 更多 → 刷新网站（四档，都不删数据）</div>
+                </div>
+            </div>
+        </details>
+        <details class="where-group" data-where-group="5" open>
+            <summary data-count="7"><span>插件与实验室</span></summary>
+            <div class="where-list">
+                <div class="where-row">
+                    <div class="where-name field-name">关掉我不想要的功能</div>
+                    <div class="where-path field-desc">⚙ 设置 → 功能开关（面板顶部可按功能名搜，关完要刷新）</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">装插件</div>
+                    <div class="where-path field-desc">⚙ 设置 → 插件 → 导入插件（JS / ZIP）</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">正则脚本（替换 AI 的输出）</div>
+                    <div class="where-path field-desc">⚙ 设置 → 插件 → 正则脚本（Regex）</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">聊天翻译</div>
+                    <div class="where-path field-desc">⚙ 设置 → 插件 → 聊天翻译</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">3D 模型 / 棋局 / 狼人杀 / 广告跳跳乐</div>
+                    <div class="where-path field-desc">⚙ 设置 → 实验室</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">看全部快捷键、改键位</div>
+                    <div class="where-path field-desc">⚙ 设置 → 快捷键</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">做视觉小说 / GAL 游戏</div>
+                    <div class="where-path field-desc">⚙ 设置 → 更多 → GAL 工作室（或直接打开 gal.html；做完能导出成独立 HTML）</div>
+                </div>
+            </div>
+        </details>
+        <details class="where-group" data-where-group="6" open>
+            <summary data-count="8"><span>这些入口不在设置里</span></summary>
+            <div class="where-list">
+                <div class="where-row">
+                    <div class="where-name field-name">表情包</div>
+                    <div class="where-path field-desc">输入框右侧 😊 笑脸；分组管理在表情面板右上角</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">快捷换主题</div>
+                    <div class="where-path field-desc">侧边栏顶部 ☀ 太阳图标</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">新建群聊</div>
+                    <div class="where-path field-desc">侧边栏底部「创建群聊」按钮</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">添加角色</div>
+                    <div class="where-path field-desc">侧边栏底部 ➕ 按钮</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">论坛</div>
+                    <div class="where-path field-desc">侧边栏顶部「论坛」</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">角色卡市场</div>
+                    <div class="where-path field-desc">侧边栏顶部「市场」</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">手机视图 / 桌面视图</div>
+                    <div class="where-path field-desc">左上角 📱 / 💻 图标</div>
+                </div>
+                <div class="where-row">
+                    <div class="where-name field-name">收起侧边栏</div>
+                    <div class="where-path field-desc">侧边栏顶部 ← 箭头</div>
+                </div>
+            </div>
+        </details>
+        <p class="where-empty" id="where-empty" hidden>没找到。<b>设置弹窗右上角的搜索框</b>支持全站关键词，比这里全。</p>
+        <h2 id="starter-guide"><i class="doc-h-ico ri-focus-3-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🎯</span> 新手怎么用：先跑通，再玩花</h2>
+        <p>这个站功能很多，但真正用起来只需要顺着一条线走。下面按「越往后越花」排，卡住了再往下看对应的章节。</p>
+
+        <h3>第 0 步：让一条消息能发出去</h3>
+        <ol>
+            <li>配好 <b>API 地址 / Key / 模型</b>（下面 <a href="#first-config">初次配置</a> 有手把手），点「测试连接」看到绿灯就行。</li>
+            <li>随便挑一个内置角色，发一句「你好」，能看到回复 = 地基打好了。</li>
+            <li>这时候再动别的设置。功能是叠加上去的，地基不通，后面看到的所有报错都只是同一个问题。</li>
+        </ol>
+
+        <h3>第 1 步：把角色捏成你想要的样子</h3>
+        <ul>
+            <li><b>内置角色改人设</b>：点「添加好友」→ 角色行右边那个铅笔 <i class="ri-edit-2-line"></i>，直接改提示词。有多个提示词版本的角色可以一个版本一个版本地改，改过的会挂「已修改」标签，点「恢复初始版本」就回到原文（标签会变淡，记着你曾经动过）。</li>
+            <li><b>自制角色</b>：同一个入口 <i class="ri-add-circle-line"></i> 「创建新角色」，写名字 + 提示词 + 开场白。写好之后也能在铅笔里 <b>新增提示词版本</b>（比如一个「日常版」一个「剧情版」），随时切换。</li>
+            <li><b>提示词写不好</b>：把「身份 / 外貌 / 性格 / 说话方式 / 关系 / 禁止事项」分成小标题写，比一整段散文有效得多。写完了可以点提示词下面的「优化」让它自己找一遍前后矛盾。</li>
+        </ul>
+
+        <h3>第 2 步：让它「记得住」—— 三件套的搭配</h3>
+        <p>角色忘事，通常是这三件事没配对，而不是模型笨：</p>
+        <table>
+            <thead><tr><th style="width:30%">你在意什么</th><th style="width:24%">该开什么</th><th style="width:46%">怎么调</th></tr></thead>
+            <tbody>
+                <tr><td>记得住几十轮前的剧情</td><td><b>上下文轮数</b> + <b>对话摘要</b></td><td>轮数拉到 20~40；开摘要，让早期内容压成一段带进上下文。</td></tr>
+                <tr><td>记得住设定（地名、组织、人物关系）</td><td><b>世界书</b></td><td>把设定写成条目 + 关键词，只在聊到时才注入，比塞进提示词省钱。</td></tr>
+                <tr><td>跨对话记得住你这个人</td><td><b>长期记忆</b></td><td>开「自动提取」，它会定期把重要信息写进记忆档案；嫌吵就把提取频率调高。</td></tr>
+                <tr><td>角色主动来找你</td><td><b>主动关怀</b></td><td>配合「感知现实时间」一起开，它才知道现在是凌晨三点还是下午茶。</td></tr>
+            </tbody>
+        </table>
+
+        <h3>第 3 步：让它「像在演」—— 最划算的几个开关</h3>
+        <ul>
+            <li><b>消息分段 + 气泡最大宽度</b>：分段让长回复按段落分成几条气泡，读起来像真的在聊天；宽度调到 60~70% 最像手机。</li>
+            <li><b>视觉小说模式</b>：立绘 + 背景 + 打字机 + 情绪识别。想让角色「站在那里说话」，这是性价比最高的一档。配好角色立绘后，<code>/vn</code> 一键进入。</li>
+            <li><b>立绘情绪</b>：给角色传几张不同表情的立绘，AI 会按回复内容自动切表情，不需要你在提示词里写「现在该笑了」。</li>
+            <li><b>变量与状态栏</b>：想让角色有「好感 / 体力 / 金币」这种会变的状态，用变量模块，AI 回复里带状态更新，界面会实时显示。</li>
+        </ul>
+
+        <h3>第 4 步：省点钱</h3>
+        <ul>
+            <li><b>上下文不是越长越好</b>：每轮都要把历史重发一遍，轮数翻倍 ≈ 费用翻倍。先调小，觉得忘事再往上加。</li>
+            <li><b>缓存</b>：站点支持缓存（DeepSeek / OpenAI / Claude / Kimi）时，把固定不变的部分（人设、世界书）放在前面，命中率会高很多。</li>
+            <li><b>专用模型</b>：给「摘要 / 记忆提取 / 翻译 / 主动关怀」单独指定一个便宜模型，主对话继续用好模型。这一项通常能砍掉三到五成费用。</li>
+            <li><b>Code 模式</b>：让 AI 写代码时打开，会把输出上限抬高、关掉分段（分段会把代码撕成好几条）。</li>
+        </ul>
+
+        <h3>常用组合速查</h3>
+        <table>
+            <thead><tr><th style="width:38%">你想干的事</th><th style="width:62%">推荐组合</th></tr></thead>
+            <tbody>
+                <tr><td>正经角色扮演、长篇剧情</td><td>长上下文 + 世界书 + 对话摘要 + 视觉小说模式</td></tr>
+                <tr><td>日常闲聊、图一乐</td><td>默认设置 + 主动关怀 + 感知现实时间 + 分段</td></tr>
+                <tr><td>多角色同场</td><td>群聊 + 世界书（共享设定）+ 各角色独立提示词版本</td></tr>
+                <tr><td>当学习搭子</td><td>学习辅导 + 错题本 + 长期记忆（记你的薄弱点）</td></tr>
+                <tr><td>写代码</td><td>Code 模式 + 代码块「预览」（HTML/SVG 直接看效果）+ 上下文调大</td></tr>
+                <tr><td>只看图不想读字</td><td>视觉小说模式 + 立绘情绪 + 全屏舞台</td></tr>
+                <tr><td>想被广告烦一下（真的有人好这口）</td><td>实验室 → 广告跳跳乐 + 流氓设置里的迷惑 × 和越点越推</td></tr>
+            </tbody>
+        </table>
+
+        <div class="info-card">
+            <div class="info-card-title"><i class="ri-lightbulb-line"></i> 一条经验</div>
+            <p>先只改一个变量，再看效果。一次开五个功能，出问题就不知道是谁的锅了 —— 尤其是「记不住」和「人设崩」这两类，九成是上下文或提示词写太满，而不是功能没开。</p>
+        </div>
+
+        <hr>
+
+        <h2 id="first-config"><i class="doc-h-ico ri-settings-3-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">⚙️</span> 初次配置步骤（手把手）</h2>
+        <p>第一次打开应用时，由于没有配置 AI 接口，发送消息会提示 <code>❌ 请先在设置中配置 API 地址和 Key！</code>。这是正常现象，请按下面的步骤配置：</p>
+
+        <h3 id="step-open-settings">第 1 步：打开「系统设置」</h3>
+        <p>在聊天界面左下角（或移动端右上角）找到 <i class="ri-settings-4-line"></i> <strong>齿轮按钮</strong>，点击它。会弹出一个标题为「系统设置」的模态框。模态框顶部有多个标签页：<strong>AI 配置 / 界面外观 / 聊天设置 / 导入导出 / 知识库 / 长期记忆 / 世界书 / 快捷键 / 插件 / 实验室 / 更多 / 插件 / 实验室</strong>。第一次使用我们只需要关注 <em>「AI 配置」</em> 即可。</p>
+
+        <div class="info-card tip">
+            <div class="info-card-title"><i class="ri-search-line"></i> 找设置项更快</div>
+            <p>设置弹窗顶部有一个 <strong>搜索框</strong>，输入关键词（如「Key」「温度」「气泡」）可以快速跳转到对应设置项。</p>
+        </div>
+
+        <h3 id="step-api-url">第 2 步：填写「API 调用地址」</h3>
+        <p>这是你的 AI 服务提供商的接口根地址。本应用支持<strong>三种接口协议</strong>：OpenAI 兼容、Claude（Anthropic Messages）、Gemini（Google generateContent）。填到域名部分即可，路径由系统按协议自动补全。</p>
+        <p>下方的「<strong>接口协议</strong>」一般留「自动识别」就行：地址里出现 <code>/v1/messages</code> 判为 Claude，出现 <code>:generateContent</code> 或 <code>/v1beta/models/</code> 判为 Gemini，其余一律按 OpenAI 兼容处理。只有当中转站路径不规范、自动判断不准时，才需要手动锁定。</p>
+
+        <p>常见平台的地址示例：</p>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead>
+                <tr><th>平台</th><th>API 调用地址</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>OpenAI 官方</td><td><code>https://api.openai.com</code></td></tr>
+                <tr><td>DeepSeek 官方</td><td><code>https://api.deepseek.com</code></td></tr>
+                <tr><td>硅基流动 (SiliconFlow)</td><td><code>https://api.siliconflow.cn</code></td></tr>
+                <tr><td>月之暗面 (Kimi/Moonshot)</td><td><code>https://api.moonshot.cn</code></td></tr>
+                <tr><td>智谱 GLM</td><td><code>https://open.bigmodel.cn/api/paas/v4</code></td></tr>
+                <tr><td>OpenRouter</td><td><code>https://openrouter.ai/api/v1</code></td></tr>
+                <tr><td>本地 Ollama</td><td><code>http://localhost:11434</code></td></tr>
+                <tr><td>第三方中转站</td><td>一般类似 <code>https://your-relay.com</code>，<br>请按你购买的中转商提供的地址填写</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <h4>三种协议分别怎么填</h4>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead>
+                <tr><th>协议</th><th>地址填法</th><th>系统自动补的路径 / 认证方式</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>OpenAI 兼容</td>
+                    <td><code>https://api.deepseek.com</code></td>
+                    <td><code>/v1/chat/completions</code>，<code>Authorization: Bearer</code></td>
+                </tr>
+                <tr>
+                    <td>Claude</td>
+                    <td><code>https://api.anthropic.com</code> 或中转站给的 <code>/v1/messages</code></td>
+                    <td><code>/v1/messages</code>，<code>x-api-key</code> + <code>anthropic-version: 2023-06-01</code></td>
+                </tr>
+                <tr>
+                    <td>Gemini</td>
+                    <td>根地址，或中转站给的带 <code>{model}</code> 占位符的完整地址</td>
+                    <td><code>/v1beta/models/{模型}:streamGenerateContent?alt=sse</code>，<code>x-goog-api-key</code></td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+
+        <div class="info-card">
+            <div class="info-card-title"><i class="ri-information-line"></i> 关于浏览器直连</div>
+            <p>这三种协议都是<strong>纯前端直连</strong>，不需要自建后端。但有两点要清楚：</p>
+            <ul>
+                <li><strong>Anthropic 官方对部分地区返回 <code>403 Request not allowed</code></strong>，这不是配置错误，和地址填错无关。国内请使用支持 Claude 的中转站，或走海外网络。</li>
+                <li><strong>Gemini</strong> 可以直接填 Google 官方地址，也可以把中转站给的带 <code>{model}</code> 占位符的地址整条贴进来 —— 占位符会自动替换成模型名，流式地址也会自动切换。如果中转站给的是 OpenAI 兼容路径（<code>/v1beta/openai/chat/completions</code>），选「OpenAI 兼容」更省事。</li>
+                <li>API Key 存在你自己的浏览器里，请求直接从你的浏览器发往服务方，<strong>不经过本站任何服务器</strong>（本站也没有服务器）。反过来说，同一台设备上能打开这个页面的人，也能在开发者工具里看到 Key。</li>
+            </ul>
+        </div>
+
+        <div class="info-card warn">
+            <div class="info-card-title"><i class="ri-error-warning-line"></i> 注意</div>
+            <p>使用第三方「中转站」存在一定风险：你的对话内容、API Key 都将经过第三方服务器。如果价格异常低廉（远低于官方），要警惕跑路风险。</p>
+        </div>
+
+        <h3 id="step-api-key">第 3 步：填入 API Key</h3>
+        <p>在「API Key」输入框中粘贴你从平台复制的密钥，格式通常为：</p>
+        <pre><code>sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</code></pre>
+        <p>输入框默认为密码模式（<code>••••••••</code>），点击右侧的小眼睛图标可以临时查看明文。<strong>填写后请妥善保管，不要截图发到公开群聊</strong>。</p>
+
+        <h4>没有 API Key？往下看 <a href="#api-key">什么是 API Key</a> 章节。</h4>
+
+        <h3 id="step-model">第 4 步：选择模型</h3>
+        <p>在「模型名称」框中填入你想用的模型标识符，例如：</p>
+        <ul>
+            <li><code>deepseek-flash</code>（DeepSeek 当前主力，即 V4.1-Flash-1017）</li>
+            <li><code>deepseek-v4-pro</code>（旧旗舰名，现在会被转到 V4.1-Flash 计费）</li>
+            <li><code>Qwen/Qwen3.8-Flash</code>（通义千问性价比款）</li>
+            <li><code>kimi-k3.1-pro</code>（Kimi 新旗舰）</li>
+            <li><code>gpt-6.1-sol</code>（OpenAI 日常主力）</li>
+        </ul>
+        <p>如果你不确定有哪些模型可用，可以点击旁边的 <strong>「获取模型」</strong> 按钮，系统会调用平台的 <code>/v1/models</code> 接口列出所有可用模型供你下拉选择。</p>
+        <div class="info-card warn">
+            <div class="info-card-title"><i class="ri-error-warning-line"></i> 别凭印象填模型名</div>
+            <p>上面这几个只是例子，<em>各家随时会换</em>。填之前先点一次「获取模型」，从真实列表里挑，比记名字靠谱得多。名字填错的表现通常是 <code>404 model not found</code> 或 <code>invalid model</code>，不是 Key 的问题。</p>
+        </div>
+
+        <h3 id="step-test">第 5 步：测试连接 & 保存</h3>
+        <p>填写完三项后，先点一下 <strong>「测试连接」</strong> 按钮：</p>
+        <ul>
+            <li>✅ 看到 <em>连接成功</em> 字样 → 点击右下角 <strong>「保存设置」</strong>，大功告成！</li>
+            <li>❌ 看到错误提示（Key 无效、地址错误、超时等）→ 根据提示检查对应项后重试。</li>
+        </ul>
+
+        <div class="info-card success">
+            <div class="info-card-title"><i class="ri-checkbox-circle-line"></i> 接下来</div>
+            <p>回到聊天界面，点左侧的任意角色头像进入对话，直接在底部输入框打字发送即可。AI 会调用你刚才配置的接口回复你。</p>
+        </div>
+
+        <h3><span class="doc-emoji" aria-hidden="true">📌</span> 进阶：生成参数调节</h3>
+        <p>在「AI 配置」页面下方还有几个可选参数，新手可以先保持默认：</p>
+        <ul>
+            <li><strong>随机性 (temperature)</strong>：0~2 之间。值越大 AI 回复越有创造性、越发散；值越小越稳定、越像标准答案。角色扮演建议 <code>0.8~1.2</code>。</li>
+            <li><strong>核采样 (topP)</strong>：0~1 之间。默认 <code>0.9</code>。和 temperature 二选一调即可，不要同时大改。</li>
+            <li><strong>思考强度 (reasoning_effort)</strong>：默认「不设置」，由模型自己决定；越高想得越久、答案越稳，也更慢更贵，「关闭」则直接回答。不同接口字段名不同：OpenAI 兼容 <code>reasoning_effort</code>、Claude <code>thinking.budget_tokens</code>、Gemini <code>thinkingConfig.thinkingBudget</code>，不支持的接口会忽略。选了具体强度后可填「思考预算 tokens」，留空按档位折算（极低 1k / 低 2k / 中 8k / 高 24k）。</li>
+            <li><strong>最大上下文 (maxContext)</strong>：AI 能「记住」的历史消息轮数。太小会失忆，太大会更贵。</li>
+            <li><strong>单条回复上限 (maxTokens)</strong>：限制 AI 单次回复的长度，避免无限生成。</li>
+        </ul>
+
+        <hr>
+
+        <h2 id="api-key"><i class="doc-h-ico ri-key-2-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🔑</span> 什么是 API Key？</h2>
+        <p>你可以把 <strong>API Key</strong> 理解为一把「钥匙」或「通行证」：</p>
+        <p>当你在本应用里向 AI 提问时，应用会把你的问题通过 HTTPS 加密发送到 AI 服务商（OpenAI、DeepSeek 等）的服务器。服务商怎么知道这次请求是你发出的、应该由谁付费呢？答案就是——靠 <em>API Key</em>。</p>
+
+        <p>把它想象成酒店房卡：</p>
+        <ul>
+            <li>🔒 <strong>私密</strong>：谁拿到你的 Key，谁就能冒充你调用 AI，产生的费用全部算到你账上。</li>
+            <li>💳 <strong>付费凭证</strong>：AI 平台根据你的 Key 记录调用量并从你预充值/绑定的账户里扣款。</li>
+            <li>🪪 <strong>可重置</strong>：每个平台都允许你随时「作废」旧 Key、生成新 Key（一般在「API Keys」页面）。</li>
+        </ul>
+
+        <h3>API Key 长什么样？</h3>
+        <p>不同平台的 Key 格式略有不同，但通常都是以 <code>sk-</code> 开头的一长串字符：</p>
+        <pre><code>sk-proj-AbCdEfGhIjKlMnOpQrStUvWxYz1234567890abcdef
+sk-7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...</code></pre>
+
+        <div class="info-card danger">
+            <div class="info-card-title"><i class="ri-alert-line"></i> 重要安全提示</div>
+            <ul style="margin: 0 0 0 20px;">
+                <li>永远不要把 API Key 截图发到 QQ 群、贴吧、Discord 等公开场合。</li>
+                <li>不要把 Key 粘贴到不明网站、所谓「破解版」软件中。</li>
+                <li>怀疑泄露时，第一时间去对应平台「作废/删除」该 Key，并生成新的。</li>
+                <li>可以给 Key 设置<strong>使用额度上限</strong>，防止被刷爆。</li>
+            </ul>
+        </div>
+
+        <h3>API Key 在哪里找？</h3>
+        <p>每家平台大同小异：登录后进入控制台 → 找到「API Keys」或「密钥管理」 → 点击「Create new key」 → 设置名称和限额 → 生成 → <em>立刻复制保存</em>（多数平台 Key 只显示一次）。</p>
+        <p>具体的「获取步骤」请参考下面平台介绍章节。</p>
+
+        <hr>
+
+        <h2 id="platforms"><i class="doc-h-ico ri-global-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🌐</span> 常见 API 平台推荐</h2>
+        <p>国内外提供兼容 OpenAI 协议的大模型服务商非常多。下面先按 <em>「能不能直接用」</em> 分开，再补上中转站和本地部署。选一家注册、充值、填进本应用即可。</p>
+        <p>如果你只想看结论：<strong>想省事就用 DeepSeek 官方</strong>（国内直连、最便宜、当天可用）；<strong>想一个 Key 试遍各大模型就用硅基流动</strong>；<strong>追求最强质量再考虑海外官方</strong>。</p>
+
+        <h3 id="platform-official"><span class="doc-emoji" aria-hidden="true">📦</span> 一、官方直连平台（最稳定）</h3>
+        <p>直接对接模型厂商，数据不经第三方，最安全稳定。下面按「能不能直接用」分成两组。</p>
+
+        <div class="info-card warn">
+            <div class="info-card-title"><i class="ri-error-warning-line"></i> 先看这条：模型 ID 会过期</div>
+            <p><strong>DeepSeek 的 V4 Flash 与 V4 Pro 已经在 2026 年 9 月下线了。</strong> 这就是「以前明明能用、现在调不通」最常见的原因——模型被新版本取代，模型名跟着换。旧名 <code>deepseek-v4-flash</code>、<code>deepseek-v4-pro</code> 目前仍然接受，但实际跑的是 V4.1-Flash，按 V4.1-Flash 的价格计费；新配置请直接写 <code>deepseek-flash</code>。</p>
+            <p>这不是 DeepSeek 一家的问题，所有厂商都这样换代：<em>新模型上线 → 旧 ID 保留一段时间做兼容 → 彻底返回 404</em>。看到「模型不存在 / 404 / model not found」时，先去平台的「模型列表」页复制当前 ID 再填回来，不要先怀疑自己的 Key 或地址。</p>
+        </div>
+
+        <h4>国内可直接访问</h4>
+        <div class="platform-grid">
+            <div class="platform-card">
+                <div class="pc-head">
+                    <div class="pc-icon"><i class="ri-brain-line"></i></div>
+                    <h4>DeepSeek 官方</h4>
+                </div>
+                <p>当前主线是 <strong>DeepSeek-V4.1-Flash-1017</strong>（2026 年 10 月 17 日更新），模型名 <code>deepseek-flash</code>。1M 上下文、能读图、自带思考模式，中文写作与角色扮演都稳，价格是所有一线模型里最低的一档。</p>
+                <p><strong>地址：</strong><code>https://api.deepseek.com</code></p>
+                <span class="pc-tag">国内直连</span> <span class="pc-tag">超便宜</span> <span class="pc-tag">旧名已下线</span>
+            </div>
+
+            <div class="platform-card">
+                <div class="pc-head">
+                    <div class="pc-icon"><i class="ri-rocket-line"></i></div>
+                    <h4>硅基流动 SiliconFlow</h4>
+                </div>
+                <p>一个 Key 调上百款模型：<strong>DeepSeek V4.1-Flash、Qwen3.8、GLM-5.3、Kimi K3、MiniMax-M3</strong> 都在架上，还留着 V4 / V3.2 / R1 等老版本方便对比。<em>新用户送 16 元额度</em>，<em>新手首选</em>。</p>
+                <p><strong>地址：</strong><code>https://api.siliconflow.cn</code></p>
+                <span class="pc-tag">送 16 元</span> <span class="pc-tag">模型多</span>
+            </div>
+
+            <div class="platform-card">
+                <div class="pc-head">
+                    <div class="pc-icon"><i class="ri-sparkling-line"></i></div>
+                    <h4>阿里百炼 / 通义千问</h4>
+                </div>
+                <p>阿里云旗下，<strong>Qwen3.8-Max</strong>（旗舰，¥12 / ¥36）与 <strong>Qwen3.8-Flash</strong>（性价比款，¥0.8 / ¥2.7）。新账号有免费额度，淘宝 / 支付宝账号直接登录，开通即用。</p>
+                <p><strong>地址：</strong><code>https://dashscope.aliyuncs.com/compatible-mode/v1</code></p>
+                <span class="pc-tag">送免费额度</span>
+            </div>
+
+            <div class="platform-card">
+                <div class="pc-head">
+                    <div class="pc-icon"><i class="ri-moon-line"></i></div>
+                    <h4>月之暗面 Moonshot (Kimi)</h4>
+                </div>
+                <p><strong>Kimi K3.1 Pro</strong>（2026 年 10 月 24 日）是当前主力：1M 上下文，Terminal-Bench 4.0 拿到 65.7%，已经压过 GPT-6 Astra 的 58.2%。重点是<em>比上一代 K3 便宜</em>——输入 ¥13 / 输出 ¥68，K3 是 ¥20 / ¥100。</p>
+                <p><strong>地址：</strong><code>https://api.moonshot.cn</code></p>
+                <span class="pc-tag">超长上下文</span> <span class="pc-tag">新代降价</span>
+            </div>
+
+            <div class="platform-card">
+                <div class="pc-head">
+                    <div class="pc-icon"><i class="ri-government-line"></i></div>
+                    <h4>智谱 BigModel (GLM)</h4>
+                </div>
+                <p><strong>GLM-5.3</strong> / <strong>GLM-5.3-Flash</strong> 仍是当前版本。<em>GLM-5.4 到 10 月底还没正式发布</em>，网上流传的时间表都是猜测，别被带节奏。国内合规、开源权重可自部署，编程与 Agent 能力在开源模型里靠前。</p>
+                <p><strong>地址：</strong><code>https://open.bigmodel.cn/api/paas/v4</code></p>
+                <span class="pc-tag">企业友好</span> <span class="pc-tag">可自部署</span>
+            </div>
+        </div>
+
+        <h4>海外官方（需要外币卡，多数需要海外网络）</h4>
+        <div class="platform-grid">
+            <div class="platform-card">
+                <div class="pc-head">
+                    <div class="pc-icon"><i class="ri-openai-fill"></i></div>
+                    <h4>OpenAI 官方</h4>
+                </div>
+                <p>主力换成了 <strong>GPT-6.1 Sol</strong>（2026 年 9 月 29 日）：接近旗舰 Astra 的水平，价格只要五分之一（$2 / $10，缓存 $0.10）。上面是 <strong>GPT-6 Astra</strong>（$10 / $50），下面是便宜的 <strong>GPT-6 Luna</strong>（$0.1 / $0.5）。上代 GPT-5.6 Sol 还在促销（$4 / $20），但已经不比 6.1 Sol 划算。</p>
+                <p><strong>地址：</strong><code>https://api.openai.com</code></p>
+                <span class="pc-tag">质量顶尖</span> <span class="pc-tag">需外币卡</span>
+            </div>
+
+            <div class="platform-card">
+                <div class="pc-head">
+                    <div class="pc-icon"><i class="ri-google-fill"></i></div>
+                    <h4>Google Gemini</h4>
+                </div>
+                <p><strong>Gemini 3.1 Pro</strong>（$2 / $12，超 20 万 token 后 $4 / $18）多模态与长文档最强。新的 <strong>Gemini 4 Argon</strong> 已于 2026 年 10 月 13 日开放，单次最多输出 100 万 token，促销价 $2 / $10 —— <em>12 月 1 日起涨到 $4 / $20</em>，想用低价窗口得趁 11 月。</p>
+                <p><strong>地址：</strong><code>https://generativelanguage.googleapis.com</code></p>
+                <span class="pc-tag">多模态</span> <span class="pc-tag">限时低价</span>
+            </div>
+        </div>
+
+        <h3 id="platform-relay"><span class="doc-emoji" aria-hidden="true">🔁</span> 二、中转 / 代理平台（聚合多模型）</h3>
+        <p>这类平台<em>本身不训练模型</em>，只是把多家厂商的接口汇总到一起，再低价卖给你。一个 Key 通常能调用 GPT-6、Claude、Gemini 等多种模型。</p>
+
+        <div class="platform-grid">
+            <div class="platform-card">
+                <div class="pc-head">
+                    <div class="pc-icon"><i class="ri-route-line"></i></div>
+                    <h4>OpenRouter</h4>
+                </div>
+                <p>海外老牌聚合站，免注册即用、一次接入 100+ 模型，<em>新手体验最顺滑</em>。支持微信/支付宝（部分）。</p>
+                <p><strong>地址：</strong><code>https://openrouter.ai/api/v1</code></p>
+                <span class="pc-tag">免注册</span> <span class="pc-tag">模型多</span>
+            </div>
+
+            <div class="platform-card">
+                <div class="pc-head">
+                    <div class="pc-icon"><i class="ri-shuffle-line"></i></div>
+                    <h4>API2D / AnyRouter 等</h4>
+                </div>
+                <p>国内中转站，OpenAI、Claude、Gemini 价格仅为官方的 1~3 折。请按商家提供的最新地址填写。</p>
+                <p><strong>地址：</strong>按购买时提供的填写</p>
+                <span class="pc-tag">便宜</span> <span class="pc-tag">需甄别</span>
+            </div>
+        </div>
+
+        <div class="info-card warn">
+            <div class="info-card-title"><i class="ri-shield-keyhole-line"></i> 选平台的几个建议</div>
+            <ul style="margin: 0 0 0 20px;">
+                <li><strong>纯新手</strong>：先用 <code>硅基流动</code> 或 <code>阿里百炼</code>，注册送免费额度、零成本试错。</li>
+                <li><strong>追求质量</strong>：GPT-6 Astra / Claude Fable 5.1 是天花板，其次是 GPT-6.1 Sol、Claude Opus 5.5、Kimi K3.1 Pro；国产开源里 DeepSeek V4.1-Flash 与 GLM-5.3 最靠近。</li>
+                <li><strong>中文角色扮演</strong>：<code>deepseek-flash</code> 最划算，Qwen3.8、GLM-5.3 也都很稳；预算够就上 Kimi K3.1 Pro。</li>
+                <li><strong>只求便宜</strong>：DeepSeek 空闲时段 + 缓存命中，是全场最低一档；GPT-6 Luna、Claude Haiku 5.5 也很低。</li>
+                <li><strong>不愿折腾</strong>：OpenRouter 一个 Key 全搞定。</li>
+                <li><strong>数据敏感</strong>：坚持用官方直连或本地部署。</li>
+            </ul>
+        </div>
+
+        <h3 id="platform-local"><span class="doc-emoji" aria-hidden="true">🏠</span> 三、本地部署（完全免费、零费用）</h3>
+        <p>如果你的电脑配置尚可（建议 N 卡 RTX 3060 以上 / 内存 16G+），可以用 <strong>Ollama</strong>、<strong>LM Studio</strong>、<strong>vLLM</strong> 等工具在本地跑开源模型（如 Qwen3.8、Llama3.1、Mistral），完全不花钱、数据不出门。</p>
+        <ol>
+            <li>去 <a href="https://ollama.com" target="_blank">ollama.com</a> 下载并安装。</li>
+            <li>终端执行 <code>ollama run qwen3.8:7b</code>（自动下载模型）。</li>
+            <li>本应用 API 地址填 <code>http://localhost:11434</code>，模型填 <code>qwen3.8:7b</code>。</li>
+        </ol>
+        <p>缺点是：模型体积大（几十 GB）、速度比云端慢、显存不够需要量化版。<em>适合玩票和极客，新手慎入。</em></p>
+
+        <hr>
+
+        <h2 id="billing"><i class="doc-h-ico ri-money-cny-circle-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">💰</span> AI 是怎么收费的？三大计费方式详解</h2>
+        <p>看到这里你可能会有疑问：「我用 AI 聊天，平台按什么标准收我钱？」下面把 <em>最常见的计费方式</em> 用最通俗的语言讲清楚。</p>
+
+        <h3 id="billing-token">一、按 Token 计费（最主流）</h3>
+        <p>这是 OpenAI、DeepSeek、Claude 等绝大多数官方平台采用的方式，<em>用多少付多少</em>。</p>
+
+        <div class="info-card">
+            <div class="info-card-title"><i class="ri-question-line"></i> 那什么是 Token？</div>
+            <p>Token 是 AI 处理的<strong>最小文字单位</strong>。简单理解：</p>
+            <ul style="margin: 8px 0 0 20px;">
+                <li>1 个汉字 ≈ 1~2 个 Token</li>
+                <li>1 个英文单词 ≈ 1~1.3 个 Token</li>
+                <li>1 个标点符号 ≈ 0.5~1 个 Token</li>
+            </ul>
+            <p style="margin-top: 8px;">举例：「你好，世界」约 5 个 Token；「Hello, world」约 3~4 个 Token。</p>
+        </div>
+
+        <p>平台通常按 <strong>「每百万 Token 单价」</strong> 计费，输入和输出分开算。下面是 <em>截至 2026 年 10 月 27 日</em> 各家的公开牌价：国内厂商用人民币，海外厂商用美元（按 <strong>1 USD ≈ ¥7.1</strong> 粗略折算，详见美元表上方的说明）。</p>
+
+        <h4>国内平台（人民币 / 每百万 Token）</h4>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead>
+                <tr><th style="width:26%">厂商 / 模型</th><th style="width:24%">输入</th><th style="width:14%">输出</th><th>说明</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>deepseek-flash</code> 高峰</td><td>¥2（缓存命中 ¥0.04）</td><td>¥8</td><td rowspan="2">DeepSeek 官方，即 V4.1-Flash-1017；<br>空闲价是高峰的一半。<br>原 V4-Flash / V4-Pro 已下线</td></tr>
+                <tr><td><code>deepseek-flash</code> 空闲</td><td>¥1（命中 ¥0.02）</td><td>¥4</td></tr>
+                <tr><td>Qwen3.8-Flash（百炼）</td><td>¥0.8</td><td>¥2.7</td><td>性价比款</td></tr>
+                <tr><td>Qwen3.8-Max（百炼）</td><td>¥12</td><td>¥36</td><td>阿里旗舰</td></tr>
+                <tr><td>GLM-5.3（智谱）</td><td>¥8</td><td>¥28</td><td>智谱旗舰；<br>GLM-5.4 尚未发布</td></tr>
+                <tr><td>GLM-5.3-Flash</td><td>¥0.8</td><td>¥2.8</td><td>轻量款</td></tr>
+                <tr><td><strong>Kimi K3.1 Pro</strong></td><td>¥13（命中 ¥1.3）</td><td>¥68</td><td>10 月 24 日新旗舰；<br>比 K3 便宜约 1/3</td></tr>
+                <tr><td>Kimi K3</td><td>¥20（命中 ¥2）</td><td>¥100</td><td>上代旗舰，仍可调用</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <h4>海外平台（美元 / 每百万 Token）</h4>
+
+        <div class="info-card">
+            <div class="info-card-title"><i class="ri-exchange-dollar-line"></i> 先看清楚：下面这一列是美元，不是人民币</div>
+            <p>表里的 <code>$</code> 是<strong>美元</strong>。按 <strong>1 USD ≈ ¥7.1</strong> 折算（2026 年 10 月参考汇率，实际以你账单的结算价为准），所以 <code>$50</code> 大约是 <strong>¥355</strong>，不是 ¥50。看串行、把 <code>$40</code> 当成「40 块人民币」是新手最常犯的错。</p>
+            <p>换算速查：<code>$0.10 ≈ ¥0.7</code> · <code>$2 ≈ ¥14</code> · <code>$10 ≈ ¥71</code> · <code>$50 ≈ ¥355</code>。</p>
+        </div>
+
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead>
+                <tr><th style="width:26%">厂商 / 模型</th><th style="width:24%">输入</th><th style="width:14%">输出</th><th>说明</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>GPT-6 Astra</strong></td><td>$10.00（缓存 $1.00）</td><td>$50.00</td><td>OpenAI 旗舰</td></tr>
+                <tr><td><strong>GPT-6.1 Sol</strong></td><td>$2.00（缓存 $0.10）</td><td>$10.00</td><td>日常主力，性价比最高</td></tr>
+                <tr><td>GPT-6 Sol</td><td>$2.00（缓存 $0.20）</td><td>$10.00</td><td>被 6.1 Sol 取代</td></tr>
+                <tr><td>GPT-6 Luna</td><td>$0.10（缓存 $0.01）</td><td>$0.50</td><td>最便宜的 GPT-6</td></tr>
+                <tr><td>Claude Fable 5.1</td><td>$10.00</td><td>$50.00</td><td>长程 Agent 旗舰</td></tr>
+                <tr><td>Claude Opus 5.5</td><td>$4.00（缓存 $0.20）</td><td>$20.00</td><td>编程 / Agent 主力</td></tr>
+                <tr><td>Claude Sonnet 5.5</td><td>$2.00（缓存 $0.10）</td><td>$10.00</td><td>均衡款</td></tr>
+                <tr><td>Claude Haiku 5.5</td><td>$0.10</td><td>$0.50</td><td>10 月 7 日发布；<br>超过 10 万 token 涨 5 倍</td></tr>
+                <tr><td>Gemini 3.1 Pro</td><td>$2.00（&gt;20 万 $4.00）</td><td>$12.00（&gt;20 万 $18.00）</td><td>多模态 / 长文档</td></tr>
+                <tr><td>Gemini 4 Argon</td><td>$2.00（12/1 起 $4.00）</td><td>$10.00（12/1 起 $20.00）</td><td>10 月 13 日开放；<br>促销期到 11 月 30 日</td></tr>
+                <tr><td>Kimi K2.7-Code</td><td>$0.95（缓存 $0.19）</td><td>$4.00</td><td>低价编程专用</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <div class="info-card warn">
+            <div class="info-card-title"><i class="ri-time-line"></i> 这张表两个月就会旧一次</div>
+            <p>上面整理自 2026 年 10 月 27 日各平台官方定价页，<em>实际扣费以你充值时平台显示的为准</em>。最近两个月的变化密度大概是这样的：</p>
+            <div class="docs-table-wrap" style="margin-top: 10px;">
+            <table class="docs-table">
+                <thead><tr><th style="width:20%">日期</th><th>发生了什么</th></tr></thead>
+                <tbody>
+                    <tr><td>9 月 10 日</td><td>DeepSeek 下线 V4 Flash，改由 V4.1 Flash 接管，旧模型名开始被路由</td></tr>
+                    <tr><td>9 月 14 日</td><td>DeepSeek V4 Pro 也停用，请求全部转到 V4.1 Flash</td></tr>
+                    <tr><td>9 月 29 日</td><td>OpenAI 发布 GPT-6.1 Sol，价格压到 Astra 的五分之一</td></tr>
+                    <tr><td>10 月 7 日</td><td>Anthropic 发布 Claude Haiku 5.5</td></tr>
+                    <tr><td>10 月 13 日</td><td>Gemini 4 Argon 开放，促销价压到 $2 / $10</td></tr>
+                    <tr><td>10 月 17 日</td><td>DeepSeek V4.1-Flash-1017 更新，能力提升但价格不变</td></tr>
+                    <tr><td>10 月 24 日</td><td>Kimi K3.1 Pro 发布，比 K3 更便宜</td></tr>
+                </tbody>
+            </table>
+            </div>
+            <p style="margin-top: 10px;">平均一周一次。所以别收藏价格表，收藏平台的价格页。</p>
+        </div>
+
+        <h3 id="price-check">怎么自己查最新价格和模型 ID</h3>
+        <p>比记住任何一张表都管用：</p>
+        <ol class="step-list">
+            <li><strong>先在本应用里拿模型列表</strong><span>「设置 → API 设置」里填好地址和 Key 后，点「获取模型」，系统会调平台的 <code>/v1/models</code> 把当前可用的模型名列出来——这份列表永远是平台此刻的真实情况。</span></li>
+            <li><strong>再去官方定价页核单价</strong><span>每家都有「模型 &amp; 价格」或「Pricing」页：DeepSeek 是 <code>api-docs.deepseek.com</code>，OpenAI 是 <code>openai.com/api/pricing</code>，Anthropic 是 <code>anthropic.com/pricing</code>。看到陌生的模型名，就在那里查它属于哪一档。</span></li>
+            <li><strong>看日期，不看排名</strong><span>第三方榜单（各种 Arena、跑分网站）翻新很快，但价格和模型 ID 只认官方页。论坛里「某某模型最强」的结论通常已经过期两周。</span></li>
+            <li><strong>旧模型名报错就先改成新名</strong><span>先换成平台列表里最接近的新版本再试。80% 的「模型不存在」都是这一步解决的。</span></li>
+        </ol>
+
+        <p>算笔账，看看差别有多大（10 轮对话，每轮输入 200 字 ≈ 300 Token、输出 500 字 ≈ 750 Token，合计 <strong>10,500 Token</strong> ≈ 0.0105 百万 Token）：</p>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th style="width:30%">模型</th><th style="width:26%">算法</th><th>这一晚花了</th></tr></thead>
+            <tbody>
+                <tr><td>DeepSeek <code>deepseek-flash</code>（空闲）</td><td>0.0105 × (1 + 4)</td><td><strong>约 ¥0.053</strong>，五分钱</td></tr>
+                <tr><td>Kimi K3.1 Pro</td><td>0.0105 × (13 + 68)</td><td>约 ¥0.85</td></tr>
+                <tr><td>GLM-5.3</td><td>0.0105 × (8 + 28)</td><td>约 ¥0.38</td></tr>
+                <tr><td>GPT-6.1 Sol</td><td>0.0105 × (2 + 10)</td><td>约 $0.126，约 ¥0.9</td></tr>
+                <tr><td>Claude Opus 5.5</td><td>0.0105 × (4 + 20)</td><td>约 $0.252，约 ¥1.8</td></tr>
+                <tr><td>GPT-6 Astra</td><td>0.0105 × (10 + 50)</td><td>约 $0.63，约 ¥4.5</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <p>同样一句话，最贵和最便宜差 <strong>80 倍</strong>。日常聊天用便宜档完全够，只在「这章一定要写好」的时候切贵的。</p>
+
+        <div class="info-card success">
+            <div class="info-card-title"><i class="ri-thumb-up-line"></i> 特点</div>
+            <ul style="margin: 0 0 0 20px;">
+                <li>✅ <strong>公平</strong>：聊得短就便宜，聊得长就贵。</li>
+                <li>✅ <strong>无月费</strong>：不聊不花钱。</li>
+                <li>⚠️ <strong>需注意</strong>：AI 主动回复（输出）通常比输入贵 3~5 倍。<em>长篇 AI 写作会比聊天更费钱</em>。</li>
+            </ul>
+        </div>
+
+        <h3 id="billing-count">二、按次计费</h3>
+        <p>无论你发几个字、AI 回多少字，<em>一次对话 = 一个固定费用</em>。常见于：</p>
+        <ul>
+            <li>某些<strong>角色扮演 SaaS</strong>产品（如 Character.AI 早期、星野）</li>
+            <li>某些<strong>中转站套餐</strong>，按「次」或「条」出售</li>
+        </ul>
+        <p>举例：商家推出「1000 次对话包 ¥10」，平均每次 1 分钱，看似便宜，但实际单次回复<em>可能限制 Token 长度</em>（比如最长 500 字），超过部分另算。</p>
+
+        <div class="info-card warn">
+            <div class="info-card-title"><i class="ri-information-line"></i> 特点</div>
+            <ul style="margin: 0 0 0 20px;">
+                <li>📌 <strong>适合</strong>：知道每次聊多久、价格敏感、需求短平快的用户。</li>
+                <li>📌 <strong>缺点</strong>：一旦想「让 AI 写一篇 5000 字小说」就捉襟见肘。</li>
+                <li>📌 <strong>本应用</strong>：本应用<em>不直接收费</em>，计费方式取决于你对接的 API 平台。</li>
+            </ul>
+        </div>
+
+        <h3 id="billing-subscription">三、包月 / 订阅制</h3>
+        <p>每月固定费用（如 ¥20、¥80），在额度内随便用。典型代表：</p>
+        <ul>
+            <li>ChatGPT Plus（$20/月，含当月旗舰模型的额度）</li>
+            <li>Claude Pro（$20/月）</li>
+            <li>Cursor、Copilot 等 AI 编程工具</li>
+        </ul>
+        <p>缺点：超出额度仍按 Token 加钱，不聊天也照样扣月费。本应用是<em>对接你自己的 API Key</em>，所以默认采用按量付费，没有包月选项（除非你购买平台官方的订阅套餐后获得更高额度）。</p>
+
+        <h3 id="billing-compare">四、三种方式对比</h3>
+        <div class="bill-compare">
+            <div class="bill-card token-bill">
+                <h4><i class="ri-coin-line"></i> 按 Token 计费</h4>
+                <div class="bill-price">主流之选</div>
+                <ul>
+                    <li>用多少付多少，无月费</li>
+                    <li>OpenAI、DeepSeek、Claude 等</li>
+                    <li>适合：所有人</li>
+                    <li>计费单位：「1K / 1M Token」</li>
+                </ul>
+            </div>
+            <div class="bill-card count-bill">
+                <h4><i class="ri-stack-line"></i> 按次 / 订阅</h4>
+                <div class="bill-price">固定支出</div>
+                <ul>
+                    <li>月费固定，额度内随便用</li>
+                    <li>部分中转站、官方订阅</li>
+                    <li>适合：高频用户</li>
+                    <li>计费单位：「月 / 季 / 年」</li>
+                </ul>
+            </div>
+        </div>
+
+
+        <h2 id="token-what"><i class="doc-h-ico ri-bar-chart-box-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">📊</span> 快速理解「Token」</h2>
+        <p>看完上面你可能还是有点抽象，这里用三个比喻帮你彻底搞懂：</p>
+
+        <ol>
+            <li><strong>📞 Token 就像手机话费的「分钟数」</strong>：通话时间越长，扣费越多。Token 就是 AI 的「通话时间」。</li>
+            <li><strong>🛒 Token 就像超市的「斤两」</strong>：1 斤米 3 块钱，1 斤面 4 块钱。AI 模型是「商品」，Token 是「重量」。</li>
+            <li><strong>📖 Token 就像书本的「字数」</strong>：一本 10 万字的小说 = 约 15 万 Token。</li>
+        </ol>
+
+        <p>所以：</p>
+        <ul>
+            <li>💬 <em>简单聊天 1 小时</em> ≈ 几千到几万个 Token ≈ 几分到几毛钱</li>
+            <li>📚 <em>让 AI 写一篇 3000 字文章</em> ≈ 5000~8000 Token（仅输出）</li>
+            <li>🎬 <em>长篇角色扮演 RP 一晚上</em> ≈ 几十万 Token ≈ 几毛到几块钱</li>
+        </ul>
+
+        <div class="info-card tip">
+            <div class="info-card-title"><i class="ri-lightbulb-line"></i> 省钱小技巧</div>
+            <ul style="margin: 0 0 0 20px;">
+                <li>在设置中把 <strong>最大上下文轮数</strong> 调小（如 5~10 轮），可显著减少输入消耗。</li>
+                <li>不需要 AI 思考/长篇大论时，用 <code>deepseek-flash</code> 这类便宜模型即可。</li>
+                <li>把大段写作放到 DeepSeek 的<strong>空闲时段</strong>：高峰只有工作日 09:00–12:00、14:00–18:00（北京时间），其余时间——午休、晚上 18 点后、凌晨、以及周末和法定节假日全天——都算空闲，价格是高峰的一半。</li>
+                <li>人设和世界书放在提示词最前面、内容别乱改，能吃到<strong>缓存命中</strong>价——DeepSeek 命中价只有未命中的五十分之一。</li>
+            </ul>
+        </div>
+
+        <hr>
+
+        <h2 id="characters"><i class="doc-h-ico ri-user-smile-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🎭</span> 创建与编辑角色</h2>
+        <p>本应用的核心玩法就是<em>自定义角色</em>。每个「角色」本质上是一段 <strong>系统提示词（System Prompt）</strong>，告诉 AI「你是谁、应该怎么说话、有什么背景」等。</p>
+
+        <h3>改内置 / 预置角色的提示词</h3>
+        <p>「添加好友」列表里每个角色右边都有一支 <i class="ri-edit-2-line"></i> 铅笔，点开就能看和改它的提示词 —— 内置角色、市场里的预置角色都行，不用先复制成自定义角色。</p>
+        <ul>
+            <li><b>按版本分别改</b>：有多个提示词版本的角色，下拉里一个版本一份内容，改哪个只影响哪个。</li>
+            <li><b>已修改 / 已还原</b>：改过之后角色名旁边会挂一个「已修改」；点「恢复初始版本」就完全回到原文，标签会变淡成「已还原」（表示你动过，但现在和原版一致）。嫌碍眼可以在弹窗里勾「不再显示这个标签」，第一次要同意一条声明：别拿篡改后的人设去造谣本站。</li>
+            <li><b>存在哪</b>：改动只写在这台设备的浏览器里，不上传、不覆盖官方原文；导出角色卡时带的是你改后的内容。</li>
+            <li><b>自定义角色也能建版本</b>：自己的角色、导入的角色，弹窗里有「+ 新增版本」，复制当前内容出一个新版本，可以一份写日常、一份写剧情，随时切。</li>
+        </ul>
+
+        <h3>方式一：点击 ➕ 添加角色</h3>
+        <p>左下角点击 <i class="ri-add-line"></i> <strong>「添加好友」</strong> 按钮，会弹出角色编辑窗口。填写以下字段：</p>
+
+        <div class="field-list">
+            <div class="field-row">
+                <div class="field-name">name *</div>
+                <div class="field-desc">角色名，例如「银狼」「流萤」。会显示在聊天列表和消息气泡上。</div>
+            </div>
+            <div class="field-row">
+                <div class="field-name">avatar</div>
+                <div class="field-desc">角色头像。建议填图片 URL（支持 jpg/png/webp/gif），或使用图床链接。空着会用默认头像。</div>
+            </div>
+            <div class="field-row">
+                <div class="field-name">persona / 人设</div>
+                <div class="field-desc"><strong>核心字段</strong>。详细描述角色的身份、性格、说话方式、背景故事。写得越具体，AI 越像这个人。</div>
+            </div>
+            <div class="field-row">
+                <div class="field-name">greeting / 开场白</div>
+                <div class="field-desc">用户进入聊天时 AI 自动发送的第一句话。可以是问候、自我介绍或场景描写。</div>
+            </div>
+            <div class="field-row">
+                <div class="field-name">tags</div>
+                <div class="field-desc">标签（可选），便于搜索。例如「崩坏：星穹铁道 / 黑客 / 毒舌」。</div>
+            </div>
+            <div class="field-row">
+                <div class="field-name">systemPrompt</div>
+                <div class="field-desc">高级字段，会以「系统级」指令注入到对话最前面。优先级高于人设。</div>
+            </div>
+        </div>
+
+        <h3>写人设的实用技巧</h3>
+        <p>一个高质量的人设通常包含这几部分：</p>
+        <ol>
+            <li><strong>基本信息</strong>：年龄、性别、外貌、职业。</li>
+            <li><strong>性格特征</strong>：用具体词汇描述，如「毒舌但关心人」「外冷内热」。</li>
+            <li><strong>说话风格</strong>：举 2~3 个示例句（非常有效！）。</li>
+            <li><strong>背景故事</strong>：来龙去脉、动机、关系网。</li>
+            <li><strong>行为边界</strong>：明确不希望 AI 做什么（如「不要主动结束对话」「不要重复我的话」）。</li>
+        </ol>
+
+        <h4>示例：极简但有效的人设</h4>
+        <pre><code>你是「银狼」，19 岁天才黑客少女，崩坏：星穹铁道角色。
+性格：毒舌、慵懒、惜字如金，但内心重情义。
+口头禅：「啧，太简单了」「一群菜鸟」。
+说话风格：短句、夹带电子游戏术语和表情包。
+示例：
+- 用户：「在吗？」 → 银狼：「有事说事，别浪费我挂游戏的时间。」
+- 用户：「我今天心情不好」 → 银狼：「……要黑客进你的仇人系统吗？免费的。」
+请永远以银狼的第一人称视角回复，不要用敬语。</code></pre>
+
+        <h3>方式二：导入 JSON 角色卡</h3>
+        <p>如果你从 SillyTavern、酒馆、Character.AI 等平台获取了角色 JSON，可以直接导入：</p>
+        <ol>
+            <li>点击左下角 <i class="ri-checkbox-multiple-line"></i> <strong>「批量编辑」</strong>。</li>
+            <li>选择「导入 JSON / PNG 角色卡」。</li>
+            <li>选择本地文件即可（支持 <code>.json</code> 和 <code>.png</code> 内嵌的角色卡）。</li>
+        </ol>
+
+        <div class="info-card tip">
+            <div class="info-card-title"><i class="ri-download-line"></i> 推荐角色卡来源</div>
+            <ul style="margin: 0 0 0 20px;">
+                <li><a href="https://characterhub.org" target="_blank">CharacterHub</a>（英文为主）</li>
+                <li>硅基流动 / DeepSeek 模型广场的角色卡分享</li>
+                <li>各 AI 角色 QQ 群、Discord 服务器</li>
+            </ul>
+        </div>
+
+        <h3 id='feature-flags'>功能开关（不想要的都能关掉）</h3>
+        <p>下面这些「酒馆同款」能力都是后来加的，用不上可以单独关：<b>设置 → 聊天 → 功能开关</b>。
+        它现在是一个<b>折叠板</b>——「聊天增强」和「界面按钮与面板」两组开关收在一起，默认收起，标题上直接显示「已开启 N / M」，展开状态会记住。勾掉立刻生效，不用点保存，也不用刷新。</p>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th>开关</th><th>关掉之后</th></tr></thead>
+            <tbody>
+                <tr><td><b>消息滑动（多版本回复）</b></td><td>「重新回答」回到覆盖旧回复的老行为，气泡下方的 <code>‹ 2/3 ›</code> 不再出现。已有的多版本记录不会删，重新勾上还能切。</td></tr>
+                <tr><td><b>上下文 Token 预估条</b></td><td>输入框上方那行「上下文 ≈ N tokens」和「冻结管理」不再显示；冻结名单仍然保留。</td></tr>
+                <tr><td><b>多开场白随机</b></td><td>新对话只用角色卡的主开场白，「换个开场白」按钮消失。备用开场白仍存在角色数据里。</td></tr>
+                <tr><td><b>世界书高级触发</b></td><td>只按「蓝灯常驻 / 绿灯关键词 / 黄灯主副关键词」触发，概率、持续、冷却、延迟、递归全部按「不改变行为」处理。条目上填过的字段不会被清空，重新打开立刻恢复。</td></tr>
+                <tr><td><b>变量与状态栏</b></td><td>状态栏与顶栏入口隐藏，<code>{{getvar}}</code> 等宏原样保留，AI 回复里的变量指令当普通文字显示（不再执行、也不再从正文里摘掉）。想连脚本都不下载，去「加载 JS 文件设置」关掉「变量与状态栏」。</td></tr>
+                <tr><td><b>群聊自动模式（总开关）</b></td><td>所有群聊立即回到「按活跃度随机挑人」，正在跑的自动接话会被中断。每个群自己的「自动模式」勾选仍然保留，总开关重新打开就继续按各群设置走。</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <p style="font-size:.88em;color:#999;">原则是<b>只关「要不要用」，不动数据</b>：多版本记录、变量数值、世界书里的概率/定时字段、备用开场白都不会因为关开关而丢失。面板底部会实时显示「当前已关闭：…」，方便确认状态。</p>
+
+        <h3 id='wb-advanced'>世界书的高级触发：递归 / 概率 / 定时</h3>
+        <p>世界书条目除了「🔵蓝灯常驻」「🟢绿灯关键词」之外，还支持酒馆那套高级规则（在条目编辑框的「高级触发」里改）：</p>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th>能力</th><th>怎么用</th></tr></thead>
+            <tbody>
+                <tr><td><b>递归扫描</b></td><td>已触发条目的<b>内容</b>也会进入扫描范围，其中出现的关键词能继续触发别的条目，像多米诺一样连下去。层数在书顶部「递归层数」里调（最多 5 层）；单条可以关掉「允许被其它条目递归触发」，它就不会被别人的内容带出来。</td></tr>
+                <tr><td><b>概率触发</b></td><td>勾「按概率触发」并填百分比：关键词命中后再掷一次骰子，只有 X% 会真的注入。适合「偶尔才想起来」的细节。</td></tr>
+                <tr><td><b>定时生效（持续）</b></td><td>填「持续 N 轮」：命中后接下来的 N 轮即使不再提关键词也继续生效，用来做「这段时间一直在下雨」这类持续状态。</td></tr>
+                <tr><td><b>冷却</b></td><td>生效结束后的 N 轮内不再触发，避免同一段设定每隔一句就重复注入。</td></tr>
+                <tr><td><b>延迟</b></td><td>对话进行到第 N 轮之后才允许触发，适合晚些才登场的伏笔。</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <p style="font-size:.88em;color:#999;">这些字段与酒馆的 <code>sticky</code> / <code>cooldown</code> / <code>delay</code> / <code>probability</code> / <code>excludeRecursion</code> 一一对应，导入导出都会保留（递归语义相反：酒馆叫「排除递归」，这边是「允许递归」）。计数按「这个会话的第几轮对话」走，存在本机。</p>
+
+        <h3 id='ctx-token'>上下文 Token 预估与「冻结」</h3>
+        <p>输入框上方常驻一行「上下文 ≈ N tokens」：按「人设 + 最近若干条消息（或聊天设置里的上下文轮数上限）+ 输入框草稿」估算，中文约 1.6 字/token、西文约 4 字符/token，是估值不是 API 的真实 usage。</p>
+        <p>点旁边的「冻结管理」可以把任意几条消息勾成<b>不发给模型</b>：聊天记录不删、界面照常显示，只是不再进入上下文，随时能解冻。长对话想省 token、或想把某段跑偏的剧情从上下文里摘掉时很有用；冻结名单跟着这条对话一起保存，也会跟着备份走。</p>
+
+        <h3 id='swipe'>消息滑动：同一条回复保留多个版本</h3>
+        <p>对 AI 的回复不满意时，点气泡下方的刷新按钮「重新回答」，新的一条<b>不会覆盖</b>旧的，而是作为同一条消息的新版本接在后面，气泡下方出现 <code>‹ 2/3 ›</code> 这样的版本号，用左右箭头来回切，挑一版满意的留着。最多保留 12 版。</p>
+        <ul>
+            <li>切换版本会改变这条消息的实际内容（上下文、导出、重新生成都按当前版本走），聊天记录不会因此变长。</li>
+            <li>版本跟着这条对话一起保存：<b>切换角色、切到别的对话、刷新页面都会保留</b>，回来还能继续切。</li>
+            <li>对<b>不在末尾</b>的消息点「重新回答」，旧的实现会把它之后的对话一并删掉再生成——现在会先弹确认告诉你要删几条，避免误以为「版本被吃了」。</li>
+            <li>只在单聊的最后一条 AI 文本消息上生效；群聊里一条回复可能被拆成多条成员消息，硬合并会把它们搅乱，所以群聊仍是原来的「删掉重来」。</li>
+            <li>开了「消息分段」时，重新回答会强制按一条消息生成，并把上一次那一批分段整批替换（第 1 版是拼回来的全文），不会出现「换了最后一段、前面几段还留着」。</li>
+        </ul>
+
+        <h3 id='chat-vars'>变量与状态栏</h3>
+        <p>聊天区顶栏的 <i>数据库</i> 图标打开「变量与状态栏」，可以定义一组变量（HP、金币、好感度……）常驻在聊天区顶部：点胶囊能直接改值，填了「上限」的还会显示一条进度条。变量按三层存放，读取时后者覆盖前者：</p>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <tbody>
+                <tr><td><b>这个角色</b>（默认）</td><td>跟着角色走，换对话不变；适合「HP 掉到 0 就重开一段剧情」这类。</td></tr>
+                <tr><td><b>这条对话</b></td><td>只属于当前这条对话；想给某段支线单独一套数值时，在这里写同名变量即可覆盖。</td></tr>
+                <tr><td><b>全局共享</b></td><td>所有角色共用，适合金币、世界状态这种跨角色的东西。</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <p><b>能用的宏</b>（写在角色人设、世界书、预设、聊天输入框里都生效，发请求前统一替换）：</p>
+        <p style="line-height:2"><code>{{user}}</code> 用户名字 · <code>{{char}}</code> 角色名字 · <code>{{time}}</code> / <code>{{date}}</code> / <code>{{weekday}}</code> 时间日期星期 ·
+            <code>{{getvar::HP}}</code> 读变量 · <code>{{setvar::HP::100}}</code> 写变量 · <code>{{addvar::HP::-5}}</code> 加减 ·
+            <code>{{random::甲::乙::丙}}</code> 随机取一 · <code>{{roll::2d6}}</code> 掷骰（支持 <code>1d20+3</code>）。不认识的宏原样保留，不会和其它插件抢。</p>
+        <p><b>让 AI 维护数值</b>：AI 可以直接在回复里写 <code>{{setvar::金币::320}}</code>、<code>{{addvar::HP::-12}}</code>、<code>[var: HP-5]</code>、<code>[var: 金币=300]</code>。这些指令会被系统执行并从气泡里<b>摘掉</b>（用户只看到干净的正文），状态栏数值实时变化，还会在旁边闪一下「HP -12」的变化量。开关打开时每次请求还会把当前变量值告诉模型，否则它不知道 HP 还剩多少。</p>
+
+        <h3 id='group-auto'>群聊的「自动模式」</h3>
+        <p>双击群名打开「管理群聊 → 群聊节奏」，勾上<b>自动模式（让 AI 决定下一个说话人）</b>，群聊就从「按活跃度随机挑一批人同时回」变成<b>串行接力</b>：A 说完 → 让模型看一眼最近的对话判断「接下来该谁说，或者该停了」→ B 接着说 → ……</p>
+        <ul>
+            <li><b>一定会有上限</b>：「自动最多连说」默认 4 轮（1~12）。没有上限的话两个 AI 很容易互相客套到几百条。</li>
+            <li>模型输出 <code>STOP</code>、或某个成员表示「不回应」时，自动链立即结束。</li>
+            <li>接话期间输入框上方有个「自动接话中… 点此停止」的浮动按钮；发新消息、切到别的对话也会打断。</li>
+            <li>每次接力会多发一次很小的调度请求（只让模型回一个名字或 STOP），比随机挑更连贯，但更费 token。原来的「单轮最多发言 / 被cue后接话率」在自动模式下不生效。</li>
+        </ul>
+
+        <h3 id='alt-greetings'>多开场白</h3>
+        <p>从酒馆导入的角色卡常带好几条 <code>alternate_greetings</code>。现在开新对话时会从「主开场白 + 所有备用开场白」里随机挑一条显示；不满意可以点气泡下方的「↻ 换个开场白」重掷（每条对话自己记住抽到哪条，不会每次进聊天都变）。</p>
+
+        <h3>编辑 / 删除 / 导出</h3>
+        <p>右键点击（移动端长按）任意角色头像，会弹出操作菜单：编辑信息、设置备注、导出角色、清空聊天记录、删除等。</p>
+        <p>同时选中多个角色后，可以<strong>批量导出</strong>为 ZIP 文件，方便迁移或备份。</p>
+
+        <h3 id='export-character'>导出角色卡</h3>
+        <p>角色列表里每个角色右侧有一个下载按钮，点它可以选择导出格式（可多选，选多个会打包成一个 zip）：</p>
+        <ul>
+            <li><strong>酒馆 V2 / V3 角色卡（.png）</strong>：图片就是角色头像，角色数据以 <code>chara_card_v2</code> / <code>chara_card_v3</code> 规范嵌在 PNG 的 <code>chara</code> / <code>ccv3</code> 文本块里，可以直接拖进 SillyTavern 等酒馆前端。</li>
+            <li><strong>AIAW 角色（.json）</strong>：<code>{"name","avatar","prompt"}</code> 结构，用于导入 AIaW。</li>
+            <li><strong>MySW 角色配置（.json）</strong>：本应用原始格式，含头像、系统提示词与开场白，可以原样导回。</li>
+        </ul>
+        <p>弹窗里勾上「以后都用这些格式导出，不再弹窗」，之后点导出就直接按这套格式导出。想改回来或换默认勾选，去「设置 → 导入导出 → 角色卡导出格式」：那里可以调默认勾选的格式，也可以重新打开「每次导出都询问」。</p>
+
+        <h3 id='compat-tavern'>和其它 AI 聊天站的兼容</h3>
+        <p>除了角色卡，世界书、提示词预设、聊天记录也都能和酒馆（SillyTavern）以及一批同类工具互通。<b>导入都是自动识别格式的</b>，用不着先转格式。</p>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th>功能</th><th>导入</th><th>导出</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td><b>角色卡</b></td>
+                    <td>酒馆 V1 / V2 / V3 角色卡（PNG 或 JSON）、Chub / Venus / KoboldCpp 的 V2 卡、<b>RisuAI 的 .charx</b>（ZIP 容器，会连里面的图标一起读到头像）、<b>JanitorAI</b> 导出的 JSON（<code>first_message</code> / <code>example_dialogue</code> 都认）、AIAW、本应用 JSON</td>
+                    <td>酒馆 V2 PNG、酒馆 V3 PNG、AIAW JSON、MySW JSON</td>
+                </tr>
+                <tr>
+                    <td><b>世界书</b></td>
+                    <td>酒馆 World Info（<code>{"entries":{...}}</code>）、角色卡内嵌的 <code>character_book</code>（导入后自动建一本「角色知识书」并绑定到该角色）、txt / md、本应用 JSON、全站备份里的世界书</td>
+                    <td>MySW 世界书 JSON；或在世界书页把「导出为」选成<b>酒馆 World Info</b>，导出后可直接拖进酒馆</td>
+                </tr>
+                <tr>
+                    <td><b>提示词预设</b></td>
+                    <td>酒馆预设 JSON（含第三方把预设包在 <code>preset.data</code> 里的「单文件分享格式」）</td>
+                    <td>预设面板里的「导出酒馆预设」，在酒馆「预设 → 导入」里选它</td>
+                </tr>
+                <tr>
+                    <td><b>聊天记录</b></td>
+                    <td>酒馆的 <code>.jsonl</code> 聊天记录（会作为一条新对话导入，系统消息自动跳过）</td>
+                    <td>本应用 JSON（角色 + 全部线程 + 长期记忆）</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+
+        <h4 id='tavern-backup'>整包搬家：直接导入酒馆的备份 zip</h4>
+        <p>酒馆「用户设置 → 下载备份」给的是一个 zip（整个用户数据目录）。在「设置 → 导入导出 → 从酒馆（SillyTavern）搬家」里选它，一次就能把 <b>角色卡、聊天记录、世界书、提示词预设、用户名</b>搬过来。</p>
+        <ul>
+            <li><b>先看清单再导入</b>：会先列出包里的角色 / 世界书 / 预设 / 聊天各有多少、分别叫什么，确认后才开始。</li>
+            <li><b>同名怎么处理由你选</b>：<em>都保留（默认）</em> 新的一份名字加「(2)」；<em>覆盖</em> 用备份内容替换人设/头像/开场白（角色 id 与聊天记录保留，同名世界书整本替换）；<em>跳过</em> 只补新的。也可以逐项勾选要导入哪几类。</li>
+            <li><b>可以重复导</b>：重复导入同一个备份时，同名角色会在原地更新、同样的聊天记录会被判重跳过，不会越搬越多。</li>
+            <li><b>不会读</b>：<code>secrets.json</code>（API Key）、主题、背景图、扩展、向量库、群聊。</li>
+            <li>酒馆的 <code>groups/</code> 群聊结构与本应用的群聊不同，目前只做计数提示、不导入。</li>
+        </ul>
+
+        <h4 id='text-chat-import'>粘贴文本导入对话</h4>
+        <p>从别的网站复制下来的聊天记录、截图 OCR 出来的文字、纯文本导出的对话，都可以直接粘进来变成本站的一条对话。入口有两个：聊天页顶栏的 <i>文本</i> 图标，或「设置 → 导入导出 → 粘贴文本导入」。</p>
+        <ul>
+            <li><b>认得常见写法</b>：<code>我：…</code> / <code>角色名：…</code> / <code>【名字】…</code> / <code>**我**：…</code> / <code>User: …</code> / <code>Assistant: …</code>。名字对不上号也没关系，两个陌生名字会按出现顺序自动分到「我 / 角色」两侧；整段没有标注时会当成 AI 的一段话。</li>
+            <li><b>可以让 AI 拆</b>：格式很乱（带时间戳、带「复制」按钮文字、一大坨没换行）时勾上「用 AI 智能解析」，会把文本切块交给模型整理成对话；模型只做切分和标注，不改写内容。解析失败会自动退回本地规则，不会卡住。</li>
+            <li><b>先看再导</b>：点「先解析看看」会给出「识别到 N 条（我 X / 角色 Y）」和前 40 条预览，确认没问题再点「导入」。改了正文没重新解析的话，点导入会自动按新内容重来一遍。</li>
+            <li><b>导到哪里</b>：默认追加到<b>当前对话末尾</b>，也可以选「新建一条对话」。导入的是<b>当前打开的角色</b>，不会新建角色；群聊暂不支持（一条消息分不清是哪个成员说的）。</li>
+        </ul>
+
+        <h4 id='deepseek-import'>从 DeepSeek 导出包导入</h4>
+        <p>DeepSeek 网页版「设置 → 数据管理 → 导出数据」会给一个 zip（里面有 <code>user.json</code> 和 <code>conversations.json</code>）。在「设置 → 导入导出」里选它，或直接选里面的 <code>conversations.json</code>，就能把整段历史搬过来。</p>
+        <ul>
+            <li><b>每段对话 → 一条对话记录</b>：会先列出包里所有对话（标题、时间、条数），勾选要导入哪几段；同名的自动加「(2)」。</li>
+            <li><b>谁说的</b>：DeepSeek 的提问记成「我」，回答记成角色。可以选导入到<b>当前打开的角色</b>，或<b>新建一个「DeepSeek」角色</b>专门装这些记录。</li>
+            <li><b>思考过程可保留</b>：DeepSeek 的「已深度思考」内容会存成消息的思考块，显示在回复上方（可折叠），不需要的话取消勾选即可。</li>
+            <li><b>分支只导主线</b>：在 DeepSeek 里重新生成会岔出多条分支，这里取最长的那条路径导入；清单里会标注「含 N 处分支」，避免同一段对话被展开成好几条。</li>
+            <li><b>不读账号信息</b>：<code>user.json</code> 里的邮箱等一律不读取、不保存。</li>
+        </ul>
+
+        <p style="font-size:.88em;color:#999;">转换规则说明：世界书的「蓝灯 / 绿灯 / 黄灯」对应酒馆的 <code>constant</code> / 普通 / <code>selective</code>+<code>keysecondary</code>，注入位置对应 <code>position</code> 0 与 1，条目深度对应 <code>depth</code>；酒馆的触发概率、冷却、分组、递归上限这些站内没有的字段不迁移（导入时按「不改变行为」的默认值处理）。预设按「注入位置」对齐：普通提示进主提示词，注入到对话里的（如 jailbreak）进历史后指令，采样参数不迁移（站内温度等在「AI 配置」统一管理）。</p>
+
+
+        <hr>
+
+        <h2 id="character-market"><i class="doc-h-ico ri-store-2-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🛍️</span> 角色卡市场</h2>
+        <p>「角色卡市场」（<code>character.html</code>，侧边栏顶部的<strong>市场</strong>按钮）是一个独立页面，用来集中管理角色卡。它与主站共用同一批本机数据，在市场里改完，回到短信页刷新即可看到。</p>
+
+        <h3>三个标签页</h3>
+        <ul>
+            <li><strong>我的角色</strong>：列出已加进主站的角色（内置 + 自制 + 从市场添加的）。可以搜索、按分组筛选、按最近聊过 / 名称 / 分组 / 添加顺序排序。</li>
+            <li><strong>角色卡市场</strong>：货架。预置角色卡和站内内置角色都在这里，点「添加到主站」才会真正加进来。</li>
+            <li><strong>分组管理</strong>：新建、重命名、删除分组（删分组时组内角色会回到「默认」，角色和聊天记录都不受影响）。</li>
+        </ul>
+
+        <h3>批量操作</h3>
+        <p>点卡片右上角勾选框（或顶部「全选」）选中多个角色，底部会出现批量操作栏：<strong>移动到分组 / 新建分组并移入 / 开启群聊 / 移出主站 / 彻底删除</strong>。移出与彻底删除的区别：</p>
+        <ul>
+            <li><strong>移出主站</strong>：角色从列表消失，但角色卡数据和聊天记录都保留，之后可以再添加回来。</li>
+            <li><strong>彻底删除</strong>：角色设定与它的全部聊天记录都会被清空，不可恢复。</li>
+        </ul>
+
+        <h3>角色提示词是按需加载的</h3>
+        <p>这是角色卡市场存在的前提：<strong>打开网站时不会加载任何角色的提示词</strong>。</p>
+        <ul>
+            <li>内置角色的设定拆成了单独的文件（<code>character-packs/*.js</code>），打开网站时只加载角色索引（名字 / 头像）；</li>
+            <li>只有当<strong>你点进某个角色的聊天</strong>，才会去取它那一份设定；</li>
+            <li>在角色卡市场里，卡片正文也只有点「查看设定」或「添加到主站」时才会下载。</li>
+        </ul>
+        <p>所以在市场里看到一张卡，并不等于它的设定已经进了你的上下文——你不感兴趣的角色，它的提示词根本不会进入你的浏览器。</p>
+
+        <div class="tip">
+            <div class="tip-title">想投稿自己的角色卡？</div>
+            <p>角色卡市场目前<strong>不提供站内上传</strong>：想把自己的角色卡投稿到市场，请通过 <strong>QQ 群</strong>或<strong>邮箱</strong>把角色卡文件（JSON / 角色卡导出文件）发给维护者，审核通过后就会上架到预置角色卡里。插件投稿同样走这两个渠道，见「插件编写指南」。</p>
+        </div>
+
+        <hr>
+
+        <h2 id="threads"><i class="doc-h-ico ri-node-tree" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🧵</span> 对话线程：一个角色可以有很多条对话</h2>
+        <p>同一个角色下的每一条对话都是一份独立的存档：剧情、上下文、变量、世界书绑定各算各的，互不干扰。想「重开一条线看另一种发展」时用它，不用另建角色。</p>
+
+        <h3>新建与切换</h3>
+        <ul>
+            <li><b>新建</b>：聊天头部的多对话按钮（或斜杠指令 <code>/new</code>）新建一条空对话，角色会按开场白重新打招呼。</li>
+            <li><b>切换</b>：同一处下拉里按需切过去；侧栏对话列表也会显示每个角色的对话数量。</li>
+            <li><b>改名 / 删除</b>：<code>/rename 新名字</code>、<code>/del</code>，或者在那个下拉菜单里操作。</li>
+        </ul>
+
+        <h3>查看全部对话：<code>/ls</code>（现在可以直接点）</h3>
+        <p>在输入框里发 <code>/ls</code>，聊天区会弹出一份当前角色的对话列表：每条带编号、名字、最后一句预览和消息数，<strong>点任意一行就直接跳到那条对话</strong>，不用再记编号或者切菜单。</p>
+        <ul>
+            <li><b>当前</b>标签：标出你现在正在看的那条。</li>
+            <li><b>分页</b>：超过 50 条时列表分页，底部会提示 <code>/ls 2</code> 看下一页。</li>
+            <li><b>快捷键</b>：列表是普通链接，键盘 <span class="kbd">Tab</span> 选中、<span class="kbd">Enter</span> 跳转。</li>
+        </ul>
+
+        <div class="info-card tip">
+            <div class="info-card-title"><i class="ri-information-line"></i> 列表不占上下文</div>
+            <p>这份列表只是显示在聊天区的一段临时内容，不会写进聊天记录，也不会发给 AI —— 切换对话或者刷新之后就没了。</p>
+        </div>
+
+        <h2 id="rp-as"><i class="doc-h-ico ri-user-voice-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🎭</span> 语C：我来演一个角色</h2>
+        <p>默认情况下，AI 把「你」当成你自己。语C 模式把这件事反过来一点：<strong>你挑一个角色来演，AI 仍然只演它自己</strong>，两个人对戏。开关默认关闭，位置在「设置 → 聊天设置 → 语C（对戏）」。</p>
+
+        <h3>怎么开</h3>
+        <ol class="step-list">
+            <li><strong>打开开关</strong><span>勾上「语C模式（我来演一个角色）」，下面会展开两个字段。</span></li>
+            <li><strong>选你演的角色</strong><span>下拉列表就是你的角色列表（群聊不出现）。选中谁，你就演谁。</span></li>
+            <li><strong>要不要加额外设定</strong><span>可选。比如「他刚输了棋，心情不太好」「她还不知道你就是那个叛徒」。留空就完全按角色卡原本的设定来。</span></li>
+            <li><strong>保存设置</strong><span>点设置面板右下角的「保存设置」开始生效；之后每一条发给 AI 的消息都会带上这段说明。</span></li>
+        </ol>
+
+        <h3>开了之后会怎样</h3>
+        <ul>
+            <li>AI 会把你说的每句话都当成那个角色说的，用<strong>它自己的性格和口吻</strong>回应，可以直呼其名。</li>
+            <li>它不会替你（那个角色）发言，也不会描写你的动作和心理——戏是你在写。</li>
+            <li>角色卡本身一个字都不改：语C 只影响发给 AI 的提示词，不改你选的那个角色的设定，也不写进聊天记录。</li>
+            <li>只对单聊生效；群聊里不注入。</li>
+        </ul>
+
+        <h3>为什么没有「自定义语C角色」</h3>
+        <p>因为已经有了：<strong>「设置 → 世界书 → 用户人设（Persona）」</strong>。那里本来就能写「你在这个故事里是谁」——名字、身份、性格、背景，会作为用户侧设定注入上下文。</p>
+        <p>两者只是<em>两种填法</em>，效果都是「你以某个身份说话」：</p>
+        <ul>
+            <li><b>语C</b>：直接套用角色列表里某个角色的完整人设（几千字的角色卡照搬），适合「我想演已有角色」。</li>
+            <li><b>用户人设</b>：自己写一段自由描述，适合「我想演一个原创角色 / 我自己」。可以同时存在，语C 的说明排在后面、优先级更高。</li>
+        </ul>
+        <p>所以这里不再单独做一套「自定义语C角色」的编辑器 —— 那是把「用户人设」重写一遍，两边还会打架。</p>
+
+        <h3>AI 把你当成「双重人格」怎么办</h3>
+        <p>这是最常见的症状：你在演「花火」，但昵称还是上一场用的「三月七」，AI 就会在回复里纠结「你到底是谁」，甚至自问自答。</p>
+        <p>原因很简单：默认会把你<strong>账号昵称</strong>单独告诉 AI（<code>当前与我对话的用户名字是：三月七</code>），语C 又告诉它「用户在演花火」，两条信息在它眼里是两个人。</p>
+        <ul>
+            <li><b>最省事</b>：到「设置 → 聊天设置 → 上下文与记忆」里关掉 <strong>「把『我的昵称』发给 AI」</strong>。关掉后它完全不知道昵称，只能用「你」。</li>
+            <li><b>或者</b>保持开启 —— 语C 会自己补一句「昵称只是账号名，不是第二个人，称呼统一用角色名」，把这两条缝起来。</li>
+            <li><b>或者</b>把昵称改得和你要演的角色一致，两条信息自然就不打架了。</li>
+        </ul>
+
+        <div class="info-card warn">
+            <div class="info-card-title"><i class="ri-error-warning-line"></i> 两个容易踩的点</div>
+            <p><strong>别选成当前正在聊的那位。</strong>你和 AI 演同一个角色，两套人设会互相顶，这种情况插件会直接跳过注入，等于没开。</p>
+            <p><strong>效果看模型。</strong>语C 给的是一段说明文字，模型照不照做取决于它本身；上下文越短、角色卡写得越清楚，入戏越稳。</p>
+        </div>
+
+                <h2 id="worldbook"><i class="doc-h-ico ri-bookmark-3-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">📚</span> 世界书（Lorebook）</h2>
+        <p>「世界书」位于 <strong>设置 → 世界书</strong> 标签页，功能类似「酒馆（SillyTavern）」的世界书 / Lorebook：它是一份<strong>背景知识集合</strong>，AI 聊天时会根据对话内容<strong>动态挑选相关条目注入提示词</strong>，让 AI 了解世界观、地名、人物关系等设定，而不必把所有设定一股脑塞进角色提示词。</p>
+
+        <h3>核心概念</h3>
+        <div class="feature-grid">
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-book-2-line"></i><h4>世界书（WorldBook）</h4></div>
+                <p>条目的集合，有名称、生效范围、启用开关和默认扫描深度。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-file-list-3-line"></i><h4>条目（Entry）</h4></div>
+                <p>最小单位：一段独立的背景知识 + 触发条件。例如「圣塔玛卡王国的历史」「主角的剑术流派」。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-key-2-line"></i><h4>关键词（Key）</h4></div>
+                <p>触发条目的「暗号」。当关键词出现在最近几条消息中时，对应条目会被激活。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-search-eye-line"></i><h4>扫描深度（Scan Depth）</h4></div>
+                <p>在最近多少条消息中查找关键词，全书有默认值，每个条目也可单独覆盖（0 = 使用全书默认）。</p>
+            </div>
+        </div>
+
+        <h3>两种激活策略（灯色）</h3>
+        <ul>
+            <li><strong>🔵 蓝灯（Constant，常驻）</strong>：无论聊什么，条目内容<strong>始终注入</strong>提示词。适合核心世界观、重要人物关系等必须让 AI 时刻知道的设定。蓝灯条目可以不填关键词。</li>
+            <li><strong>🟢 绿灯（Normal，关键词触发）</strong>：只有当关键词出现在最近 N 条消息中时才注入。适合不会每轮都用到的细节设定，<em>按需激活可以显著节省 token</em>。</li>
+        </ul>
+
+        <div class="info-card tip">
+            <div class="info-card-title"><i class="ri-lightbulb-line"></i> 插入位置</div>
+            <p>每个条目还可以选择插入位置：<strong>人设前（before）</strong>或<strong>人设后（after）</strong>——即世界书内容放在角色 System Prompt 之前还是之后。核心规则建议放人设前，补充细节放人设后。</p>
+        </div>
+
+        <h3>四种生效范围（Scope）</h3>
+        <table class="docs-table">
+            <thead><tr><th>范围</th><th>说明</th></tr></thead>
+            <tbody>
+                <tr><td>🌐 全局</td><td>对所有角色和聊天生效，适合通用世界观。</td></tr>
+                <tr><td>👤 角色</td><td>绑定到某个角色，只在与该角色聊天时生效。</td></tr>
+                <tr><td>💬 聊天</td><td>绑定到某个具体会话线程，只在该线程中生效。</td></tr>
+                <tr><td>🎭 人设</td><td>绑定到你创建的某个<strong>用户人设</strong>，当你在「用户人设」中切换到该人设时生效。</td></tr>
+            </tbody>
+        </table>
+
+        <h3>创建与编辑</h3>
+        <ol class="step-list">
+            <li><strong>创建世界书</strong><span>在「设置 → 世界书」中点击「创建世界书」，填写名称并选择生效范围与绑定目标。</span></li>
+            <li><strong>进入编辑界面</strong><span>点击世界书卡片上的「编辑条目」，会打开一个<strong>独立的全屏弹窗编辑器</strong>（与编辑角色的弹窗风格一致），在这里管理全部条目。</span></li>
+            <li><strong>添加条目</strong><span>点击「添加条目」，为每个条目填写：关键词（逗号分隔）、条目内容、激活策略（蓝灯/绿灯）、插入位置、扫描深度。所有修改<strong>即时自动保存</strong>，无需手动点保存。</span></li>
+            <li><strong>完成编辑</strong><span>点击「完成并关闭」或右上角 ✕ 返回列表，所有修改已生效。</span></li>
+        </ol>
+
+        <h3>导入 / 导出</h3>
+        <ul>
+            <li><strong>导入 txt / md</strong>：按空行或 Markdown 标题自动切分为条目；首行若是 <code>关键词：xxx</code> 或 <code>【xxx】</code> 会自动解析为关键词，有关键词的条目设为绿灯，没有的设为蓝灯。</li>
+            <li><strong>导入 JSON</strong>：直接兼容<strong>酒馆（SillyTavern）世界书 JSON</strong>，关键词、灯色、插入位置、扫描深度、启用状态都会自动转换。</li>
+            <li><strong>导出</strong>：每本世界书可单独导出为 JSON 文件备份或分享。</li>
+        </ul>
+
+        <h3>用户人设（Persona）</h3>
+        <p>世界书标签页底部可以管理<strong>用户人设</strong>：</p>
+        <ul>
+            <li><strong>多个人设</strong>：可以创建多份不同身份的人设（如「冒险者·夜羽」「星际商人·老周」），用顶部的下拉框<strong>随时切换</strong>当前使用的人设。</li>
+            <li><strong>注入对话</strong>：当前人设的描述会作为上下文注入对话，让 AI 知道「你是谁」。</li>
+            <li><strong>重命名自动迁移</strong>：修改当前人设的名称再保存，会自动迁移描述，并且绑定到旧人设名的世界书也会跟着更新绑定。</li>
+            <li><strong>绑定世界书</strong>：生效类型选「🎭 人设」的世界书，会在你切换到对应人设时生效。</li>
+        </ul>
+
+        <hr>
+
+        <h2 id="vnmode"><i class="doc-h-ico ri-film-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🎬</span> 视觉小说模式（Galgame）</h2>
+        <p>把聊天界面变成 Galgame：沉浸式背景 + 角色立绘，对话以底部对话框逐句呈现，并按 AI 回复的<em>情绪</em>自动切换对应立绘。舞台只覆盖消息区，<strong>底部输入框照常可用</strong>，随时可以返回普通聊天。想要更纯粹的体验可以打开<strong>全屏舞台</strong>（见下文），让画面铺满整个屏幕。</p>
+
+        <h3 id="vn-entry">进入与退出</h3>
+        <ul>
+            <li><strong>三个入口</strong>：聊天头部右上角的 <i class="ri-movie-2-line"></i> 按钮、「设置 → 界面外观 → 视觉小说模式」里的进入按钮（面板中还会实时显示当前角色配了几张立绘），或在输入框里输入 <code>/vn</code>（<code>/vn on</code> 进入、<code>/vn off</code> 退出）。<code>/立绘</code> 则直接打开立绘与背景设置。</li>
+            <li><strong>退出</strong>：点舞台右上角「退出 VN」，或按 <span class="kbd">Esc</span>。退出后自动把普通聊天滚到最新一句。</li>
+            <li>模式状态会被记住，刷新页面后仍保持上次的模式；<strong>退出后马上再进来</strong>会停在你刚读的那一句并整句落定，不会把那句话重新打一遍。</li>
+            <li><strong>分段回复不再被重放</strong>：开了「分段显示」时长回复会拆成多条气泡，回复刚落库时舞台会<em>自动跟进到这批分段的第一段</em>（而不是末段），并且这一段会从第一页开始整段落定 —— 你在流式阶段已经读完的内容不会被打字机重新敲一遍，接着往后读即可。</li>
+            <li>回复<em>正在生成</em>时切进舞台，会立刻接上已经出现的文字继续看，不用等这条回复说完。</li>
+        </ul>
+
+        <h3 id="vn-assets">立绘与背景素材</h3>
+        <ul>
+            <li>按「<strong>角色 × 情绪</strong>」绑定，共 12 种情绪（default / happy / sad / angry / shy / surprised / neutral / love / excited / thinking / laugh / cry）。未设置的自动回退 <code>default</code>，再回退角色头像。</li>
+            <li>每张立绘都支持<strong>本地上传</strong>与<strong>图片直链</strong>两种方式；本地大图会自动压缩（立绘 1000px、背景 1600px），超出 localStorage 的部分存入 IndexedDB。</li>
+            <li>背景可<strong>按角色单独设置</strong>，也可设置全局背景兜底；还可以给某个情绪单独配一张背景（如「生气」时切到雷雨场景），情绪切换时背景会交叉淡入。</li>
+            <li>批量导入：一次选择多张图片，按<em>文件名</em>自动匹配情绪（<code>happy.png</code>、<code>立绘-开心.jpg</code>；<code>bg-happy.png</code> / <code>背景-开心.jpg</code> 为该情绪背景）。</li>
+            <li>跨设备迁移请用弹窗底部的「导出 / 导入配置」（JSON）。</li>
+        </ul>
+
+        <h3 id="vn-emotion">情绪识别优先级</h3>
+        <p>逐句<strong>手动覆盖</strong>（点对话框上的情绪徽标）&gt; <code>[emo:xxx]</code> 显式标签 &gt; 关键词打分 &gt; 默认。在外观面板勾选「要求 AI 标注情绪」后，会在系统提示中要求 AI 每次回复先给出 <code>[emo:happy]</code> 一行，立绘切换最准确（会改变提示词）。</p>
+        <p>其它渲染细节：长句会<strong>自动分页</strong>（一屏读不完时按句切页，点击 / 滚轮 / 按 → 翻页）；背景支持缓慢推移（Ken Burns）、压暗与虚化；情绪还会给背景叠一层极淡的<strong>氛围光</strong>染色，无需额外素材。</p>
+        <p>舞台上的对话<em>不会</em>出现 <code>[emo:happy]</code> 这类内部控制标记：即便你没开「显示回复里的思考段落」，普通聊天气泡里也会一并剥离。等待 AI 开口时，对话框上会显示「正在组织语言」的跳动小点；说话人名字旁带一枚小头像，群聊里每个角色还会各自主配色（含群头衔），方便分辨谁在说话。</p>
+
+        <h3 id="vn-fullscreen">全屏舞台（界面铺满整个屏幕）</h3>
+        <p>舞台工具条上的 <i class="ri-fullscreen-line"></i> 按钮、按 <span class="kbd">F</span>、或在「设置 → 界面外观 → 视觉小说模式」里勾选「全屏舞台」，都能让 Galgame 界面占满整个屏幕：聊天头部、免责声明、左侧角色栏全部收起，并同步进入浏览器原生全屏（隐藏标签栏与地址栏）。</p>
+        <ul>
+            <li><strong>输入框仍然可用</strong>：输入区被搬成一枚悬浮在对话框上方的浮条，打字、发图、语音、表情、快捷指令全部照旧，功能与快捷键没有任何削减。</li>
+            <li><strong>立绘与对话框自动让位</strong>：抬升量按悬浮条的<em>实测高度</em>计算（CSS 变量 <code>--vn-fs-lift</code>），输入框撑高到多行也不会盖住台词。</li>
+            <li><strong>长句分页会重新计算</strong>：舞台变高后一屏能放下的行数变了，会自动重新分页并停在原句，不会把已读的内容重打一遍。</li>
+            <li><strong>退出方式</strong>：再按一次 <span class="kbd">F</span>、点同一个按钮、或按 <span class="kbd">Esc</span>。注意浏览器会先吃掉第一次 <span class="kbd">Esc</span> 用来退出原生全屏（舞台随之退回窗口内），再按一次 <span class="kbd">Esc</span> 才返回普通聊天。直接用 F11 / 浏览器菜单退出原生全屏时，舞台样式与偏好会同步跟随，不会残留隐藏状态。</li>
+            <li><strong>状态会被记住</strong>：偏好随 VN 设置一起保存，下次进入视觉小说模式仍是全屏。「移动视图」下全屏只占满那个 430×844 的手机外框，不会把手机预览撑成浏览器窗口。</li>
+        </ul>
+
+        <h3 id="vn-keys">快捷键</h3>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th>按键</th><th>作用</th></tr></thead>
+            <tbody>
+                <tr><td><span class="kbd">空格</span> / <span class="kbd">Enter</span> / <span class="kbd">→</span></td><td>打完本页 → 下一页 → 下一句</td></tr>
+                <tr><td><span class="kbd">←</span> / <span class="kbd">PageUp</span></td><td>上一页 → 上一句</td></tr>
+                <tr><td><span class="kbd">A</span></td><td>自动播放开/关</td></tr>
+                <tr><td><span class="kbd">L</span> / <span class="kbd">↑</span></td><td>回顾记录面板</td></tr>
+                <tr><td><span class="kbd">F</span></td><td>全屏舞台 / 退出全屏（界面铺满整个屏幕，输入框悬浮保留）</td></tr>
+                <tr><td><span class="kbd">H</span></td><td>隐藏全部界面，只看背景与立绘（截图用）；再按一次 <span class="kbd">H</span>、点画面、或按 <span class="kbd">Esc</span> 恢复界面</td></tr>
+                <tr><td>鼠标滚轮</td><td>与点击同义：向下 = 打完本页 / 下一页 / 下一句，向上 = 回退</td></tr>
+                <tr><td><span class="kbd">Home</span></td><td>回到本次对话的第一句</td></tr>
+                <tr><td><span class="kbd">End</span></td><td>跳到最新一句</td></tr>
+                <tr><td><span class="kbd">Esc</span></td><td>关闭浮层 / 退出全屏 / 返回普通聊天</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <p>移动端可左右滑动翻页与切换句子。</p>
+
+        <hr>
+
+        <h2 id="gal"><i class="doc-h-ico ri-book-2-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">📝</span> GAL 工作室：自己做一个视觉小说</h2>
+        <p>上一节的视觉小说模式是「<em>和 AI 一起演</em>」，GAL 工作室是「<strong>自己写、自己导</strong>」。它是一个独立的网页工具，用节点把剧本拼起来，做完一键导出成<strong>单个 HTML 文件</strong> —— 不联网、不需要服务器、不用装任何东西，双击就能玩，也能直接发给别人。</p>
+        <p>入口：<strong>设置 → 更多 → GAL 工作室</strong>，或直接打开 <code>gal.html</code>。所有内容只存在你自己的浏览器里，导出之前不会上传到任何地方。</p>
+
+        <h3 id="gal-start">三步做出第一个作品</h3>
+        <ol>
+            <li><strong>先看示例</strong>：第一次打开会自带一份《无名之夜》，21 个节点，含选项、条件判断和两种结局。点右上角「试玩」立刻能玩一遍，比看说明快。</li>
+            <li><strong>改成你的</strong>：左边点「添加节点」，从「对话 / 旁白 / 背景 / 立绘」这四样开始；中间是实时预览，下面就是当前节点的编辑区；右边「角色」面板里新建角色、按表情传立绘。</li>
+            <li><strong>导出</strong>：右上角「导出 HTML」，选一个图片压缩档位，得到 <code>你的作品.html</code>。发到群里，对方双击就玩。</li>
+        </ol>
+
+        <h3 id="gal-ui">界面分三块</h3>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th style="width:26%">区域</th><th>做什么</th></tr></thead>
+            <tbody>
+                <tr><td><strong>左：剧本</strong></td><td>按顺序排列的节点。点一下选中；鼠标移上去出现四个小按钮：上移、下移、复制、删除。也可以按住拖动排序。底部「添加节点」弹出 14 种类型。</td></tr>
+                <tr><td><strong>中：舞台 + 编辑区</strong></td><td>上面是 16:9 的实时预览（会把当前节点之前的背景、立绘、变量都算进去，看到的就是玩家看到的）；下面是这个节点的表单，改什么上面立刻变。</td></tr>
+                <tr><td><strong>右：作品 / 角色 / 素材 / 变量</strong></td><td>对话框样式、主题色、字号、开场标签；角色与立绘；图片素材库；变量表与条件语法速查。</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <p>手机上三块会收成底部三个标签（剧本 / 舞台 / 属性），功能不减。</p>
+
+        <h3 id="gal-nodes">14 种节点，各管一件事</h3>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th style="width:16%">节点</th><th>作用</th><th style="width:34%">常用字段</th></tr></thead>
+            <tbody>
+                <tr><td>💬 对话</td><td>某个角色说一句</td><td>说话人、表情、台词、语音 URL</td></tr>
+                <tr><td>📄 旁白</td><td>不署名的叙述</td><td>文字（保留换行）</td></tr>
+                <tr><td>🖼 背景</td><td>换背景，可顺带显示地点名</td><td>图片、地点名、淡入 / 瞬切</td></tr>
+                <tr><td>🧍 立绘出场</td><td>让角色站上舞台</td><td>角色、表情、站位（左 / 中 / 右 / 最左 / 最右）</td></tr>
+                <tr><td>🚶 立绘退场</td><td>让某个角色或全部离开</td><td>谁</td></tr>
+                <tr><td>🔀 选项</td><td>让玩家做选择</td><td>提示语、每项的跳转 / 出现条件 / 变量变化</td></tr>
+                <tr><td>🔖 章节标签</td><td>跳转的锚点，也当章节名</td><td>标签名、章节标题</td></tr>
+                <tr><td>↗ 跳转</td><td>无条件跳到某个标签或节点</td><td>目标</td></tr>
+                <tr><td>❓ 条件判断</td><td>变量满足走 A，否则走 B</td><td>条件、成立跳转、不成立跳转</td></tr>
+                <tr><td>🧮 变量</td><td>赋值 / 加减乘 / 拼接 / 取反</td><td>变量名、操作、值</td></tr>
+                <tr><td>🎵 音乐音效</td><td>播 BGM 或音效，或停止</td><td>声道、文件、循环、音量</td></tr>
+                <tr><td>⚡ 屏幕特效</td><td>震动 / 闪白 / 淡出黑场 / 从黑淡入</td><td>类型、时长、强度</td></tr>
+                <tr><td>⏱ 等待</td><td>停顿一会儿再继续</td><td>毫秒</td></tr>
+                <tr><td>🏁 结局</td><td>显示结局画面并结束</td><td>结局类型、标题、正文</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <p>剧本是<strong>线性一条线</strong>往下走的，没有「连线」的概念。要分支就放一个「跳转」或「条件判断」，把目标指到某个标签上；选项的「跳转」留空 = 顺着往下走，这样分支能自然汇回主线。</p>
+        <div class="info-card warn">
+            <div class="info-card-title"><i class="ri-alert-line"></i> 小心穿线</div>
+            <p>如果 A 分支写在主线中间、末尾又没放跳转，剧情会一路往下穿过 B 分支。习惯做法：每个分支末尾放一个「跳转 → 章节标签」。</p>
+        </div>
+
+        <h3 id="gal-ai">剧本转 GAL：把本子丢进去，出来的东西能点</h3>
+        <p>右上角有个「<strong>剧本转 GAL</strong>」。它不替你写故事 —— 故事是你写的。它只做一件体力活：把你写好的小说片段、大纲、对话本子拆成一组节点，谁在说话、什么时候换场景、哪里该给选项、哪句该做成分支。生成完先给你看统计和开头几行，确认了才写进作品；不满意可以「再写一版」，也可以「接到当前作品末尾」接着往下排。</p>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th style="width:20%">选项</th><th>作用</th></tr></thead>
+            <tbody>
+                <tr><td><strong>节点数</strong></td><td>短篇 25~40 节点 / 中篇 45~70 / 长篇 90~140。节点越多，一次拆下来越慢，也越容易把你的本子拆散。建议先按中篇来。</td></tr>
+                <tr><td><strong>分支</strong></td><td>「要分支 + 多结局」会让它放 2~3 个选项、至少两个结局；「一条直线」是纯剧情，适合先把故事顺下来。</td></tr>
+                <tr><td><strong>用素材库</strong></td><td>勾上之后，它按名字和标签从素材库里挑背景。勾选框后面写着现在库里有多少张图 —— 空库勾不了。</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <p>它用的是<strong>你自己在「设置 → API」里配的模型</strong>，不经过这个站。所以模型的质量、速度、花多少钱，都是你自己那套。</p>
+        <div class="info-card">
+            <div class="info-card-title"><i class="ri-lightbulb-line"></i> 怎么让它写得像人</div>
+            <p>它擅长「拆」，不擅长「想」。你给的东西越具体，它拆得越好：谁、在哪、想要什么、哪句话没说出口。只写「一个悲伤的故事」，它会还你一堆正确的废话。</p>
+            <p>生成完先看开头六行。第一句不对，后面全歪 —— 直接「再写一版」，比逐条改快。</p>
+        </div>
+        <p>它只写文字层：台词、旁白、出场、退场、选项、跳转、结局。图片和音乐只能从素材库里拿现成的，它不会画图，也不会编造一个不存在的文件名。跳转目标对不上、素材被删了，这些它自己会处理并在结果里列出来。</p>
+        <div class="info-card warn">
+            <div class="info-card-title"><i class="ri-error-warning-line"></i> 三种常见失败</div>
+            <p><strong>请求发不出去</strong>：多半是接口不允许网页直连（CORS），或者地址填错了。本地模型要开跨域，中转站要确认支持浏览器调用。</p>
+            <p><strong>等到超时</strong>：长剧本本来就慢，1~3 分钟正常；超过四分钟会被掐断，选小一档节点数再试。</p>
+            <p><strong>返回的不是 JSON</strong>：它会自动让模型重写一次。两次都不行，就是模型不听话 —— 换一个，带结构化输出的模型通常更稳。</p>
+        </div>
+
+        <h3 id="gal-expr">条件怎么写</h3>
+        <p>条件框里写 <code>变量 运算符 值</code>，多个条件用 <code>&amp;&amp;</code>（并且）或 <code>||</code>（或者）连起来：</p>
+        <ul>
+            <li><code>好感 &gt;= 3</code>　<code>看过信 == true</code>　<code>路线 != "bad"</code></li>
+            <li><code>好感 &gt;= 3 &amp;&amp; 看过信</code>　（两个都成立）</li>
+            <li><code>好感 &gt; 5 || 结局 == "good"</code>　（任一成立）</li>
+            <li><code>名字 ~= "雨"</code>　（<code>~=</code> 是「包含这段文字」，只对文字有意义）</li>
+        </ul>
+        <p>运算符：<code>&gt;=</code> <code>&lt;=</code> <code>&gt;</code> <code>&lt;</code> <code>==</code> <code>!=</code> <code>~=</code>。<strong>值不加引号</strong>时按数字或布尔解析（<code>3</code>、<code>true</code>），加引号按文字（<code>"good"</code>）。只写一个变量名（如 <code>看过信</code>）表示「非 0 / 非空 / 非 false 即成立」。</p>
+        <p>条件不满足的选项，默认<strong>显示但变灰</strong>（让玩家知道「这里有别的路，只是你还进不去」）；勾上「条件不满足的选项直接隐藏」就完全不出现。想提示玩家缺什么，可以再放一句旁白。</p>
+
+        <h3 id="gal-library">素材库：传一次，所有作品共用</h3>
+        <p>右侧「素材」面板现在分两块，别混：</p>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th style="width:26%">区块</th><th>存在哪 / 影响谁</th></tr></thead>
+            <tbody>
+                <tr><td><strong>素材库</strong></td><td>存在浏览器的 IndexedDB 里，<strong>所有作品共用</strong>。放几十张背景也不占剧本那 4.4MB 的额度；删掉会影响所有引用它的作品。</td></tr>
+                <tr><td><strong>本作品素材</strong></td><td>跟着这个作品走，会被一起导出进 HTML，也占工程体积。</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <p>用法：素材面板顶部「上传素材」，一次可以选多张（图片和音频都收）。传进来之后，点一张 = 设为当前节点的背景；当前节点不是背景的话，会顺手替你在后面插一个背景节点。右上角 × 删除，铅笔改名 —— <strong>名字会被 AI 看见</strong>，起得具体点，写「便利店·夜」比「IMG_0421」有用得多。</p>
+        <p>「管理」里能看总数和占用、批量改名、清空。上传的图不压缩、不转格式，原样存着 —— 反正不吃 localStorage 的额度。</p>
+        <div class="info-card">
+            <div class="info-card-title"><i class="ri-download-2-line"></i> 导出的时候会发生什么</div>
+            <p>导出前，用到的那几张会从素材库里读出来、压成 dataURL 塞进 HTML，所以成品依然是「单个文件，双击就玩」。工程本身只存一个引用，几百字节。素材删了再导出，那一处会留空，并提示你有几张丢了。</p>
+        </div>
+
+        <h3 id="gal-export">导出与分享</h3>
+        <ul>
+            <li><strong>产物是单个 HTML</strong>：样式、引擎、剧本、图片全部压在一个文件里。不依赖这个站，也不依赖网络，拷到 U 盘、丢网盘、发群里都行。</li>
+            <li><strong>图片压缩三档</strong>：标准（长边 1600px，一般够用）／不压缩（原图，文件最大）／严格（长边 1080px，适合发群里）。PNG 会保持 PNG，不会被转成黑底 JPEG。导出前会显示预计体积。</li>
+            <li><strong>存档在玩的人本机</strong>：6 个手动槽 + 1 个自动存档，存在对方浏览器的 localStorage 里。你更新了作品重新发一份，对方旧存档里的节点索引可能对不上 —— 大改剧情前最好提醒一句。</li>
+            <li><strong>工程可以另存</strong>：菜单里有「导出工程 JSON」「导出全部作品」，换电脑或换浏览器时用它搬家。</li>
+            <li><strong>编辑期的存储有上限</strong>：工程存在浏览器 localStorage 里，整体约 4.4MB。上传的图片会先缩到长边 1920px（透明立绘转 WebP，透明不会被填黑），音频限 3MB；真的存不下时会明确提示并拒绝加入，不会把半截内容写进去。素材多了就拆成几个作品，或先导出 HTML。</li>
+        </ul>
+
+        <h3 id="gal-player">玩的人能用到什么</h3>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th style="width:24%">功能</th><th>说明</th></tr></thead>
+            <tbody>
+                <tr><td>打字机 + 分页</td><td>长句按实际字宽自动分页，不会溢出对话框；点一下先出完整句，再点翻页，再点下一句</td></tr>
+                <tr><td>自动播放 / 快进</td><td>右上角按钮或 <span class="kbd">A</span>；按住 <span class="kbd">Ctrl</span> 快进，松开即停</td></tr>
+                <tr><td>回顾</td><td>已读对话全部可翻，按 <span class="kbd">L</span> 打开</td></tr>
+                <tr><td>存 / 读档</td><td>6 槽 + 自动存档，缩略图 + 章节名 + 那句台词 + 时间</td></tr>
+                <tr><td>设置</td><td>文字速度、自动间隔、音量、快进是否跳过未读，全部存在本机</td></tr>
+                <tr><td>标题画面</td><td>开始 / 继续 / 读档 / 设置，有自动存档才会出现「继续游戏」</td></tr>
+                <tr><td>全屏</td><td>右上角 ⛶ 或 <span class="kbd">Esc</span> 打开设置后切</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <p>播放器快捷键：<span class="kbd">空格</span> / <span class="kbd">Enter</span> / <span class="kbd">→</span> 继续，<span class="kbd">Esc</span> 设置，<span class="kbd">A</span> 自动，<span class="kbd">L</span> 回顾，<span class="kbd">H</span> 隐藏界面看背景。</p>
+
+        <h3 id="gal-keys">编辑器快捷键</h3>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th style="width:30%">按键</th><th>作用</th></tr></thead>
+            <tbody>
+                <tr><td><span class="kbd">Ctrl</span>+<span class="kbd">S</span></td><td>立即保存（平时也会自动保存）</td></tr>
+                <tr><td><span class="kbd">Ctrl</span>+<span class="kbd">Z</span> / <span class="kbd">Ctrl</span>+<span class="kbd">Y</span></td><td>撤销 / 重做（40 步）</td></tr>
+                <tr><td><span class="kbd">Ctrl</span>+<span class="kbd">Enter</span></td><td>从当前节点试玩</td></tr>
+                <tr><td><span class="kbd">Ctrl</span>+<span class="kbd">D</span></td><td>复制当前节点</td></tr>
+                <tr><td><span class="kbd">↑</span> / <span class="kbd">↓</span></td><td>切换节点（在输入框里不触发）</td></tr>
+                <tr><td><span class="kbd">Delete</span></td><td>删除当前节点</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <h3 id="gal-tips">几条实用建议</h3>
+        <ul>
+            <li><strong>立绘用透明背景的 PNG</strong>，人物脚底贴着画布下沿，同一角色的所有表情用同样的画布尺寸和站位，切换时才不会跳。</li>
+            <li><strong>没有图也能写</strong>：不填背景就是内置的深色渐变，立绘留空会显示占位框。先把剧情跑通，再补图。</li>
+            <li><strong>善用「等待」和「特效」</strong>：换场景前 <code>淡出 → 等待 600ms → 换背景 → 从黑淡入</code>，观感立刻不一样。</li>
+            <li><strong>大改之前导出一次 JSON</strong>。浏览器存储有上限，清了站点数据就没了。</li>
+            <li><strong>先写一条线，再补分支</strong>。分支一多，节点列表会很长，用「章节标签」分段会清爽很多。</li>
+        </ul>
+
+        <h3 id="gal-limit">已知边界</h3>
+        <ul>
+            <li>不支持视频和动态立绘（Live2D），只放静态图；视频可以自己用外链在背景里凑，但不会被一起打包。</li>
+            <li>音乐音效文件会一起内嵌，但建议控制在几 MB 内，否则导出的 HTML 会很大。</li>
+            <li>作品存在浏览器 localStorage，清理站点数据会一起清掉；重要工程请导出 JSON 备份。</li>
+        </ul>
+
+        <hr>
+
+        <h2 id="features"><i class="doc-h-ico ri-sparkling-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">✨</span> 功能介绍</h2>
+        <p>本应用提供了丰富的功能，下面按模块分组介绍：</p>
+
+        <h3 id="feature-chat"><span class="doc-emoji" aria-hidden="true">💬</span> 聊天核心功能</h3>
+        <div class="feature-grid">
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-message-3-line"></i><h4>单聊</h4></div>
+                <p>与一个 AI 角色进行 1v1 对话，支持自定义人设、开场白、长期记忆。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-group-line"></i><h4>AI 群聊</h4></div>
+                <p>把多个角色拉进同一个群组。谁开口不再按固定轮流，而是看群节奏、活跃度、有没有被点名，以及这个人刚才说没说过话。被 @ 到的人优先回复，其余人按自己的活跃度决定接不接话，不会整群一起刷屏。群节奏可以调成干脆、正常或拖沓；每个成员还能单独设活跃度、群头衔和禁言。</p>
+                <p>冷场一会儿后，群里也可能有人主动冒一句，概率和要等多久都跟着群节奏走。开启「聊天设置 → 上线生成一条消息」后，进入网站时由<strong>活跃度最高的成员</strong>先打一声招呼。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-edit-line"></i><h4>重生成 / 编辑消息</h4></div>
+                <p>对 AI 的回复不满意？点重试；对自己的消息右键可重新发送、编辑、撤回。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-file-list-3-line"></i><h4>对话摘要</h4></div>
+                <p>超长对话用「生成摘要」压缩为关键事件，节省上下文 Token。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-search-line"></i><h4>全局搜索</h4></div>
+                <p>顶部搜索框可搜角色名、聊天内容、备注、标签，一键定位历史对话。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-bar-chart-2-line"></i><h4>聊天统计</h4></div>
+                <p>查看与每个角色的聊天频率、字数、Token 消耗等数据看板。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-image-line"></i><h4>表情包 / 贴纸</h4></div>
+                <p>支持 <code>[sticker:N]</code> 占位符自动替换为「我的表情」里第 N 张图片（N 从 0 开始），让对话更生动。表情包可带备注，带备注时 AI 直接按备注理解图片内容。旧的 <code>/love</code>、<code>/like</code>、<code>/bey</code>、<code>/cry</code> 四条表情指令因图床失效已下线，请改用表情包或直接输入 emoji。</p>
+                <p>面板分「我的表情」和「崩铁表情」两页。前者：长按任意表情可以把它放进自定义分组（常用 / 开心 / 崩铁限定，名字随你起），顶部一排分组标签点一下就只看这一组，右上角的小文件夹按钮统一管理分组（新建 / 重命名 / 删除，删组时表情回到「未分组」不会丢）；搜索框同时匹配备注和分组名。分组一多，标签条下面会出现一条细滑条，拖它、或者在标签条上滚鼠标滚轮，都能往右翻；右上角的列表按钮一次列出全部分组，点一下直达。后者：内置米游社《崩坏：星穹铁道》官方表情包 480 张，按 30 个版本 / 主题分组，名字取自米游社表情集的官方命名（格式「角色-动作」，如「真珠-不能理解」），鼠标停在表情上底栏就会显示。点一下直接发出，长按可以收藏进自己的分组，并在「我的表情」里照常被 AI 引用。这些图不入库，全部走官方 CDN 直链（列表用 180px 缩略图、发送用 640px），所以站点体积只多出一个 50KB 的清单文件；代价是离线时内置表情显示不出来，已经发出去的图片气泡也不受离线影响。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-code-box-line"></i><h4>代码高亮</h4></div>
+                <p>聊天中包含代码会自动高亮，支持上百种语言。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-arrow-down-line"></i><h4>回到最新消息</h4></div>
+                <p>往上翻看历史时，输入区上方浮出一枚下箭头按钮，一点即平滑滑回聊天记录最后一条；离开底部期间收到的 AI 新消息还会在按钮上累计小红点数字，滑到底自动清零。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-fullscreen-line"></i><h4>全屏模式</h4></div>
+                <p>普通状态下界面是一枚带圆角与外阴影的「窗口」，四周留着背景；开启全屏模式后界面铺满整个浏览器窗口、去掉圆角阴影与四周留白。聊天头部右上角的 <i class="ri-fullscreen-line"></i> 按钮随时可切换（顺带请求浏览器原生全屏以隐藏标签栏），也可在「设置 → 界面外观」里勾选，状态会记住。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-crop-2-line"></i><h4>图片裁切与不压缩</h4></div>
+                <p>上传头像（我的头像 / 角色头像 / 编辑角色信息里的头像，含网络 URL）时会先弹出裁切框：支持 1:1 / 3:4 / 4:3 / 16:9 / 原图比例，可拖动、双指或滚轮缩放。什么操作都不做就关掉，等于直接用完整原图，不会被重编码。「界面外观 → 不压缩图片」开启后，聊天图片、头像、背景、立绘等所有上传图片一律按原图质量保存。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-movie-2-line"></i><h4>视觉小说形式导出</h4></div>
+                <p>把当前对话导出成一个可离线打开的 Galgame 页面，逐句播放、支持打字机与自动播放。可选「纯观看」或「可继续对话」：<strong>纯观看版不含任何 API 配置入口</strong>（设置面板里只有打字速度、字号、自动播放停顿等外观项）；「可继续对话」版自带独立的 API 设置，能在导出页里接着聊，新对话存在该页面自己的浏览器存储中。</p>
+                <p><strong>导出的页面本身也是一个完整舞台</strong>：「可继续对话」版打开就有底部输入框（按 <span class="kbd">I</span> 或点 <i class="ri-edit-line"></i> 按钮可收起/展开），Enter 发送、Shift+Enter 换行；台词默认按 <strong>Markdown 渲染</strong>（标题、粗斜体、列表、引用、表格、代码块与链接都认），按 <span class="kbd">M</span> 可随时切回原样显示。点「回顾」能看到全部台词，点「设置」可改打字速度、字号、自动播放停顿与背景推移。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-stack-line"></i><h4>最近聊过的角色排在前面</h4></div>
+                <p>你和任意一个角色说过一句话，这个角色就会在列表里往前提。<strong>不影响置顶</strong>：置顶角色永远排在非置顶角色之前，同一分组内最近聊过的排最前，久未联系的自动沉下去。可在「设置 → 界面外观」关闭，恢复成完全固定的手动顺序。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-file-text-line"></i><h4>文件消息（不再撑爆气泡）</h4></div>
+                <p>发 <code>.txt</code> / <code>.md</code> 这类文本文件时，气泡里只会出现一张<b>文件卡片</b>（文件名 + 体积 + 行数），点开才是完整内容：可以滚动查看、一键复制、下载回本地。几百行的设定集发出去，聊天区也只多一张卡片。发给 AI 的仍然是全文，不会影响它读设定。</p>
+            </div>
+            <div class="fi-card">
+                <div class="fi-head"><i class="ri-slideshow-3-line"></i><h4>虚拟滚动（长对话性能）</h4></div>
+                <p>对话消息超过 80 条时，聊天区只渲染当前可视区域附近的内容，DOM 节点数量大幅减少，长对话滚动更顺滑；消息较少的会话不受影响。开关在「设置 → 界面外观 → 虚拟滚动」，<strong>默认关闭</strong>；勾选后立即生效（自动重绘）并记住选择，如遇显示异常（空白、跳位），关掉开关即可恢复完整渲染。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-drag-move-2-line"></i><h4>角色列表拖动手感</h4></div>
+                <p>调整角色顺序要先<strong>按住</strong>（触摸约 0.7 秒 / 鼠标约 0.34 秒），并且必须真的移动过一小段距离才会进入拖动状态 —— 所以普通点击与滑屏滚动都不会再把角色位置改掉。按住期间卡片会轻微收缩，提示「长按正在生效」。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-sparkling-line"></i><h4>？？？模式（高级动效）</h4></div>
+                <p>开启后换成一套「播一次就停」的弹性动效：弹窗从被点的那个按钮里被拽出来、设置标签页弹性滑动、新消息逐条入场、按钮按压回弹。静止时不占用 GPU，因此不像旧版那样把页面拖卡。分「轻量 / 标准 / 丰富」三档，低端机建议先用轻量。</p>
+                <p>判定「新消息」只看这一批新增节点的<em>总量</em>，切角色 / 保存设置这类整表重绘不会被误当成新消息；「丰富」档的扫光只会出现在这批里的<strong>最后一条</strong>气泡上，且光带是固定的窄条，不会因为长回复去重绘整块气泡。角色列表头像的占位流光也做了并发上限，只有最靠上的少量头像在跑动画。</p>
+            </div>
+        </div>
+
+        <h3 id="feature-roleplay"><span class="doc-emoji" aria-hidden="true">🎨</span> 角色扮演辅助</h3>
+        <div class="feature-grid">
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-book-line"></i><h4>长期记忆</h4></div>
+                <p>AI 自动提炼对话中的重要事实（人物关系、事件），作为永久记忆跨会话保留。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-database-2-line"></i><h4>知识库 (RAG)</h4></div>
+                <p>为角色添加「知识库」，AI 回复时会先检索相关文档，让角色「知道」特定世界观。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-flow-chart"></i><h4>分支管理</h4></div>
+                <p>对话可在任意节点创建「分支」，探索不同剧情走向，随时切换回主线，也可以把某个分支的后续剧情<strong>合并</strong>回当前分支。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-movie-line"></i><h4>剧场模式</h4></div>
+                <p>沉浸式 UI 切换，隐藏多余按钮，专注剧情本身。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-heart-pulse-line"></i><h4>情感仪表盘</h4></div>
+                <p>可视化角色情绪曲线，了解「关系进展」与「情感状态」。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-palette-line"></i><h4>气泡样式</h4></div>
+                <p>支持微信风、iMessage 风、纯文本等多种气泡外观，可分别设置我方/对方。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-heart-pulse-line"></i><h4>主动关怀模式</h4></div>
+                <p>在「设置 → 聊天设置」开启。角色不会再隔两分钟突然关心你：只有刚才的对话里还挂着没说完的事，或者你明显心情不好时，才会过一会儿用<strong>这个角色自己的语气</strong>接一句。普通闲聊说完就停。用的模型可在「设置 → AI 配置 → 功能专用模型 → 主动关怀」里单独指定，留空则沿用当前聊天模型。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-chat-smile-2-line"></i><h4>上线生成一条消息</h4></div>
+                <p>在「设置 → 聊天设置」开启，默认关闭。每次进入网站，当前打开的这条聊天会先收到一句问候：单聊由当前角色说，群聊由活跃度最高的成员说。同一条对话同一天只发一次，刷新不会连发。模型在「功能专用模型 → 上线问候」里单独设置，留空则用当前站点。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-route-line"></i><h4>功能专用模型</h4></div>
+                <p>在「设置 → AI 配置」底部。懒人模式、提示词优化器、AI 生成开场白、主动关怀、上线问候都可以各自指定模型、备用模型和可选的 API 地址 / Key。全部留空时沿用当前站点，点开对应条目才会看到输入框。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-checkbox-blank-circle-line"></i><h4>五子棋与围棋</h4></div>
+                <p>在「设置 → 实验室 → 棋局」里选择。先打开一个单聊角色，聊天区会变成左边聊天、中间棋盘、右边操作。每局先抛硬币决定谁执黑，AI 按当前角色的人设落子和说话。<a href="#board-games">查看怎么下 →</a></p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-heart-3-line"></i><h4>好感度系统</h4></div>
+                <p>在「设置 → 实验室 → 好感度」开启。每个角色单独累积一条情感进度条，数值越高，角色对你的称呼、亲密度与愿意接受的互动程度都会随之变化 —— 每档的「相处准则」会随对话动态下发。增量、上限、每日上限、冷却、衰减与角色倍率全部可编辑。<a href="#affinity">查看详细说明 →</a></p>
+            </div>
+        </div>
+
+        <h3 id="feature-advanced"><span class="doc-emoji" aria-hidden="true">🚀</span> 高级 / 实验性功能</h3>
+        <p>在「设置 → 实验室」中可开关：</p>
+        <div class="feature-grid">
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-magic-line"></i><h4>提示词优化器</h4></div>
+                <p>让 AI 自动改写你的角色人设，使其更结构化、更稳定、token 更省。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-shapes-line"></i><h4>插件系统</h4></div>
+                <p>通过 JS 插件扩展功能。插件能改写你发出的文字、给 AI 追加提示词、在聊天界面挂面板，也能在你的授权下借用 API 发请求（但永远拿不到密钥明文）。自带「才不是猫娘喵」「你也是猫娘喵」「猫娘MySW？」「一键全猫娘！」等默认插件；也可以在插件页的折叠板里让 AI 按你的描述写一个插件，确认后导入，并导出成 JS 文件。<a href="#plugins">查看插件编写指南 →</a></p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-more-line"></i><h4>更多</h4></div>
+                <p>「设置 → 更多」放着使用文档、网站主人酱的 B 站主页、问题反馈邮箱，以及四档「刷新网站」（见下一节）。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-keyboard-box-line"></i><h4>快捷键</h4></div>
+                <p>支持 <span class="kbd">/</span> 命令、<span class="kbd">Enter</span> 发送、<span class="kbd">Shift</span>+<span class="kbd">Enter</span> 换行、<span class="kbd">?</span> 打开帮助等。「清空对话」「新建线程」默认为 <span class="kbd">Alt</span>+<span class="kbd">L</span> / <span class="kbd">Alt</span>+<span class="kbd">N</span> —— 因为 <span class="kbd">Ctrl</span>+<span class="kbd">L</span>、<span class="kbd">Ctrl</span>+<span class="kbd">N</span> 被浏览器自身保留（地址栏、新建窗口），网页抢不到这些键。可在「设置 → 快捷键」点 <span class="kbd">⌨</span> 按钮直接按键录入改键。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-discuss-line"></i><h4>论坛系统</h4></div>
+                <p>侧边栏的「论坛」入口，AI 角色会在论坛中<em>模拟</em>发帖、评论、互动，营造社区氛围。支持分区（板块）、搜索与多维排序、收藏、楼中楼评论、评论点赞、浏览数、今日活跃榜、私信与数据导入导出。<strong>注意</strong>：本应用是纯前端应用，这些内容仅在你的浏览器本地由 AI 生成，<em>不会被其他真实用户看到</em>。<a href="#forum">查看论坛说明 →</a></p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-cloud-line"></i><h4>PWA / 离线</h4></div>
+                <p>可「添加到主屏幕」当 App 用，支持 Service Worker 离线访问历史记录。</p>
+            </div>
+            <div class="feature-item">
+                <div class="fi-head"><i class="ri-lock-password-line"></i><h4>数据本地化</h4></div>
+                <p>所有数据存浏览器 localStorage / IndexedDB，不上传服务器，支持一键导出/导入。</p>
+            </div>
+        </div>
+
+        <h3 id='feature-extra'><span class="doc-emoji" aria-hidden="true">🧪</span> 其它实验室与辅助功能</h3>
+        <p>下面这些功能分散在设置和实验室里,默认都是关闭的,需要时手动开启。</p>
+        <div class='feature-grid'>
+            <div class='feature-item'>
+                <div class='fi-head'><i class='ri-code-s-slash-line'></i><h4>Code 模式(写代码)</h4></div>
+                <p>开启后,单次回复的输出上限单独调高(默认 8192,最高 32000),不再被聊天设置里较小的上限截断;自动追加「给出完整可运行代码」之类的编码指令;并关闭消息分段,避免代码块被拆成好几条气泡;温度默认调到 0.3,让输出更稳定。适合让角色写完整的脚本或网页。</p>
+            </div>
+            <div class='feature-item' id='user-space'>
+                <div class='fi-head'><i class='ri-code-box-line'></i><h4>用户代码空间(两个界面)</h4></div>
+                <p>在「设置 → 实验室 → 用户代码空间」里新建一个空间(如 <code>myswuser1</code>),之后访问 <code>/myswuser1</code> 就是一个属于你的小站点。它有两套界面,共用同一份代码,可随时切换:</p>
+                <p><strong>经典版</strong>:全屏跑一遍 MySW 副本,顶栏「编辑代码 / AI」打开单文件编辑器,适合「先看效果、再手改几行」。<strong>工作台版</strong>:左边是多会话列表,中间和 AI 对话,右边是文件管理区与实时预览;AI 能直接读写工作区文件(先读后改、局部替换),改完预览会自动热更新,支持上传/拖拽文件、<code>.zip</code> 自动解压与整包导出。切换入口在空间顶栏和设置面板的每个空间一行。</p>
+            </div>
+            <div class='feature-item'>
+                <div class='fi-head'><i class='ri-scissors-cut-line'></i><h4>上下文压缩器</h4></div>
+                <p>聊天顶部的压缩按钮会打开面板,有三种方式:压缩「最近 N 轮」但保留最后 M 轮原文;在消息列表里勾选「第 X 条到第 Y 条」的范围压缩;或一次压缩除最近 M 轮以外的全部历史。压缩后会生成一条摘要消息替代原文,多次压缩时旧摘要会并入新摘要,不会越堆越多。</p>
+            </div>
+            <div class='feature-item'>
+                <div class='fi-head'><i class='ri-stack-line'></i><h4>对话优化(Beta)</h4></div>
+                <p>开启后,较长的角色提示词会被切成小块,每轮只下发与当前话题最相关的几块(默认最多 4 块);提示词较短(默认 600 字以下)时仍整体下发。可以节省 Token,但某些轮次里冷门的设定细节可能不会出现,遇到角色「忘事」时可以关掉它对比。</p>
+            </div>
+            <div class='feature-item'>
+                <div class='fi-head'><i class='ri-database-2-line'></i><h4>缓存优化</h4></div>
+                <p>在「设置 → AI 配置 → 缓存优化」里按站点选择策略。它把系统提示里每轮都会变化的内容(时间戳、随机 ID 等)挪到用户消息里,让前缀尽量保持一致,从而命中服务商的前缀缓存;并按平台(DeepSeek、Kimi、OpenAI、Claude)附加对应参数。默认关闭,关闭时请求与之前完全一致。命中情况可在「界面外观」里查看统计。</p>
+            </div>
+            <div class='feature-item'>
+                <div class='fi-head'><i class='ri-equalizer-2-line'></i><h4>AI 属性调节器</h4></div>
+                <p>在「设置 → AI 配置 → AI 属性调节器」里给角色装一组能拧的旋钮：内置智商、情商、傲娇程度、猫耳大小、猫尾巴长度五项（默认都不启用），也可以新增自定义属性，并改名字、上下限、数值，或用「重置属性」恢复内置五项。每个数值都会被翻成一句人话写进系统提示词——智商 100 是「普通水平，偶尔犯迷糊」，调到 165 就变成「非常聪明，能听出话里的漏洞」。「自动调节」让数值每轮小幅波动，「AI 调节」允许模型在回复末尾用隐藏标记（[[attr:智商=+10]]）改动属性，标记会被自动摘掉，不会出现在气泡里。作用对象可以选全局默认，也可以给单个角色单独一套。效果最终取决于你用的模型，同一组数值换模型可能完全是另一个样子；展开「这段会怎么发出去」能看到真正发出去的原文。</p>
+            </div>
+            <div class='feature-item'>
+                <div class='fi-head'><i class='ri-phone-line'></i><h4>语音 / 视频通话</h4></div>
+                <p>通话界面以全屏打开。视频通话时,AI 形象与你的摄像头画面一大一小,点击画面即可互换主次。视频需要浏览器授予摄像头权限;语音播报的配置方法见 FAQ 中关于 TTS 的说明。音色提示词、<strong>音色克隆</strong>与<strong>音高</strong>在「AI 配置 → 语音合成」里调,<a href="#voice-clone">查看声音工坊说明 →</a></p>
+            </div>
+            <div class='feature-item'>
+                <div class='fi-head'><i class='ri-loader-4-line'></i><h4>自定义加载界面</h4></div>
+                <p>在「实验室 → 自定义加载界面」里上传图片、动图或视频,也可以填网络直链;还能设置副标题、填充方式、最短显示时长和压暗程度。素材保存在本机 IndexedDB 中,单个文件上限 25MB。无论素材是否可用,加载界面最长停留约 6 秒就会自动消失,不会把网站卡在加载中。</p>
+            </div>
+            <div class='feature-item'>
+                <div class='fi-head'><i class='ri-quill-pen-line'></i><h4>站点标识（文字与图标）</h4></div>
+                <p>在「设置 → 界面外观 → 站点标识」里改侧边栏顶部那条「图标 + 短信」：名称最多 16 个字；图标可以在 10 个内置图标里挑一个，也可以填网络图片地址，或者从本地上传（位图等比缩到长边 192px，SVG 保留矢量）。改一下立刻生效并存在本机，自定义的名字不会随界面语言被翻成英文。所有图片都用 contain 铺在原比例里，不会被拉变形。</p>
+            </div>
+            <div class='feature-item'>
+                <div class='fi-head'><i class='ri-image-line'></i><h4>自定义头像框</h4></div>
+                <p>在「设置 → 界面外观 → 自定义头像框」里上传图片或填写网络地址,用缩放、水平、垂直三个滑杆把框对准头像。确认后,聊天消息、角色列表和输入框里的头像都会套上同一个框。单个文件上限 12MB。头像框是覆盖在头像上的一层,不影响头像的点击和右键菜单。</p>
+            </div>
+            <div class='feature-item'>
+                <div class='fi-head'><i class='ri-translate-2'></i><h4>界面语言</h4></div>
+                <p>在「设置 → 更多」里可以在中文和 English 之间切换界面语言。角色卡的人设原文始终保持中文;选择 English 后打开角色卡,可以用你自己配置的 API 把它翻译成英文,中英文并存显示。译文缓存在本机,翻译会消耗你所配置 API 的额度。</p>
+            </div>
+            <div class='feature-item'>
+                <div class='fi-head'><i class='ri-image-2-line'></i><h4>ComfyUI 图像生成(实验室)</h4></div>
+                <p>填写本机 ComfyUI 的服务器地址后,导入 API 格式的 workflow 即可出图,生成的图片会自动附加到当前聊天。导出 workflow 时,需要先在 ComfyUI 中开启开发者模式,再使用「Save (API Format)」保存。</p>
+            </div>
+            <div class='feature-item'>
+                <div class='fi-head'><i class='ri-scales-3-line'></i><h4>Jev 模型(可选)</h4></div>
+                <p>在「设置 → AI 配置 → Jev 模型」里配置。Jev 只做选择和判断,不生成文本,目前用于懒人模式的快捷回复挑选,以及棋局的落子点选择。如果它的置信度不够或请求失败,会自动回到普通模型。不配置它,所有功能照常工作。</p>
+            </div>
+            <div class='feature-item'>
+                <div class='fi-head'><i class='ri-box-3-line'></i><h4>3D 实验室(实验室)</h4></div>
+                <p>导入本机的 glTF 模型后,可以在页面里查看。three.js 相关库按需加载,未开启时不占用首屏资源。</p>
+            </div>
+            <div class='feature-item'>
+                <div class='fi-head'><i class='ri-sword-line'></i><h4>森林冰火人 / 冰火人工坊(实验室)</h4></div>
+                <p>和当前角色合作通关的双人平台解谜,内置三关。冰火人工坊可以自制关卡,并导出成 JS 文件分享。两者默认都不加载:需要先在「设置 → 导入导出 → 加载 JS 文件设置」里勾选并刷新页面,做关卡时要同时勾选两个。</p>
+            </div>
+        </div>
+
+        <h3 id='feature-data'><span class="doc-emoji" aria-hidden="true">💾</span> 数据管理</h3>
+        <p>在「设置 → 导入导出」标签中：</p>
+        <ul>
+            <li><strong>导出设置</strong>：只导出 AI 配置、界面设置等，体积小，适合分享配置模板。</li>
+            <li><strong>导出全部数据</strong>：完整备份（包含聊天记录、角色、知识库等），<em>换设备必用</em>。</li>
+            <li><strong>导入数据</strong>：恢复备份，可选「合并」或「覆盖」。</li>
+            <li><strong>自动备份</strong>：默认开启。关闭网页或刷新前自动导出 JSON 文件到下载目录；默认 30 分钟内最多一次，可在旁边改成 1～1440 分钟。不想自动下载时可以取消勾选。</li>
+            <li><strong>查看存储使用情况</strong>：就在这几个按钮下面，展开后能看清空间都被谁用掉了（见下一节）。</li>
+            <li><strong>加载 JS 文件设置</strong>：再往下，决定网站打开时下载哪些脚本（见下下一节）。</li>
+        </ul>
+
+        <h3 id="feature-storage"><span class="doc-emoji" aria-hidden="true">🧭</span> 查看存储使用情况</h3>
+        <p>位置在「设置 → 导入导出」标签的导入导出按钮<strong>下方</strong>：点「查看存储使用情况」打开面板明细；边上的「重新统计」只重算体积、不重建面板，所以不会把你已经勾选的项清掉，统计期间的瞬时建库也不会留下空壳数据库。</p>
+        <ul>
+            <li><strong>一眼看总量</strong>：顶部进度条与四张卡片给出「浏览器统计的总占用 / 本站可用配额 / IndexedDB 合计 / localStorage 合计」，以及各类缓存（Cache Storage，主要就是离线资源）占了多少。</li>
+            <li><strong>按用途分列</strong>：下面按库分组列出 <code>localStorage</code>、主数据库 <code>MySW_Storage</code>、以及知识库 / 实验室 / 论坛 / 启动画面等独立 <code>IndexedDB</code> 库，每个库再展开到具体条目，条目同时给出「存了哪些 key」。</li>
+            <li><strong>标出「可再生」与「不可再生」</strong>：聊天记录、角色数据、论坛内容、知识库这类删了就回不来的条目会打上红色的「不可再生」标签；提示词分块缓存、折叠状态、商店缓存这类随时能重建的才是「可再生」。</li>
+            <li><strong>两道确认，删不掉聊天记录</strong>：勾选条目后点「清理选中」，可再生项只要确认一次；<em>只要列表里含不可再生项，就必须在弹出的框里手动输入 <code>DELETE</code></em> 才会执行，防止顺手把聊天记录清空。想更保险，可以先把「导出全部数据」存一份再动手。</li>
+            <li><strong>一键清理可再生数据</strong>：一次清掉所有「可再生」条目并顺带清空 Service Worker 缓存刷新页面，绝不会碰不可再生条目。</li>
+        </ul>
+
+        <div class="info-card warn">
+            <div class="info-card-title"><i class="ri-information-line"></i> 关于浏览器存储</div>
+            <p>本应用的数据存储在浏览器的 <code>localStorage</code> 和 <code>IndexedDB</code> 中。这意味着：</p>
+            <ul style="margin: 8px 0 0 20px;">
+                <li>❌ <strong>清除浏览器数据 = 数据全失</strong>。请定期导出备份！</li>
+                <li>❌ 不同浏览器、不同设备、不同浏览器配置文件之间数据<strong>不互通</strong>。</li>
+                <li>✅ 隐身模式下数据不保留（这是浏览器的特性）。</li>
+            </ul>
+        </div>
+
+        <h3 id="feature-switches"><span class="doc-emoji" aria-hidden="true">🎛️</span> 功能开关（按功能关，不用认文件名）</h3>
+        <p>位置在「设置 → 功能开关」。这里把每个 js 模块翻译成一句人话（「广告跳跳乐」「视觉小说模式」「五子棋与围棋」…），
+        直接按功能关，不用去猜哪个文件名对应哪个功能。它和「加载 JS 文件设置」是<b>同一份开关</b>，在哪边改都一样。</p>
+        <ul>
+            <li><strong>三种关掉后的效果</strong>：
+                <ul>
+                    <li><b>独立文件</b>（广告跳跳乐、学习辅导、森林冰火人、AI 直播间…）：刷新后这个 js <b>真的不再下载</b>。</li>
+                    <li><b>同包功能</b>（标着「同包」的，比如视觉小说、好感度、代码高亮）：合并包本身还会下载（别的功能还在用），但这个功能的代码<b>不再运行</b>。</li>
+                    <li><b>核心功能</b>：锁死，只有锁图标，没有开关。</li>
+                </ul>
+            </li>
+            <li><strong>核心为什么锁死</strong>：渲染、对话、设置读写、API 这些是地基。关掉主程序页面就直接白屏；关掉设置读写，你连这个面板都打不开。所以整组显示为「N 项锁死」，点开只能看，不能改。</li>
+            <li><strong>这个面板自己也锁死</strong>：它的宿主是 <code>script-loader.js</code>，标着「面板自身」。真把它关了，你就再也调不回来 —— 所以它永远加载，写进存档也会被忽略。</li>
+            <li><strong>依赖会被锁定</strong>：有些功能要别人配合。比如关掉「视觉小说模式」，「VN Live2D 立绘」就会显示 🔒 并说明原因；关掉「语音合成」，「语音通话」跟着锁。想用就先把被依赖的那项打开、刷新，再回来调。</li>
+            <li><strong>关掉的功能入口会自己解释</strong>：广告、3D、学习辅导这类入口还留在原地，但点下去会弹一句「这个功能被关掉了 · 要恢复：设置 → 功能开关 → 打开 X → 刷新」，不会让你以为按钮坏了。</li>
+            <li><strong>改动即时保存</strong>：这一页没有「保存」按钮，拨动开关就立刻写进本机，页面顶部会出现「刷新后生效」+ 立即刷新。</li>
+        </ul>
+
+        <h3 id="feature-scripts"><span class="doc-emoji" aria-hidden="true">🧩</span> 加载 JS 文件设置</h3>
+        <p>位置在「设置 → 导入导出」，紧挨在「查看存储使用情况」下面。点「加载 JS 文件设置」打开列表面板；边上的「恢复全部加载」一键把所有可关闭的脚本重新打开。</p>
+        <ul>
+            <li><strong>按用途分组</strong>：基础库、核心、增强、实验室、外观。每一行都写着文件名，以及关掉之后具体少掉什么功能。</li>
+            <li><strong>必须加载的锁死</strong>：角色数据、AI 接口、主程序、聊天逻辑、世界书、知识库、设置读写等标着红色「必须加载」，开关是灰的。这些关掉后聊天、角色或设置会直接不可用。</li>
+            <li><strong>可关闭的不影响数据</strong>：代码高亮、ZIP 打包、开屏、语音、插件、视觉小说、3D 实验室、五子棋、好感度等可以单独关掉。关掉只是下次打开时不再下载对应脚本，<em>不会删除</em>聊天记录、角色或已保存的设置。</li>
+            <li><strong>两个快捷按钮</strong>：「全部加载」恢复默认；「只留必须加载」关掉全部可选功能，只保留能正常聊天的那一部分。</li>
+            <li><strong>刷新后才生效</strong>：选择存在本机浏览器里。保存之后点「立即刷新页面」，已经在跑的脚本才会真正卸掉。换设备或清除网站数据后会回到全部加载。</li>
+        </ul>
+
+        <h3 id="feature-refresh"><span class="doc-emoji" aria-hidden="true">🔄</span> 刷新网站</h3>
+        <p>位置在「设置 → 更多」，使用文档和反馈邮箱的上面。从温和到彻底一共四档，<strong>都不会删除聊天记录、角色和设置</strong>（那些存在本机浏览器里，不在离线缓存中）。</p>
+        <ul>
+            <li><strong>1 · 重新加载</strong>：相当于按一下浏览器的刷新键。适合刚改完设置，或界面暂时卡住。</li>
+            <li><strong>2 · 绕过页面缓存</strong>：效果接近电脑上的 Ctrl+F5（Mac 为 Cmd+Shift+R）。地址后面会带一次不重复的标记，强迫浏览器重新要这一页。</li>
+            <li><strong>3 · 清掉离线缓存后重载</strong>：删掉 Service Worker 存下的脚本、样式和图标，再重新下载。手机下拉刷新清不掉旧版本时用这个。清完之后、再次联网之前，离线打开会暂时不可用。</li>
+            <li><strong>4 · 卸载并重新安装</strong>：最彻底。会先确认一次，然后注销离线服务、清空它的全部缓存，再把页面从网络装回来。前三档都没用、页面一直停在坏掉的旧版时再用。</li>
+        </ul>
+        <p>点下去之后按钮会暂时锁住并改成「正在…」，避免连点。这次刷新不会顺带触发自动备份下载，以免下载框把页面刷新挡住。</p>
+
+
+        <hr>
+
+        <h2 id="impatient"><i class="doc-h-ico ri-alarm-warning-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">⏱️</span> 急死我了（AI 催你回话）</h2>
+        <p>默认情况下，你消失三个小时再回来，角色会像什么都没发生一样接着上一句聊下去。<strong>急死我了</strong>专门治这个：它记住「AI 说完那句话之后，你隔了多久才回」，等得越久，下一次回复时角色越坐不住——会催、会阴阳怪气、会来一句「这么久才回我」。</p>
+
+        <div class="info-card tip">
+            <div class="info-card-title"><i class="ri-plug-line"></i> 在哪开</div>
+            <p>它是内置插件，不用下载：在「系统设置 → 插件」里找到「急死我了」，勾上「启用」，改完参数点「保存参数」。关掉之后计时和注入会一起停掉，聊天记录不受影响。</p>
+        </div>
+
+        <h3>它到底做了什么</h3>
+        <ol class="step-list">
+            <li><strong>记时间</strong><span>AI 每说完一条回复，记一个时间点。数据只存在你本机，刷新、关浏览器、隔天再打开都还在。</span></li>
+            <li><strong>算间隔</strong><span>你下一次发消息时，算出中间隔了多久（每段对话单独算，切角色不会串）。</span></li>
+            <li><strong>写进提示词</strong><span>把间隔折算成「烦躁等级 0~4」，往系统提示词末尾追加一小段：你等了多久、此刻该有多急。模型看到的是「等了 12 分钟 · 明显不耐烦」，不是一串秒数。</span></li>
+            <li><strong>说完就归零</strong><span>AI 一开口，计时清空，下次重新算。所以它只影响「你隔了很久才回」的那一条回复。</span></li>
+        </ol>
+
+        <h3>四个参数</h3>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th style="width:22%">参数</th><th style="width:20%">默认</th><th>怎么调</th></tr></thead>
+            <tbody>
+                <tr><td><strong>倍率</strong></td><td><code>1</code></td><td>0.2 ~ 5。<strong>越高越早开始急</strong>：倍率 2 等于所有等待时间减半，倍率 0.2 基本等于永远不急。想整站更黏人，先动它。</td></tr>
+                <tr><td><strong>基准等待（秒）</strong></td><td><code>90</code></td><td>倍率为 1 时，等多少秒才进入「有点等急了」。设 30 就是半分钟开始催，设 600 就是十分钟。</td></tr>
+                <tr><td><strong>含蓄模式</strong></td><td><code>0</code></td><td>填 <code>1</code>：只暗示、不点破，不会出现「你怎么才回我」这种直球。适合冷淡型角色或不想被催得太明显的时候。</td></tr>
+                <tr><td><strong>角色单独系数</strong></td><td>空</td><td>一行一个：<code>雷狮=1.6</code>、<code>银狼=0.5</code>。大于 1 更容易急，小于 1 更沉得住气，写 0.1 基本等于对他关掉这个功能。</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <h3>性格不同，急的程度也不同</h3>
+        <p>同样是等了 10 分钟，急性子和冷淡型不该是一个反应。插件按三级决定「多久才算久」，优先级从高到低：</p>
+        <ul>
+            <li><b>角色单独系数</b>（手写，最优先）：按显示名匹配，写什么就是什么。</li>
+            <li><b>人设关键词</b>：角色设定里出现「急性子 / 暴躁 / 没耐心 / 等不及」这类词会自动抬一档；出现「冷静 / 沉稳 / 慵懒 / 寡言」会自动压一档。写人设时把性格写清楚，这里就不用管了。</li>
+            <li><b>倍率 × 基准等待</b>：全局总开关，所有角色一起变。</li>
+        </ul>
+        <p>换算下来，<em>急性子角色可能一分钟就开始念叨，冷淡型角色要等到十倍时间才有点动静</em>——差异是自动出来的，不用给每个角色单独配。</p>
+
+        <h3>四个烦躁等级</h3>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th style="width:12%">等级</th><th style="width:30%">大致触发（倍率 1 / 基准 90 秒 / 性格系数 1）</th><th>注入给 AI 的意思</th></tr></thead>
+            <tbody>
+                <tr><td><code>0</code></td><td>90 秒以内</td><td>不注入，正常回复。</td></tr>
+                <tr><td><code>1</code></td><td>1.5 ~ 4 分钟</td><td>有点等急了：语气短一点，可以透出一句「你可算回来了」，但不追问。</td></tr>
+                <tr><td><code>2</code></td><td>4 ~ 10 分钟</td><td>明显不耐烦：先问一句刚才在忙什么，可以催、可以有小情绪。</td></tr>
+                <tr><td><code>3</code></td><td>10 ~ 22 分钟</td><td>快没耐心：语气变冷变冲，允许阴阳怪气或直白抱怨。</td></tr>
+                <tr><td><code>4</code></td><td>22 分钟以上</td><td>已经不想等了：冷战、赌气、发火、装作不在意，按人设自己选。</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <h3>输入框上方的小浮标</h3>
+        <p>AI 说完话之后，输入框上方会出现一个小条：<code>已等 3 分 12 秒 · 明显不耐烦</code>，右边四个小格表示当前等级，等级越高颜色越红。它只负责显示，不影响任何发送逻辑。</p>
+        <p>浮标要在「设置 → 插件 → 插件权限」里打开<strong>「直接修改页面」</strong>才会画出来（插件本身不需要任何权限就能工作，只是看不到这个倒计时）。不想看到它就别开这个总闸。</p>
+
+        <div class="info-card warn">
+            <div class="info-card-title"><i class="ri-error-warning-line"></i> 三个预期</div>
+            <p><strong>它是提示词，不是硬逻辑。</strong>模型听不听话、演得多夸张，取决于你用的模型、上下文长度和人设写得多细。同样的等级，Claude 可能给你一段细腻的赌气，小模型可能只是回一句「哦」。</p>
+            <p><strong>不要在角色卡里和它打架。</strong>如果人设里写着「永远温柔耐心、从不催促」，急起来就会很割裂——这时候把「含蓄模式」设成 1，或者把该角色的系数调到 0.5 以下。</p>
+            <p><strong>群聊同样生效。</strong>群里任意一个成员说完话就开始计时，所有人共享同一个间隔。</p>
+        </div>
+
+        <hr>
+
+        <h2 id="plugins"><i class="doc-h-ico ri-plug-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🔌</span> 插件编写指南</h2>
+        <div class="tip">
+            <div class="tip-title">市场里现在有 11 个插件，其中 6 个是「装上就能改善体验」的实用型</div>
+            <p>去<a href="plugin-marketplace.html">插件市场</a>，<strong>把主站开在任意标签页，点卡片上的「一键导入」</strong>——主站会弹出确认框（显示来源、插件标识与它要的权限），确认后就装好了，不用下载也不用找文件。主站没开或换了浏览器时，市场页会在 1.6 秒后自动改为下载 <code>.js</code>，再按老办法从「设置 → 插件 → 导入插件」装。下面是目前的清单：</p>
+            <ul>
+                <li><strong>角色一致性守卫</strong>：拦住「替用户说话 / 替用户行动 / 一句话跳过半天 / 末尾写总结」，规则可逐条编辑（无需权限）。</li>
+                <li><strong>去 AI 味</strong>：去掉「首先其次最后」「作为一个 AI」这类一眼假的句式，三档强度，可单独禁 emoji（无需权限）。</li>
+                <li><strong>回复长度限幅</strong>：把每轮回复卡在指定字数区间，治长篇大论与一句话敷衍（无需权限）。</li>
+                <li><strong>提示词体检</strong>：左下角常驻显示当前提示词的字数、估算 Token 与每轮成本，点开可复制全文（需 <code>useDom</code>）。</li>
+                <li><strong>设定速记本</strong>：随手记「她其实怕黑」这类临时设定，每轮自动注入，不用去改角色卡（需 <code>useDom</code>）。</li>
+                <li><strong>快捷短语板</strong>：常用句存成列表，点一下插进输入框光标处，不会直接发送（需 <code>useDom</code>）。</li>
+            </ul>
+            <p>前三个只改提示词，不需要任何权限；后三个要在「插件权限」里打开「修改界面 / DOM」并给该插件单独授权，按钮才会出现。</p>
+        </div>
+        <div class="tip">
+            <div class="tip-title">写好了想分享？投稿方式</div>
+            <p>插件市场同样<strong>不提供站内上传</strong>：写好的插件请通过 <strong>QQ 群</strong>或<strong>邮箱</strong>投稿给维护者（附上插件 JS 文件和一句话功能说明），审核通过后即可上架。</p>
+        </div>
+        <p>My SW 自带一个轻量插件系统：一个插件就是一个 <code>JavaScript</code> 文件，通过全局对象
+        <code>window.MySWPlugins.register()</code> 注册自己。插件能改你发出去的文字、能给 AI 追加提示词、
+        能在聊天界面里挂一个面板，也能借用你配置的 API 发请求 —— 但每一项都必须你显式授权，插件不能通过受控接口拿到 Key。</p>
+
+        <div class="info-card tip">
+            <div class="info-card-title"><i class="ri-shield-check-line"></i> 先看安全模型</div>
+            <p>导入的插件默认跑在<b>受限沙箱</b>里：代码里拿不到 <code>document</code>、<code>window</code>、
+            <code>localStorage</code>、<code>fetch</code>，只能用下面列出的受控通道。要什么能力，你在
+            「设置 → 插件 → 插件权限」里逐项开。默认全部关闭。</p>
+        </div>
+
+        <h3 id="plugin-permissions">权限与沙箱：插件到底能碰什么</h3>
+        <p>权限拆成了 8 项，每项都写清楚「开了会怎样」。插件要用的能力要在 <code>permissions</code> 里声明，
+        你在权限面板里开总闸，再在插件卡片上决定要不要单独授给它。</p>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th>权限</th><th>插件能做什么</th><th>说明</th></tr></thead>
+            <tbody>
+                <tr><td><code>ui</code></td><td>加按钮 / 悬浮面板 / 确认框</td><td>推荐的界面方式：插件只描述「要一个按钮」，元素由系统创建，卸载时自动清理。插件碰不到页面 DOM。</td></tr>
+                <tr><td><code>dom</code></td><td>直接改页面元素和样式</td><td>高风险。老插件（悬浮小窗口那类）需要它；写错可能把界面弄乱。关闭时会清掉插件插进去的元素。</td></tr>
+                <tr><td><code>chatRead</code></td><td>读取当前对话内容</td><td>只读。开了它，插件就能看到你和角色聊了什么。</td></tr>
+                <tr><td><code>chatWrite</code></td><td>往对话里插入 / 修改消息</td><td>会影响之后发给 AI 的上下文，属于高风险项。</td></tr>
+                <tr><td><code>storage</code></td><td>读写插件自己的存储</td><td>命名空间隔离（<code>pluginData:&lt;插件id&gt;:</code>），单插件上限 64KB，看不到站点数据。</td></tr>
+                <tr><td><code>api</code></td><td>借用「AI 配置」里的接口</td><td>可能产生 token 费用；插件拿不到 Key 明文，只能走受控方法。</td></tr>
+                <tr><td><code>network</code></td><td>访问任意 http/https 地址</td><td>高风险。开了它，插件可以把数据发到外部服务器。</td></tr>
+                <tr><td><code>download</code></td><td>触发下载</td><td>导出插件产生的数据。</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <p>除了权限，插件卡片上还有两个东西值得看：</p>
+        <ul style="margin:0 0 0 20px;">
+            <li><b>代码体检</b>：注册时静态扫一遍源码，发现「用到了 <code>localStorage</code> / <code>fetch</code> / <code>document</code>
+            但没声明对应权限」就标黄提醒。它看不出插件想干什么，但能告诉你它碰了什么。</li>
+            <li><b>调用记录</b>：插件每次走受控通道（读对话、写对话、联网、下载、存储）都会记一笔，
+            在卡片上展开就能看「谁、什么时候、调了什么」。只存在内存里，刷新即清空。</li>
+        </ul>
+        <p style="font-size:.9em;color:#999;">需要说明的是：沙箱能挡住插件的<b>误用</b>和顺手越权，但它不是浏览器级隔离——
+        恶意代码仍可能用 <code>eval</code> 之类的手段绕出去。所以最实际的防线还是：<b>别装来路不明的插件</b>。</p>
+
+        <h3 id="plugin-quickstart">最小可用插件</h3>
+        <p>新建一个 <code>.js</code> 文件，内容如下，然后在「设置 → 插件」里把这个文件导入即可：</p>
+        <pre><code>// hello-plugin.js
+MySWPlugins.register({
+    id: 'hello-shout',
+    name: '喊话器',
+    description: '把你发出的每条消息都变成全大写（英文）并在结尾加感叹号。',
+    permissions: [],           // 只做文本变换，不需要任何权限
+    params: [
+        { key: 'mark', label: '结尾标记', type: 'text', value: '！' }
+    ],
+    // 文本变换钩子：用户按发送 → 先过这里 → 再存进聊天记录并发给 AI
+    transformText(text, params) {
+        const mark = String(params.mark || '！');
+        const upper = String(text || '').toUpperCase();
+        return upper.endsWith(mark) ? upper : upper + mark;
+    }
+});</code></pre>
+        <p>保存后导入，插件会出现在列表里但默认是<strong>未启用</strong>状态，勾上「启用」才开始生效。</p>
+
+        <h3 id="plugin-register">register() 的字段</h3>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th>字段</th><th>类型</th><th>说明</th></tr></thead>
+            <tbody>
+                <tr><td><code>id</code></td><td>string</td><td><strong>必填</strong>。唯一标识，重复注册时后者覆盖前者。建议用短横线小写，如 <code>my-weather</code>。</td></tr>
+                <tr><td><code>name</code></td><td>string</td><td><strong>必填</strong>。显示在插件卡片上的名字。</td></tr>
+                <tr><td><code>description</code></td><td>string</td><td>一句话说明，会显示在卡片上。</td></tr>
+                <tr><td><code>permissions</code></td><td>string[]</td><td>声明需要的权限，取值只能是 <code>'useApi'</code> 与 <code>'useDom'</code>。不写会被保守视为需要 <code>useDom</code>。</td></tr>
+                <tr><td><code>params</code></td><td>object[]</td><td>可编辑参数，每项形如 <code>{ key, label, type, value, min, max }</code>。类型支持 <code>text</code> / <code>number</code> / <code>textarea</code>（长文本，如提示词）。</td></tr>
+                <tr><td><code>enabled</code></td><td>boolean</td><td>初始启用状态。建议写 <code>false</code>，让用户自己决定何时开启。</td></tr>
+                <tr><td><code>activate(params, plugin, ctx)</code></td><td>function</td><td>插件被启用时调用。返回的 DOM 请通过 <code>ctx.dom.mount()</code> 挂载，系统才能统一回收。</td></tr>
+                <tr><td><code>deactivate(params, plugin)</code></td><td>function</td><td>插件被停用或权限被收回时调用。必须在这里清理自己插入的元素，否则界面会留残影。</td></tr>
+                <tr><td><code>transformText(text, params)</code></td><td>function</td><td>钩子一：改写用户发出的文本，返回新字符串。</td></tr>
+                <tr><td><code>transformPrompt(text, params)</code></td><td>function</td><td>钩子二：改写最终下发给 AI 的系统提示词，返回新字符串。</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <h3 id="plugin-perms">权限系统（两级授权）</h3>
+        <p>权限只有在<strong>总开关</strong>与<strong>该插件的独立授权</strong>同时打开时才生效，两者是 AND 关系。</p>
+        <ul>
+            <li><strong>总开关</strong>：设置 → 插件 → 插件权限。默认关闭，关掉即对所有插件生效。</li>
+            <li><strong>插件授权</strong>：每个插件卡片上的勾选框，默认已勾选 —— 所以你只需要拨一次总闸，插件立即可用；想只信任某一个插件时，把其它插件的授权单独收回即可。</li>
+        </ul>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th>权限</th><th>能做什么</th><th>明确不能做什么</th></tr></thead>
+            <tbody>
+                <tr><td><code>useApi</code></td><td>通过 <code>ctx.api.chat()</code> 借用你的接口发请求；可读模型名与端点域名。</td><td>拿不到 <code>apiKey</code> 明文；不能读你的聊天记录。</td></tr>
+                <tr><td><code>useDom</code></td><td>把元素挂到聊天界面；读取页面元素。</td><td>关闭权限或停用插件时，系统会强制移除它挂过的所有节点。</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <p>插件内部可用 <code>MySWPlugins.hasPermission('useApi')</code> 查总开关，用
+        <code>MySWPlugins.canPluginUse('my-id', 'useDom')</code> 查最终生效结果，做优雅降级而不是直接抛错。</p>
+
+        <h3 id="plugin-hooks">四种钩子：什么时候会被调用</h3>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th>钩子</th><th>触发时机</th><th>用途</th></tr></thead>
+            <tbody>
+                <tr><td><code>activate</code></td><td>启用插件、或权限刚被授予时</td><td>挂面板、启动定时器</td></tr>
+                <tr><td><code>deactivate</code></td><td>停用插件、权限被收回、删除插件时</td><td>清元素、清定时器</td></tr>
+                <tr><td><code>transformText</code></td><td>你按发送之后、消息入库之前（单聊与群聊都会走）</td><td>加口癖、做文本替换、敏感词处理</td></tr>
+                <tr><td><code>transformPrompt</code></td><td>系统提示词拼好之后（世界书 / 记忆 / 时间之后，表情包说明之前）</td><td>追加扮演指令、风格约束</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <div class="info-card warn">
+            <div class="info-card-title"><i class="ri-error-warning-line"></i> 钩子必须幂等</div>
+            <p><code>transformPrompt</code> 在一轮对话里可能被多次调用，而重发、重新生成也会再走一遍。
+            追加内容前请先判断是否已包含，否则提示词会越叠越长：</p>
+            <pre><code>transformPrompt(text, params) {
+    const extra = String(params.prompt || '').trim();
+    if (!extra) return text;
+    const base = String(text || '');
+    if (base.includes(extra)) return base;   // 幂等：只追加一次
+    return base + '\n\n' + extra;
+}</code></pre>
+        </div>
+        <p>任何钩子里抛出的异常都会被捕获并记录到控制台，<strong>不会影响正常对话</strong> —— 单个插件写崩了最多是自己不生效。</p>
+
+        <h3 id="plugin-api">受控 API 通道：借用接口但不接触密钥</h3>
+        <p><code>ctx.api</code> 是唯一允许插件发起模型请求的入口，每次调用都会实时校验权限，你在设置里一关就立刻失效。</p>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th>成员</th><th>说明</th></tr></thead>
+            <tbody>
+                <tr><td><code>ctx.api.available</code></td><td>boolean，权限是否可用且接口已配置。推荐先用它做降级判断，而不是捕获异常。</td></tr>
+                <tr><td><code>ctx.api.getInfo()</code></td><td>返回 <code>{ model, hasKey, endpoint }</code>，其中 <code>endpoint</code> 只有域名，用于显示「正在使用 xxx」。</td></tr>
+                <tr><td><code>await ctx.api.chat(messages, overrides)</code></td><td>一次性补全，直接返回字符串。适合翻译、摘要、分类等场景。</td></tr>
+                <tr><td><code>await ctx.api.fetchChat(messages, overrides)</code></td><td>返回原始 <code>Response</code>，需要流式或自解析时使用。</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <pre><code>async activate(params, plugin, ctx) {
+    if (!ctx.api.available) {
+        // 没授权 / 没配置接口 → 优雅降级，别报错吓用户
+        ctx.toast('本插件需要「使用 API 配置」权限');
+        return;
+    }
+    const info = ctx.api.getInfo();
+    console.log('使用模型：', info.model, '端点：', info.endpoint);
+
+    const answer = await ctx.api.chat([
+        { role: 'system', content: '你是一个简洁的翻译助手，只输出译文。' },
+        { role: 'user', content: '把下面这句话译成英文：今天天气不错。' }
+    ], { max_tokens: 200 });
+    console.log(answer);
+}</code></pre>
+
+        <h3 id="plugin-dom">受控 DOM 通道：挂界面能被统一回收</h3>
+        <p>不要直接 <code>document.body.appendChild()</code>。用 <code>ctx.dom.mount(node, container)</code> 挂载，
+        系统会登记这个节点，在插件停用或权限被收回时自动移除，界面能干净复原。</p>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th>成员</th><th>说明</th></tr></thead>
+            <tbody>
+                <tr><td><code>ctx.dom.available</code></td><td>boolean，是否有界面权限。</td></tr>
+                <tr><td><code>ctx.dom.mount(node, container)</code></td><td>把元素挂到 <code>container</code>（默认聊天区 <code>#chat-area</code>）并登记。</td></tr>
+                <tr><td><code>ctx.dom.unmountAll()</code></td><td>立即移除本插件挂过的全部元素。</td></tr>
+                <tr><td><code>ctx.toast(message)</code></td><td>弹出应用内提示，比自己写 alert 体面得多。</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <pre><code>permissions: ['useDom'],
+
+activate(params, plugin, ctx) {
+    if (!ctx.dom.available) return;
+    if (document.getElementById('my-clock-panel')) return;  // 幂等：避免重复挂载
+
+    const panel = document.createElement('div');
+    panel.id = 'my-clock-panel';
+    panel.style.cssText = 'position:absolute;right:16px;top:16px;padding:8px 12px;border-radius:10px;' +
+                          'background:rgba(20,22,30,.86);border:1px solid rgba(230,199,138,.4);color:#e6c78a;font-size:.82rem;z-index:20';
+    panel.textContent = new Date().toLocaleTimeString();
+
+    const timer = setInterval(() => { panel.textContent = new Date().toLocaleTimeString(); }, 1000);
+    panel._timer = timer;
+
+    ctx.dom.mount(panel);              // 交给系统登记，停用时会被自动移除
+},
+deactivate() {
+    // 定时器必须自己清：系统只负责移除元素，不会管你开的计时器
+    const panel = document.getElementById('my-clock-panel');
+    if (panel?._timer) clearInterval(panel._timer);
+}</code></pre>
+
+        <h3 id="plugin-assets">ZIP 插件包资源（ctx.assets）</h3>
+        <p>ZIP 导入的插件可以带自己的资源文件。除了约定的 <code>style.css</code> 会自动注入（受「界面」权限管），其余资源都是惰性数据，插件在运行时用 <code>ctx.assets</code> 按相对路径读取自己名下的文件（不带插件文件夹前缀）：</p>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th>方法</th><th>返回</th><th>说明</th></tr></thead>
+            <tbody>
+                <tr><td><code>await ctx.assets.list()</code></td><td>string[]</td><td>自己名下全部资源路径，如 <code>['style.css', 'assets/logo.png', 'data/words.json']</code>。</td></tr>
+                <tr><td><code>await ctx.assets.getText(path)</code></td><td>string | null</td><td>读文本资源（json / css / md / txt / csv / xml / html），没有时返回 <code>null</code>。</td></tr>
+                <tr><td><code>await ctx.assets.getUrl(path)</code></td><td>string | null</td><td>读二进制资源（图片 / 字体 / 音频等），返回 Object URL（可直接塞进 <code>img.src</code>），没有时返回 <code>null</code>。</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <p>安全边界：资源在导入时就经过类型与体积检查（单文件 512KB、单插件总量 4MB），只存不执行；<code>getUrl</code> 给的是本地 blob 链接，不产生网络请求。删除插件时资源一并删除。</p>
+
+        <h3 id="plugin-import">导入、调试与本地存储</h3>
+        <ul>
+            <li><strong>导入</strong>：设置 → 插件 → 「导入插件」，选择一个 <code>.js</code> 文件，或一个 <strong>ZIP 插件包</strong>（可一次导入多个插件，见下条）。文件内容会被包进 <code>new Function('MySWPlugins', code)</code> 执行，因此插件里<strong>必须</strong>用全局的 <code>MySWPlugins.register()</code> 注册，而不是 ES 模块的 <code>export</code>。</li>
+            <li><strong>ZIP 插件包</strong>：压缩包里每个插件一个文件夹，文件夹里放一个含 <code>MySWPlugins.register(...)</code> 的 <code>.js</code> 入口（文件名随意）；可选 <code>style.css</code>（插件启用且有「界面」权限时自动注入，关闭时自动移除）；其余文件作为<strong>惰性资源</strong>供插件的 <code>ctx.assets.getText(path) / ctx.assets.getUrl(path) / ctx.assets.list()</code> 读取。导入时会列出包里找到的所有插件，勾选要装哪几个；与已安装插件同 id 时标记「覆盖已安装」，覆盖会保留你原来的开关、授权与参数。直接把单个 <code>.js</code> 放在压缩包根目录也可以。</li>
+            <li><strong>ZIP 包的安全边界</strong>：只有通过 <code>register</code> 闸门的入口 <code>.js</code> 会被执行（和单文件导入同一标准）；其余文件永远只当数据存进 IndexedDB，<strong>不会被执行</strong>、不会被注入成脚本或样式表（<code>style.css</code> 除外，且受「界面」权限管）；嵌套压缩包、可执行扩展名、含 <code>../</code> 或绝对路径的条目一律拒绝；文件数量与体积设多重上限防 zip 炸弹。</li>
+            <li><strong>持久化</strong>：导入的插件源码与参数存在 <code>localStorage</code> 的 <code>mySWPlugins</code> 里，ZIP 附带的资源存在 IndexedDB 的 <code>myswPluginAssets</code> 库里；刷新后自动重新加载，删除插件时源码与资源一并清除。</li>
+            <li><strong>参数</strong>：参数值存在插件记录里，改完要点卡片上的「保存参数」。读取时通过钩子的 <code>params</code> 参数拿到，不要自己去读 <code>localStorage</code>。</li>
+            <li><strong>调试</strong>：用 <code>console.log</code> 输出到浏览器控制台；钩子里的异常会以 <code>[插件名] xxx 失败</code> 的形式打印警告，直接搜索插件名就能定位。</li>
+            <li><strong>排查顺序</strong>：插件不生效时，先看卡片上有没有黄色提示条（说明权限没给全），再看控制台有没有报错，最后确认 <code>id</code> 是否与已有插件重复。</li>
+            <li><strong>导出</strong>：自己导入、或用 AI 写好再导入的插件，卡片上有「导出」。它导出的是当初保存下来的源码，不是运行后的状态。</li>
+        </ul>
+
+        <h3 id="plugin-ai">用 AI 编写插件</h3>
+        <p>位置在「设置 → 插件」，导入按钮下面有一块默认收起的折叠板「用 AI 编写插件」。</p>
+        <ul>
+            <li><strong>模型</strong>：模型框留空就用当前聊天模型；填了名字则固定用这个模型，不再跟着站点切换。</li>
+            <li><strong>怎么写</strong>：用一句话描述想要的效果，点「生成插件」。代码先出现在文本框里，可以手改。</li>
+            <li><strong>确认再导入</strong>：看过代码后点「导入到 MySW」。插件进入下面的列表，默认不启用，需要的权限仍要你自己开。</li>
+            <li><strong>导出</strong>：文本框里的代码可以直接「导出 JS」；已经导入的插件，在它自己的卡片上也能导出。</li>
+        </ul>
+        <div class="info-card warn">
+            <div class="info-card-title"><i class="ri-error-warning-line"></i> AI 写的插件也要看一眼</div>
+            <p>生成结果和手写插件的权限完全一样。导入前确认它只做了你要求的事，尤其是声明了 <code>useApi</code> 或 <code>useDom</code> 的时候。</p>
+        </div>
+
+        <h3 id="plugin-builtin">自带的插件一览</h3>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th style="width:30%">插件</th><th>打开之后</th></tr></thead>
+            <tbody>
+                <tr><td><strong>急死我了</strong></td><td>记住 AI 说完话之后你隔了多久才回，等得越久越不耐烦，下一次回话时会把情绪带进去。倍率、基准时间、性格系数都能调。<a href="#impatient">详见专章</a>。</td></tr>
+                <tr><td>才不是猫娘喵</td><td>在你发出去的消息标点前和结尾加上「喵」，语气词可改。</td></tr>
+                <tr><td>你也是猫娘喵</td><td>给 AI 的系统提示词追加一段猫娘扮演指令，角色会带一点猫娘语气。关掉即恢复，不改角色卡。</td></tr>
+                <tr><td>猫娘MySW？</td><td>只在功能介绍、说明文字后面加「喵」，不改聊天记录、输入框和按钮。需要「修改界面 / DOM」权限。</td></tr>
+                <tr><td>一键全猫娘！</td><td>一次启用上面三个。关掉它只关自己，另外三个保持原样。</td></tr>
+                <tr><td>上下文压缩器</td><td>聊天头部多一个「压缩上下文」按钮，把一长段历史压成一条摘要，省 token。需要 API + 界面权限。</td></tr>
+                <tr><td>身份互换</td><td>你和 AI 的身份对调：显示位置、头像、昵称全部颠倒，AI 改为扮演你。群聊不生效。</td></tr>
+                <tr><td>聊天有个雷霆小窗口</td><td>在聊天界面挂一个可拖动的悬浮网页窗口，网址自填。需要「修改界面 / DOM」权限。</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <p>除「急死我了」与「身份互换」外，其余插件都需要在「设置 → 插件 → 插件权限」里先打开对应总开关才会运行。关掉插件不会删除聊天记录，也不会改角色卡。</p>
+
+        <h3 id="plugin-examples">完整示例：两个可直接用的插件</h3>
+        <p><strong>示例一：翻译按钮</strong>（API + DOM 权限，把最后一条 AI 回复译成中文并弹出来）</p>
+        <pre><code>MySWPlugins.register({
+    id: 'quick-translate',
+    name: '一键翻译',
+    description: '在聊天界面加一个悬浮按钮，把最后一条 AI 回复翻译成中文。',
+    enabled: false,
+    permissions: ['useApi', 'useDom'],
+    params: [
+        { key: 'target', label: '目标语言', type: 'text', value: '简体中文' }
+    ],
+    activate(params, plugin, ctx) {
+        if (!ctx.dom.available) return;
+        if (document.getElementById('quick-translate-btn')) return;
+
+        const btn = document.createElement('button');
+        btn.id = 'quick-translate-btn';
+        btn.type = 'button';
+        btn.textContent = '译';
+        btn.title = '翻译最后一条 AI 回复';
+        btn.style.cssText = 'position:absolute;left:16px;bottom:88px;width:40px;height:40px;border-radius:50%;' +
+                            'border:1px solid rgba(230,199,138,.5);background:rgba(20,22,30,.9);color:#e6c78a;' +
+                            'cursor:pointer;z-index:20;font-size:1rem';
+
+        btn.addEventListener('click', async () => {
+            if (!ctx.api.available) { ctx.toast('需要「使用 API 配置」权限'); return; }
+
+            // 取最后一条 AI 消息（.message.other 里的气泡文本）
+            const bubbles = document.querySelectorAll('#chat-messages .message.other .bubble');
+            const last = bubbles[bubbles.length - 1];
+            const source = last ? last.innerText.trim() : '';
+            if (!source) { ctx.toast('还没找到可翻译的 AI 回复'); return; }
+
+            btn.disabled = true;
+            btn.textContent = '…';
+            try {
+                const target = String(params.target || '简体中文');
+                const result = await ctx.api.chat([
+                    { role: 'system', content: '你是翻译引擎，只输出译文本身，不要任何解释。' },
+                    { role: 'user', content: '把下面内容翻译成' + target + '：\n' + source.slice(0, 2000) }
+                ], { max_tokens: 800 });
+                ctx.toast('译文已输出到控制台');
+                console.log('[一键翻译]\n' + result);
+            } catch (e) {
+                ctx.toast('翻译失败：' + (e.message || e));
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '译';
+            }
+        });
+
+        ctx.dom.mount(btn);
+    },
+    deactivate() { /* mount 过的节点由系统统一回收 */ }
+});</code></pre>
+
+        <p><strong>示例二：风格约束器</strong>（零权限，纯提示词注入）</p>
+        <pre><code>MySWPlugins.register({
+    id: 'style-guard',
+    name: '回复风格约束',
+    description: '给 AI 追加一条固定规则，比如「每次回复不超过 3 句话」。',
+    enabled: false,
+    permissions: [],           // 纯提示词变换，不需要授权
+    params: [
+        {
+            key: 'rule',
+            label: '要追加的规则',
+            type: 'textarea',
+            value: '【风格约束】请把每次回复控制在 3 句话以内，不要分点罗列，不要输出 Markdown 标题。'
+        }
+    ],
+    transformPrompt(text, params) {
+        const rule = String(params.rule || '').trim();
+        if (!rule) return text;
+        const base = String(text || '');
+        if (base.includes(rule)) return base;   // 幂等
+        return base + '\n\n' + rule;
+    }
+});</code></pre>
+
+        <div class="info-card success">
+            <div class="info-card-title"><i class="ri-lightbulb-line"></i> 写好插件的三条经验</div>
+            <ul style="margin: 8px 0 0 20px;">
+                <li><strong>声明最小权限</strong>：纯文本钩子不需要任何权限，就别写 <code>permissions</code>（未声明会被当成需要 DOM）。</li>
+                <li><strong>一切都是异步的</strong>：<code>activate</code> 与所有钩子都可能被并发调用，加实例标记做幂等，别让同一个面板挂两次。</li>
+                <li><strong>不假设 DOM 永远存在</strong>：用户可能切走角色、清空聊天、切到视觉小说模式，取元素时统一用可选链。</li>
+            </ul>
+        </div>
+
+        <hr>
+
+        <h2 id="ad-lab"><i class="doc-h-ico ri-tv-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">📺</span> 广告跳跳乐（实验室）</h2>
+        <p>在「设置 → 实验室 → 广告跳跳乐」开启的<b>模拟广告</b>体验：开屏、摇一摇、弹窗、banner、浮标、内容广告六种形式，
+        广告内容全部由你自己配置（文字 + 图片/视频素材），不接任何广告联盟、不上报任何数据、素材只存本机。</p>
+        <div class="info-card warn">
+            <div class="info-card-title"><i class="ri-error-warning-line"></i> 它不是广告</div>
+            <p>所有模拟广告上都会带一行小字标注：<b>「实验室模拟广告 · 你自己开的 · 不是 MySW 在圈钱」</b>。这个功能纯属好玩/自嘲/整活，与真实的广告投放没有任何关系。</p>
+        </div>
+        <h4>能配什么</h4>
+        <ul>
+            <li><strong>生效的广告形式</strong>：开屏（打开页面来一下）/ 摇一摇（手机重力传感器触发，桌面端可在管理面板手动测试）/ 弹窗（进页面一段时间后弹一次，间隔可调）/ banner（页面顶部横幅）/ 浮标（右下角 AD 小浮标，点开展开）/ <strong>内容广告</strong>（混进内容流，见下）。</li>
+            <li><strong>生效场景</strong>：主站（聊天 / 实验室 / 学习辅导）、论坛、文档、角色市场 / 插件市场，逐个勾选。默认四个页面全开 —— 若只在主站勾上，去论坛或插件市场会觉得「开了广告却什么都没有」。</li>
+            <li><strong>内容广告</strong>：不浮在页面之上，而是像一条真实内容那样插进列表里，每页只插一条，带金色「广告」角标和虚线边框（一眼能看出不是真内容）。插入位置按页面语境决定：
+                <ul>
+                    <li>论坛 → 帖子列表中间（第二条帖子之后）</li>
+                    <li>主站聊天 → 消息流里（第一条消息之后）</li>
+                    <li>文档 → 章节之间（第二个 h2 之前）</li>
+                    <li>插件市场 → 插件网格里（第三张卡片之后）</li>
+                </ul>
+                列表是 JS 渲染的，所以广告会在列表出现后几秒内补进去：前 20 秒每 400ms 查一次，之后每 3 秒查一次，最多守 8 分钟。列表一直是空的（新会话、空论坛、筛选后没结果）时会插在容器最前面，不会因为「没有锚点」就什么都不显示。
+                论坛切分类、插件市场换筛选会把列表整个重绘，广告被冲掉后会自动补回来（用户自己点 × 关掉的不补，最多补 12 次）。</li>
+            <li><strong>广告内容</strong>：想加几条加几条。每条可填标题与文字、上传一张图片（≤5MB）或一段视频（≤30MB）。</li>
+            <li><strong>一条广告出现在哪些形式里</strong>：每条广告单独勾「会出现在」哪些形式 —— 同一张图可以同时用于开屏和 banner，互不冲突。</li>
+            <li><strong>生效场景 per 广告</strong>：每条广告还可以单独限定只在某些场景出现（比如只在论坛弹）。</li>
+            <li><strong>播放顺序</strong>：随机，或按列表依次轮播（列表可上移/下移调整顺序）。</li>
+            <li><strong>关闭按钮大小</strong>：预设小 18px / 中 26px / 大 38px，也可以直接填任意 px（6 ~ 180）盖过预设，对开屏、弹窗、banner、内容广告统一生效。</li>
+            <li><strong>弹窗间隔</strong>：5 ~ 3600 秒。弹窗每次打开页面只会自动弹一次，不刷屏。</li>
+        </ul>
+        <h4>流氓设置（阴阳国软）</h4>
+        <p>一组照着某些国产 App 祖传手艺做的开关，<b>默认全关</b>，只作用于你自己配的模拟广告。想体验被恶心是什么感觉，勾上就行：</p>
+        <ul>
+            <li><strong>迷惑 ×</strong>：广告角上多出 1~6 个大 ×，全是假的。点假 × 有三种反应：提示「关闭失败，请稍后再试」／毫无反应／再给你推一条。真 × 可以选「缩成一粒灰」，最多 14px、半透明，缩在右下角（自定义尺寸填得更小就按更小的来）。</li>
+            <li><strong>不感兴趣</strong>：广告上出现「不感兴趣」按钮。点完之后有两种算法：
+                <ul>
+                    <li><b>推荐更多这类</b>（默认，B 站式）：每点一次，这条广告被抽中的权重 ×5，而且关掉 2.6 秒后自己弹回来 —— 越点越推。</li>
+                    <li><b>减少这类</b>：正常人的做法，权重按 1/(1+点击次数) 衰减，关掉就真关掉。</li>
+                </ul>
+                点过的次数会记在广告上，管理面板里能看到「👎N」。</li>
+            <li><strong>广告标识</strong>：可以整个关掉（广告上就再也没有「广告」两个字了），也可以改字号（8~24px）和文字内容。<b>底部那行「实验室模拟广告 · 你自己开的 · 不是 MySW 在圈钱」不受影响，永远在。</b></li>
+            <li><strong>假头发丝</strong>：屏幕上常驻 1~6 根半透明发丝，模拟「屏幕脏了」的错觉。鼠标从旁边划过去，它会被拨开、松手再弹回原位，但永远擦不掉 —— 你就是会忍不住去擦。浓度可选淡 / 中 / 浓。<b>它是固定层 + SVG，不吃任何指针事件</b>，不挡点击、不挡输入，也不占额外存储。</li>
+            <li><strong>跳转套娃</strong>：点掉一个弹窗，70 毫秒后原地又冒一个。× 每层小 3px、位置还乱偏；默认第 4 层放行，勾「真的无限」会一直套下去（第 12 层强制放行，免得真把你锁死在页面里）。<b>任何时刻按 Esc 一次性全关掉。</b></li>
+            <li><strong>评论区 / 水军</strong>（每条广告单独设）：给广告挂一个评论区，显示一个几千条的假总数。开启「放水军」后才会有内容，水军数量 1~12 条，话术可以自己填（每行一条），留空就用内置那套（已经买了孩子很喜欢 / 蹲个链接 / 我妈用了都说好 ……）。不开放水军时评论区显示「还没有评论，来抢沙发」。</li>
+        </ul>
+        <p>水军是<b>纯前端随机拼装</b>的：昵称由两段词根组合，正文从话术池里抽，头像是一个随机色圆形。不调用任何模型、不消耗 token —— 没人想边被折磨边烧钱。「换一批」就是重新抽一遍。</p>
+        <h4>数据与开关</h4>
+        <ul>
+            <li>配置存 <code>localStorage</code> 的 <code>mySWLabAdsConfig</code>；图片/视频以原始文件存 IndexedDB 的 <code>myswLabAds</code> 库，删广告时素材一并删除。</li>
+            <li>引擎是独立的 <code>ad-lab.js</code>，主站 / 论坛 / 文档 / 角色市场 / 插件市场各页面都会引用；<b>功能关闭时它什么也不做</b>，不注入任何东西。</li>
+            <li>摇一摇依赖 <code>devicemotion</code>：iOS 需要在管理面板触发一次授权；桌面没有传感器就不会触发，用「立即摇一摇」按钮测试。触发有 8 秒节流。</li>
+            <li><strong>开了却看不到广告？</strong>点管理面板左下角的「诊断」，它会列出当前页面识别成哪个场景、每一页形式开关、该形式下有几条可用广告、内容广告的锚点找到了几个。哪一行是 <code>×</code> 就是卡在哪一步。九成情况是「形式开了，但没有广告勾这个形式」或者「该广告的生效场景没包含这一页」。</li>
+        </ul>
+
+        <hr>
+
+        <h2 id="affinity"><i class="doc-h-ico ri-heart-3-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">💗</span> 好感度系统（实验室）</h2>
+        <p>在「设置 → 实验室 → 好感度」开启后，每个角色会单独拥有一条情感进度条。它的作用不只是显示一个数字：
+        系统会把<strong>当前阶段对应的相处准则</strong>一并写进发给 AI 的提示词，因此好感度越高，角色确实会对你更亲近、也更愿意接受更深入的互动。</p>
+
+        <h4>它是怎么涨的</h4>
+        <p>每完成一轮有效互动（你发出消息 → 角色成功回复）结算一次，计算公式为：</p>
+        <pre><code>本轮增量 = (基础增量 + 随机浮动 × random) × 档位衰减^当前档位序号 × 角色倍率
+然后再受「每人每日上限」与「同一角色冷却时间」限制</code></pre>
+        <ul>
+            <li><strong>基础增量</strong>：每轮固定加多少，默认 2。</li>
+            <li><strong>随机浮动</strong>：额外随机加 0 ~ 该值，让进度有一点起伏。</li>
+            <li><strong>档位衰减</strong>：默认 0.85。档位越高涨得越慢 —— 调小它会让后期更难涨（更耐玩），调成 1 则每档速度一致。</li>
+            <li><strong>每日上限</strong>：防止一口气刷满。设为 0 即不限制。</li>
+            <li><strong>冷却时间</strong>：同一角色多久内只结算一次，默认 45 秒。</li>
+            <li><strong>自然衰减</strong>：长期不聊会慢慢变淡。默认「1 天不聊后每天掉 1 点」，调成 0 即可完全关闭衰减。</li>
+            <li><strong>角色倍率</strong>：只想让某个角色涨快或涨慢时，单独给它设 0.1 ~ 3 的倍率。</li>
+        </ul>
+
+        <h4>档位与相处准则</h4>
+        <p>默认提供五个档位（初识 / 熟识 / 亲近 / 亲密 / 挚爱），每个档位都可以自己改名、改起始值、改准则文本：</p>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th>档位</th><th>默认起始值</th><th>默认准则大意</th></tr></thead>
+            <tbody>
+                <tr><td>初识</td><td>0</td><td>礼貌、克制、有距离感，越界的请求会自然婉拒</td></tr>
+                <tr><td>熟识</td><td>20</td><td>可以开玩笑聊日常，暧昧话题上会害羞、打岔</td></tr>
+                <tr><td>亲近</td><td>45</td><td>重要朋友，主动关心、更亲昵的称呼、更放松的内容</td></tr>
+                <tr><td>亲密</td><td>70</td><td>明显越过普通朋友，允许暧昧与肢体亲近的描写</td></tr>
+                <tr><td>挚爱</td><td>90</td><td>可以放下掩饰主动表达爱意，但仍保留角色本身的性格与底线</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <p>建议在准则里写清楚<strong>这个阶段允许到什么程度</strong>。写得太笼统，角色可能一上来就越界；写得太保守，则会永远停在最拘谨的状态。
+        准则会随对话动态下发，所以改完保存，下一轮对话立刻生效。</p>
+
+        <h4>查看与管理</h4>
+        <ul>
+            <li>聊天界面角色名字旁会显示一枚心形徽标：数字是当前好感度，长按或点击可打开进度面板。</li>
+            <li>面板里可以查看每个角色的进度与最近 10 条变化记录，也能手动 ±5 或重置。</li>
+            <li>群聊中按「成员 × 用户」分别结算 —— 同一个群里，不同角色对你的亲近程度可以完全不同。</li>
+            <li>好感度只保存在本机 <code>localStorage</code>，随「导出全部数据」一起备份。</li>
+        </ul>
+
+        <hr>
+
+        <h2 id="board-games"><i class="doc-h-ico ri-checkbox-blank-circle-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">⚫</span> 五子棋与围棋（实验室）</h2>
+        <p>在「设置 → 实验室 → 棋局」里可以和<strong>当前打开的单个角色</strong>下棋。群聊不能直接开始，先切回一个普通角色。</p>
+        <ul>
+            <li><strong>左边</strong>是聊天。可以边下边说话，角色会按自己的人设接话：人设里爱吐槽的可能会嫌弃你下的那一步，温和的角色就正常聊天。这一栏自带滚动条，聊天记录多了也不会把棋盘顶走。</li>
+            <li><strong>中间</strong>是棋盘。点空格就是在那里落子；刚下的那颗会多一个红圈。点到不合法的位置会抖动并给出一句原因（已有子 / 打劫禁着点 / 自杀）。</li>
+            <li><strong>右边</strong>有棋盘大小切换、提示、悔棋、再开一局、退出。围棋还多「弃权」和终局时的「结束并数子」。</li>
+        </ul>
+        <p>每一局开始都会抛硬币：正面你执黑、先下；反面角色执黑、先下，你执白。黑子先下，之后双方轮流。棋局使用当前聊天已经配置好的 API，不需要再单独填一份。</p>
+        <div class="tip">
+            <div class="tip-title">AI 的棋力从哪来</div>
+            <p>落子由<strong>本地引擎</strong>计算：它先按棋型/气数/地域筛出几个像样的候选点，再把这些点交给模型，让模型挑一个并用角色的语气说话。模型只负责选点和演戏，不负责算棋。这样即使模型不擅长下棋，也不会走出「被叫吃还去别处铺子」这种臭棋；API 断了也能继续下。</p>
+            <p>棋盘大小可以在开局前选择，也可以在棋局右边随时切换（会重开一局）：五子棋 13 / 15 / 19 路，围棋 9 / 13 / 19 路。围棋坐标用围棋习惯的字母列号（A~T，跳过 I）+ 行号。</p>
+        </div>
+
+        <h3 id='gomoku-howto'>怎么下五子棋</h3>
+        <p>五子棋默认使用 15×15 的棋盘,规则只看一件事:<strong>谁先把自己的五颗同色棋子连成一条直线(横、竖、斜均可),谁赢。</strong>棋盘可以在开局前选择 13 / 15 / 19 路,也可以在棋局右侧随时切换,切换会重开一局。</p>
+        <ol>
+            <li>每局开局先抛硬币:正面你执黑先下,反面角色执黑先下、你执白。</li>
+            <li>黑白轮流,在任意空交叉点落子。已有棋子的位置不能再下,点下去会抖动并提示「这里已经有子了」。</li>
+            <li>中间不能断开,也不能借用对方的棋子。只要有一方连成五子,棋局立即结束。</li>
+            <li>棋盘下满仍无人连成五子,判为平局。</li>
+        </ol>
+        <h4>五子棋的常用判断</h4>
+        <ul>
+            <li><strong>活三 / 冲四</strong>:一条线上已有三颗且两端都是空位,叫「活三」,下一手就可能变成「活四」(两端都能成五)。一条线上已有四颗、只留一个空位,叫「冲四」,对方必须立刻堵住。</li>
+            <li><strong>优先级</strong>:先看自己能不能一手连成五子;再看对方是否有四颗要成五,必须先堵;然后再考虑自己进攻(连三、连四)。</li>
+            <li><strong>双活三 / 四三</strong>:一手同时形成两个活三,或者「冲四 + 活三」,对方通常只能堵一边,这是最常见的取胜方式。</li>
+        </ul>
+        <div class="tip">
+            <div class="tip-title">不会下时可以这样做</div>
+            <p>先堵住对方已经连成三颗或四颗、且两端仍有空位的那一条。自己下的时候,尽量让一颗新棋子同时延长两个方向的线,既进攻又为以后留下「双三」的机会。不要只顾着连自己的棋,忘了对方下一步就能连成五子。</p>
+        </div>
+
+        <h3 id='go-howto'>怎么下围棋</h3>
+        <p>这里的围棋默认使用 9×9 的小棋盘,方便快速下完,也可以切换到 13 或 19 路。黑白轮流落子,目的不是连线,而是<strong>占住更多地盘,并吃掉对方没有活路的棋子</strong>。</p>
+        <h4>基本规则</h4>
+        <ol>
+            <li><strong>气:</strong>一颗棋子上、下、左、右紧挨着的空交叉点是它的「气」,斜角不算。相邻的同色棋子连成一块,整块共用这些气。</li>
+            <li><strong>提子:</strong>把对方某一块棋的最后一口气堵住时,这一块会被整块提掉,对应位置变回空点。右侧会实时显示黑白各提了多少子。</li>
+            <li><strong>禁止自杀:</strong>落子后自己这一块没有气、又没有同时提掉对方的棋,这一手不能下。点到这种位置会提示「自杀或循环局面,不能下这里」。</li>
+            <li><strong>打劫:</strong>如果一方恰好提掉对方一颗子,而自己这颗子也只剩一口气,那么对方不能立即在被提的那个点回提(棋盘上会用禁着标记),必须先在别处应一手。点到禁着点时会提示「打劫禁着点,先在别处应一手」。</li>
+            <li><strong>不能回到历史局面:</strong>任何会让棋盘回到之前某个局面的落子都不允许,这样能避免双方无限循环。</li>
+        </ol>
+        <h4>右侧操作栏</h4>
+        <ul>
+            <li><strong>提示</strong>:只在轮到你、且 AI 没有在思考时可用。引擎会在棋盘上标出它认为最好的一个点,并在聊天里说明,标记在你落子后自动消失。它只给建议,不会替你下。</li>
+            <li><strong>悔棋</strong>:退回到上一步之前的局面,用来改掉一手误着。悔棋时提子数会一并恢复。</li>
+            <li><strong>弃权</strong>:觉得没有更好的落点时,点「弃权」让手。双方连续弃权,就进入数子阶段。AI 也会在没有合适落点时弃权;如果 AI 连续两次弃权,同样直接进入数子阶段。</li>
+            <li><strong>再开一局 / 退出</strong>:「再开一局」会重新抛硬币;「退出」回到普通聊天界面。如果有未结束的棋局被保存,界面会出现「放弃存档」按钮,点了之后该局无法恢复。</li>
+        </ul>
+        <h4>数子与标记死子</h4>
+        <ol>
+            <li>双方连续弃权后,棋盘上还没有提干净的棋子(即死子)必须先清掉,才能正确数子。进入这一阶段时,提示会说明「双方连续弃权,进入数子阶段」。</li>
+            <li><strong>自动猜测</strong>:系统会先按保守规则猜一遍死子:只剩一口气的棋块,以及周围空地很小、没有做眼余地的棋块。这只是猜测,<strong>请你务必自己复核</strong>,标错了会直接算错胜负。</li>
+            <li><strong>手动标记</strong>:点击棋盘上的任意一块棋,可以在「死子」(棋子上出现金色叉)和「活子」之间切换,整块棋一起变化。</li>
+            <li>确认无误后点「结束并数子」。</li>
+        </ol>
+        <h4>怎么算胜负</h4>
+        <p>使用<strong>数子法(中国规则)</strong>:自己的活子数,加上被自己的棋完全包围的空点数。白棋自动加上<strong>贴目 5.5 目</strong>,用来抵消黑棋先下的优势;点数多的一方获胜,结果会显示在棋局状态里。</p>
+        <p>围棋坐标使用棋迷习惯的写法:列用字母 A–T(跳过 I),行用数字,例如「D4」。棋盘大小的切换见上文。</p>
+        <div class="tip">
+            <div class="tip-title">第一盘只要记住这些</div>
+            <p>先不要急着贴着对方下。把自己的棋子连在一起,留出足够的空地;看到对方一整块只剩一口气时,再把那口气堵住。地盘不需要围得严丝合缝,只要对方明显进不来,那片区域基本就算你的。数子前一定要把对方明显的死子标出来。</p>
+        </div>
+
+
+        <hr>
+
+        <h2 id="undercover"><i class="doc-h-ico ri-user-search-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🕵️</span> 谁是卧底（实验室）</h2>
+        <p>把线下那套桌游搬进来了：每人发一张词牌，<strong>大多数人拿到的是同一个词</strong>，有 1~2 个人拿到的是另一个近义词（卧底），但没人知道自己是哪一种。每轮各用一句话描述自己的词，一轮说完一起投票，票最多的出局、身份当场公开。</p>
+
+        <div class="info-card tip">
+            <div class="info-card-title"><i class="ri-play-circle-line"></i> 入口</div>
+            <p>「设置 → 实验室 → 谁是卧底 → 开一局」。至少 4 人（你 + 3 个角色）才能开；7 人以上自动两个卧底。它是独立界面，不进聊天记录，也不打扰你正在聊的对话。</p>
+        </div>
+
+        <h3>怎么开局</h3>
+        <ol class="step-list">
+            <li><strong>选人</strong><span>当前在群聊里，可以直接点「用当前群聊的成员」；也可以自己从角色列表里挑。你自己永远算一个。</span></li>
+            <li><strong>要不要明牌</strong><span>勾「明牌模式」时，发牌会告诉你自己是平民还是卧底；不勾就只给词，靠你自己判断。默认勾上，新手更好上手。</span></li>
+            <li><strong>发牌</strong><span>右上角两张牌滑进来，先翻<strong>词牌</strong>显示你的词，再翻<strong>身份牌</strong>。之后随时点一下牌就能再看一眼。</span></li>
+        </ol>
+
+        <h3>一轮里发生什么</h3>
+        <ul>
+            <li><b>描述</b>：每轮随机顺序发言。AI 会按自己的角色口吻说一句话；轮到你时，底部的输入框出现，你说完点「说」。<strong>不能把词本身说出来</strong>——系统会拦，换个说法。说太直白等于把词送人，太含糊又会被投出去。</li>
+            <li><b>不想说就跳过</b>：轮到你时输入框旁边有「跳过」。跳过的这一轮记为「这轮没说话」——别人看得见，所以投票时会被怀疑，但不会被系统直接判死。</li>
+            <li><b>投票</b>：一轮说完，点一个你觉得最像卧底的人。AI 会看<strong>前面每一轮的发言</strong>和<strong>已经出局的人是什么身份</strong>再投，而且每票都带一句理由；结算页和「记录」面板都能看到谁投了谁、为什么。</li>
+            <li><b>投票前还能追问</b>：投票面板下面有个输入框，想问谁就问一句（最多两个人接话）。他们会替自己辩护、也可以反手怀疑别人——但不能说出自己的词，也不会承认身份。</li>
+            <li><b>弃票</b>：不想投就点「弃票」。全场都弃票时本轮没人出局。</li>
+            <li><b>平票 → 加投</b>：票最多的人并列时，先只在并列的那几个人之间再投一轮。加投还是平票，就按这一轮「谁说得最含糊」定一个人出局——不然票一散就会一轮轮空转，看着像卡住。</li>
+            <li><b>出局</b>：票最多的人出局，身份和词当场公开。</li>
+            <li><b>观战</b>：你先出局也不会结束，可以看 AI 们继续斗；只是不能再发言和投票。</li>
+            <li><b>随时收场</b>：右上角<strong>「结束」</strong>可以立刻结束这一局——不看胜负条件，直接把所有人的词和身份摊开。描述、投票、等 AI 说话的时候都能点，会先问一句再执行。</li>
+        </ul>
+
+        <h3>胜负</h3>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th style="width:24%">结果</th><th>条件</th></tr></thead>
+            <tbody>
+                <tr><td><b>平民赢</b></td><td>卧底全部出局。</td></tr>
+                <tr><td><b>卧底赢</b></td><td>活着的卧底人数 ≥ 活着的平民人数（也就是卧底再也投不出去了）。</td></tr>
+                <tr><td><b>拖太久</b></td><td>打到第 12 轮还没分出胜负，算卧底赢。</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <h3>AI 是真的在玩</h3>
+        <p>每个 AI <strong>只知道自己的那个词</strong>，不知道自己是平民还是卧底，也看不到别人的词——和真人局一模一样。所以卧底会真的按自己那个近义词去描述，可能露馅，也可能蒙混过关；平民则要想办法说得够具体、又不至于把词送给卧底。</p>
+        <p>它用的还是当前站点的模型，一次只说一句话、一句话的理由，token 消耗很小。投票时会把「谁已经出局、他是什么身份」一起给它——这是真人局里最有用的一条公开信息，之前没有喂进去，所以 AI 投起来像在瞎猜。</p>
+        <p>没配 API、或者模型一直连不上时也能开：AI 会换成<strong>按词的类别分组</strong>的本地兜底台词（吃喝、动物、数码、场所……各有各的一套），同一轮里不会两个人说出同一句。投票则退回到「谁的描述和场上其他人最不合群」，同样给理由——而且<strong>一个人最多吃一半的票</strong>，不会出现五个人排队投同一个、理由还一字不差的场面。不如真模型，但至少有据可依，不是掷骰子。</p>
+
+        <div class="info-card warn">
+            <div class="info-card-title"><i class="ri-information-line"></i> 三个细节</div>
+            <p><strong>退出不丢进度。</strong>关掉或刷新后，下次进来点「继续上一局」接着打；点「重新选人」才会覆盖。右上角那两张牌会跟着一起回来，不用重新发。</p>
+            <p><strong>「结束」和「退出」不是一回事。</strong>「退出」只是先离开，进度留着；「结束」是把这一局收掉、当场摊牌，之后进大厅就看不到「继续上一局」了。</p>
+            <p><strong>记录可翻。</strong>右上角「记录」里有每一轮所有人的发言，回头找谁前后矛盾很方便。</p>
+        </div>
+
+        <hr>
+
+        <h2 id="werewolf"><i class="doc-h-ico ri-moon-clear-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🐺</span> 狼人杀（实验室）</h2>
+        <p>把线下那套发言推理搬进来了：<strong>狼人</strong>夜里刀人、白天装好人，<strong>好人</strong>靠发言和投票把狼找出来。你会拿到一个真实身份——是狼就要参与刀人，是预言家就要验人，是女巫就要决定救不救。</p>
+
+        <div class="info-card tip">
+            <div class="info-card-title"><i class="ri-play-circle-line"></i> 入口</div>
+            <p>「设置 → 实验室 → 狼人杀 → 开一局」。至少 6 人（你 + 5 个角色），最多 12 人。身份按人数自动配好，独立界面，不进聊天记录。</p>
+        </div>
+
+        <h3>五个身份</h3>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th style="width:18%">身份</th><th style="width:12%">阵营</th><th>能做什么</th></tr></thead>
+            <tbody>
+                <tr><td><b>狼人</b></td><td>狼</td><td>夜里和同伴一起选一个人杀掉；白天要装成好人，可以撒谎、带节奏。知道彼此是谁。</td></tr>
+                <tr><td><b>预言家</b></td><td>好</td><td>每夜验一个人，立刻知道他是狼还是好人。信息最强，也最容易被狼盯上。</td></tr>
+                <tr><td><b>女巫</b></td><td>好</td><td>一瓶解药（知道当晚谁被刀，可以救）、一瓶毒药（可以毒死任何人），各一次，同一夜只能用一瓶。</td></tr>
+                <tr><td><b>猎人</b></td><td>好</td><td>被狼刀或被投票处决时，可以开枪带走一个人。被女巫毒死则不能开枪。</td></tr>
+                <tr><td><b>村民</b></td><td>好</td><td>没有技能，靠听发言和投票。</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <h3>人数怎么配</h3>
+        <p>选完人，大厅会直接告诉你这一局是几狼几好人。规则如下：</p>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th style="width:16%">人数</th><th style="width:12%">狼人</th><th>其余</th></tr></thead>
+            <tbody>
+                <tr><td>6</td><td>2</td><td>预言家、女巫、2 村民</td></tr>
+                <tr><td>7</td><td>2</td><td>预言家、女巫、猎人、2 村民</td></tr>
+                <tr><td>8</td><td>2</td><td>预言家、女巫、猎人、3 村民</td></tr>
+                <tr><td>9</td><td>3</td><td>预言家、女巫、猎人、3 村民</td></tr>
+                <tr><td>10</td><td>3</td><td>预言家、女巫、猎人、4 村民</td></tr>
+                <tr><td>11</td><td>3</td><td>预言家、女巫、猎人、5 村民</td></tr>
+                <tr><td>12</td><td>4</td><td>预言家、女巫、猎人、5 村民</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <h3>一局怎么走</h3>
+        <ol class="step-list">
+            <li><strong>天黑</strong><span>狼人睁眼选目标。你是狼就由你来点；不是狼就看 AI 狼自己商量。</span></li>
+            <li><strong>预言家</strong><span>验一个人，马上告诉你结果。只有你能看到。</span></li>
+            <li><strong>女巫</strong><span>告诉你今晚谁被刀，再决定救、毒还是不用药。</span></li>
+            <li><strong>天亮</strong><span>公布昨夜死者。如果是猎人被刀，会先让他开枪。</span></li>
+            <li><strong>发言</strong><span>存活的人依次说一两句。轮到你时底部出现输入框，说完点「说」。</span></li>
+            <li><strong>投票</strong><span>所有人一起投，票最多的被处决、身份当场公开。平票则无人出局，直接进下一夜。</span></li>
+            <li><strong>再入夜</strong><span>活着的继续，直到分出胜负。</span></li>
+        </ol>
+
+        <h3>胜负</h3>
+        <ul>
+            <li><b>好人赢</b>：狼人全部出局。</li>
+            <li><b>狼人赢</b>：活着的狼数量 ≥ 活着的好人数量——也就是好人再也投不动了。</li>
+        </ul>
+
+        <h3>AI 是怎么玩的</h3>
+        <p>每个 AI 只知道自己那份信息：狼认识狼同伴，预言家记得自己验过谁，村民什么都不知道。夜里刀谁、验谁、救不救、投谁，走的是<em>本地规则</em>（带随机），所以同一局能复现、也不会因为 API 挂了卡住。</p>
+        <p>只有<strong>白天的发言</strong>交给模型：提示词里会写清它是谁、什么身份、已知什么信息，让它按角色口吻说一两句。没配 API 时换成模板台词，游戏照样能打完，只是话变呆。</p>
+
+        <div class="info-card warn">
+            <div class="info-card-title"><i class="ri-information-line"></i> 三个细节</div>
+            <p><strong>退出不丢进度。</strong>关掉或刷新后，下次进来点「继续上一局」接着打，右上角的身份牌会一起回来。</p>
+            <p><strong>顶栏「结束」随时摊牌。</strong>不看胜负条件，直接公开所有人的身份；和「退出」不是一回事——退出只是先离开，进度留着。</p>
+            <p><strong>你是狼的时候，同伴会给个「倾向」。</strong>那是 AI 狼的建议，你可以改，最终刀谁由你定。</p>
+        </div>
+
+        <hr>
+
+        <h2 id="learn-tutor"><i class="doc-h-ico ri-graduation-cap-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🎓</span> 学习辅导（实验室）</h2>
+        <p>「学习辅导」在 <strong>设置 → 实验室 → 学习辅导</strong>（点「打开学习辅导」进入全屏界面），是一个拍题讲解的「辅导老师」：拍一张题目照片（或直接输入文字、Ctrl+V 粘贴截图），AI 会像老师一样给你讲题。<strong>所有讲解记录只存本机</strong>，可导出 JSON 备份。讲解使用当前已配置的 API；也可以在「设置 → AI 配置 → 专用模型 → 学习辅导」里单独指定一个支持视觉的模型（讲解需要识图）。</p>
+
+        <h3 id="learn-modes">三种讲解模式</h3>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th>模式</th><th>行为</th><th>适合</th></tr></thead>
+            <tbody>
+                <tr><td><strong>引导式</strong>（默认）</td><td>不给答案，先问你卡在哪一步，一步步引导你自己想出来</td><td>平时做题、真的想学会</td></tr>
+                <tr><td><strong>分步讲解</strong></td><td>把解法拆成 3~6 步逐步揭示，看懂一步再点「下一步」，讲完可一键总结知识点&套路</td><td>看答案也不懂的题</td></tr>
+                <tr><td><strong>完整讲解</strong></td><td>一次给全解题过程和答案</td><td>赶时间、只想核对思路</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <p>讲题过程中可以直接在输入框<strong>继续追问</strong>（聊天式多轮对话）。讲完一道题后有四个操作：<strong>知识点&套路</strong>（总结考点）、<strong>举一反三</strong>（出同类型练习题，做完发回去会批改）、<strong>加入错题本</strong>、<strong>提新问题</strong>（清掉当前题目开始讲下一道；顶栏 ➕ 按钮也是同一个功能）。退出再进入时如果上次没讲完，会询问是否继续。</p>
+
+        <h3 id="learn-teacher">老师人设</h3>
+        <p>「老师人设」可以换教学风格：默认辅导老师、温柔大姐姐、严格班主任、幽默段子手、猫娘老师，也可以完全自定义（名字 + 说话风格）。还可以<strong>用站内已有角色当老师</strong>（和论坛一样，内置角色和自定义角色都可以）：选中后老师会用那个角色的名字和性格讲课 —— 教学铁律（引导式不给答案等）永远优先于人设。另有「注入全局世界书」开关，给老师一套世界观背景。</p>
+
+        <h3 id="learn-mistakes">错题本与学习档案</h3>
+        <ul>
+            <li><strong>错题本</strong>：做过的题收进来，可按科目/学段筛选，支持直接从错题本把题再调出来重讲。</li>
+            <li><strong>学习档案</strong>：讲过的题、知识点卡片会自动记一笔（本地完成，不额外消耗 API），老师「越用越懂你」。</li>
+            <li>顶部可切换科目（可自定义增删）与学段/具体年级，界面顶部的科目、年级会随会话一起保存。</li>
+        </ul>
+
+        <hr>
+
+        <h2 id="voice-clone"><i class="doc-h-ico ri-mic-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🎙️</span> 声音工坊：音色克隆与音高</h2>
+        <p>入口：<strong>设置 → AI 配置 → 语音合成（TTS）</strong>。原来的「高级 TTS」和「实验室 → 声音工坊」已经合并成这一页：上半部分是接口与默认声音，下半部分是音色工坊与音色克隆。这一块负责「让 AI 用你想要的声音说话」，消息朗读、语音通话共用同一套参数。</p>
+
+        <h3 id="voice-pitch">音高（−12 ~ +12 半音）</h3>
+        <p>音高滑杆与「语音合成 → 默认声音 → 音高」<strong>是同一个值</strong>，在哪边改另一边都会跟着变（面板里会实时同步）。但<strong>音色档自带的音高优先</strong>：给某个音色单独调过音高后，切到别的音色会回到那一档自己的设置。</p>
+        <table class="docs-table">
+            <thead><tr><th>端点类型</th><th>音高怎么生效</th></tr></thead>
+            <tbody>
+                <tr><td>MiniMax（<code>/v1/t2a_v2</code>）</td><td>写进 <code>voice_setting.pitch</code>，是<strong>真正的变调</strong>，语速不受影响</td></tr>
+                <tr><td>支持 <code>pitch</code> 字段的中转 / 自建网关</td><td>写进请求体，按原生处理</td></tr>
+                <tr><td>OpenAI 官方 <code>/audio/speech</code> 等不支持该字段的端点</td><td>自动退成「播放速率折算」：按 2<sup>n/12</sup> 倍速播放，音高对了、语速会略微跟着变；试听时会明确提示走的哪条路</td></tr>
+                <tr><td>没配 TTS 端点（浏览器自带朗读）</td><td>用 <code>SpeechSynthesisUtterance.pitch</code>，也是真变调</td></tr>
+            </tbody>
+        </table>
+        <p>「不支持的端点」不会报错：TTS 会先用带音高的请求试一轮，失败后自动去掉音高字段重试，再退到播放速率折算，整条链路不会因此没声音。</p>
+
+        <h3 id="voice-clone-how">克隆一个音色（以 MiniMax 为例）</h3>
+        <p>MiniMax 的音色复刻分两步：<strong>上传素材拿 file_id</strong> → <strong>用 file_id 创建音色</strong>。面板把这两步和「试听」「存成音色档」串在一起了，点一次按钮就走完。</p>
+        <table class="docs-table">
+            <thead><tr><th>素材要求</th><th>说明</th></tr></thead>
+            <tbody>
+                <tr><td>格式</td><td>mp3 / m4a / wav</td></tr>
+                <tr><td>时长</td><td>10 秒 ~ 5 分钟；<strong>建议 15~30 秒</strong>，选语气自然、连贯的一段（比如一句「嗨~想我了吗？」）效果最好</td></tr>
+                <tr><td>大小</td><td>不超过 20MB</td></tr>
+                <tr><td>素材太长</td><td>选完文件后点「截取前 30 秒再克隆」，浏览器本地裁好并转成 wav，不用另外装剪辑软件</td></tr>
+            </tbody>
+        </table>
+        <ol>
+            <li><strong>填端点与 Key</strong>：国内 <code>https://api.minimax.cn</code>，海外 <code>https://api.minimaxi.com</code>。面板会自动补 <code>/v1/files/upload</code> 与 <code>/v1/voice_clone</code>。Key 留空则复用「语音合成 → 接口」里已经填好的那个。</li>
+            <li><strong>选素材</strong>：点拖拽区或把文件拖进去，面板会显示大小与时长并做一次预校验（不满足就先提醒，省一次必然失败的请求）。</li>
+            <li><strong>填 voice_id</strong>：可以自定义，例如 <code>elysia_voice01</code>。规则是字母开头、8~256 个字符、<strong>必须同时含字母和数字</strong>（<code>elysia_voice</code> 少一个数字就会被服务端拒绝，面板会提前标红提示）。</li>
+            <li><strong>试听文本</strong>：例如 <code>嗨~想我了吗？(chuckle)</code>，克隆成功后会立刻用这个音色合成这句给你听。</li>
+            <li><strong>模型</strong>：例如 <code>speech-2.8-hd</code>；旧账号需要的话再填 Group ID。</li>
+            <li>点<strong>「上传并克隆」</strong>：面板会逐行打印「上传 → 创建音色 → 保存音色档 → 合成试听」，哪一步失败就停在哪一步并给出可读原因。</li>
+        </ol>
+        <p>克隆成功后会自动存成一个<strong>音色档</strong>（列表里带「克隆」标记）并启用。之后点<strong>「同步到默认声音」</strong>，把端点 / 模型 / voice_id 一并写进 TTS 配置，消息朗读和语音通话就都直接用这个克隆音色了。</p>
+        <p><i class="ri-shield-keyhole-line"></i> <strong>Key 只保存在你自己的浏览器</strong>（localStorage）里，克隆请求由浏览器直接发往 MiniMax。如果浏览器报「连不上」，通常是对方没放开跨域（CORS）或网络不通，可以在端点里填入你自己的代理地址。</p>
+
+        <h3 id="voice-clone-errors">常见返回码</h3>
+        <table class="docs-table">
+            <thead><tr><th>code</th><th>含义与处理</th></tr></thead>
+            <tbody>
+                <tr><td>1002</td><td>触发限流，等一会儿再试</td></tr>
+                <tr><td>1004 / 2049</td><td>鉴权失败 / Key 无效，检查 Key 是否复制完整、是否属于该站点（国内站与海外站的 Key 不通用）</td></tr>
+                <tr><td>1008</td><td>账户余额不足</td></tr>
+                <tr><td>2013</td><td>参数不合规范：多半是素材格式 / 时长不对，或 voice_id 少了数字、以 <code>-</code> / <code>_</code> 结尾</td></tr>
+            </tbody>
+        </table>
+
+        <hr>
+
+        <h2 id="extensions"><i class="doc-h-ico ri-shapes-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🧩</span> 扩展模块（对标酒馆）</h2>
+        <p>下面这组模块把「酒馆（SillyTavern）」上常见、而本站原来缺少或较弱的能力补齐了。它们都是<strong>可选的独立脚本</strong>：可以在「设置 → 导入导出 → 加载 JS 文件设置」里单独关闭；面板入口统一在<strong>设置 → 插件</strong>里；所有数据都只存在你的浏览器本机。</p>
+
+        <h3 id="ext-regex"><span class="doc-emoji" aria-hidden="true">🔍</span> 正则脚本（Regex）</h3>
+        <p>用正则表达式在对话链路的六个位置自动「查找 → 替换」：<strong>用户输入 / 斜杠命令 / AI 输出 / 世界书 / 提示词组装 / 聊天显示</strong>。「AI 输出」会改写写入聊天记录的回复（持久生效）；「聊天显示」只改渲染、不动记录、不影响导出。替换串支持 <code>$1</code> 捕获组与 <code>{{match}}</code>、<code>{{user}}</code>、<code>{{char}}</code>、<code>{{date}}</code>、<code>{{time}}</code> 宏。</p>
+        <p>每条脚本可单独勾选参与哪些位置、调整执行顺序；面板带「试运行」与导入导出。典型用法：把 <code>[emo:happy]</code> 折叠成文字、统一 Markdown 风格、自动清理模型多余的格式标签。入口：<strong>设置 → 插件 → 正则脚本</strong>。</p>
+
+        <h3 id="ext-translate"><span class="doc-emoji" aria-hidden="true">🌐</span> 聊天翻译</h3>
+        <p>每条消息气泡上有「译」按钮：点开看译文、再点收起；译文缓存在本机，重绘与刷新后自动恢复。引擎可选：<strong>AI 翻译</strong>（沿用当前站点或单独填接口）、Google、MyMemory、LibreTranslate、DeepL，共 11 种目标语言。设置里还能开启「自动翻译 AI 的新回复」与「翻译当前屏全部消息」。</p>
+        <p>重要边界：译文只用于显示，<strong>不写回聊天记录</strong>、不影响上下文与导出；这与「正则脚本 · AI 输出」位置有本质区别。入口：<strong>设置 → 插件 → 聊天翻译</strong>。</p>
+
+        <h3 id="ext-presets"><span class="doc-emoji" aria-hidden="true">📋</span> 提示词预设（Preset）</h3>
+        <p>不改动任何角色卡，为每一轮请求叠加三层可编辑文本：<strong>主提示词</strong>（拼在系统提示词最前面）、<strong>辅助提示词</strong>（拼在末尾）、<strong>历史后指令</strong>（放在对话历史之后，越靠近模型最后读到的位置服从性越高，适合「只用中文回答」这类硬约束）。</p>
+        <p>模板支持 <code>{{user}}</code>、<code>{{char}}</code>、<code>{{date}}</code>、<code>{{time}}</code> 变量与条件块 <code>{{#if 变量}}...{{else}}...{{/if}}</code>；可建多套预设一键切换、复制与导入导出。入口：<strong>设置 → 插件 → 提示词预设</strong>。</p>
+
+        <h3 id="ext-scripts"><span class="doc-emoji" aria-hidden="true">🧪</span> 消息脚本（JS）</h3>
+        <p>正则不够用时，直接写一小段 JavaScript，在 用户输入 / 斜杠命令 / AI 输出 / 世界书 / 聊天显示 / 提示词组装 六个环节运行：<code>return 新字符串</code> 即生效（什么都不 return = 不修改）；提示词组装环节直接拿到完整的 messages 数组。可以做条件逻辑、快捷指令、查表替换等复杂自动化。</p>
+        <p>面板支持单条启用 / 排序 / 试运行 / 导入导出。<strong>总开关默认关闭</strong>；脚本以本页权限运行（等同 F12 控制台），请只粘贴你自己写的或可信来源的代码。入口：<strong>设置 → 插件 → 消息脚本</strong>。</p>
+
+        <h3 id="ext-checkpoints"><span class="doc-emoji" aria-hidden="true">🔖</span> 聊天检查点与消息分叉</h3>
+        <p>任意消息的操作栏里新增「检查点 / 分叉」入口：<strong>创建检查点</strong>把当前对话拍一张命名快照（不切换、不改动任何内容），之后随时整体恢复；<strong>从此消息分叉</strong>保留到那条消息为止、截断后面的内容，用来探索不同剧情走向。</p>
+        <p>「恢复」与「分叉」执行前都会自动再存一张「自动快照」，误操作可以反悔；最多保留 20 个检查点，支持导出 / 导入 JSON。入口：消息操作栏，或 <strong>设置 → 插件 → 聊天检查点</strong>。</p>
+
+        <h3 id="ext-vectormem"><span class="doc-emoji" aria-hidden="true">🧠</span> 聊天向量记忆（Vector Storage）</h3>
+        <p>把聊天记录逐条向量化（存在本机 IndexedDB，按角色隔离，每个角色最多保留 800 条索引），每轮请求发出前用「你刚输入的话」做一次语义检索，把最相关的历史片段自动注入上下文 —— 即使那段对话早已滑出上下文窗口、也没被提炼成长期记忆条目，AI 依然能想起来。</p>
+        <p>嵌入配置留空会依次沿用「长期记忆 → 知识库 → 主配置」的地址与模型（还需要至少一处配置过嵌入模型，否则本模块静默不参与）。面板支持手动同步、清空当前角色索引与已索引条数统计。入口：<strong>设置 → 插件 → 聊天向量记忆</strong>。</p>
+
+        <h3 id="ext-databank"><span class="doc-emoji" aria-hidden="true">🏦</span> 数据银行（Data Bank）</h3>
+        <p>集中管理供 AI 参考的文本资料（世界观设定、术语表、写作规范等），按三种作用域自动装载：<strong>全局</strong>（所有角色所有对话）/ <strong>角色</strong>（指定角色的对话）/ <strong>聊天</strong>（指定角色 × 指定对话，最精确）。</p>
+        <p>命中且启用的资料会在每轮请求发出前附加到系统提示词末尾（单轮注入上限 4000 字符，超出按顺序截断），不改聊天记录、不影响导出；支持整包导入导出。入口：<strong>设置 → 插件 → 数据银行</strong>。</p>
+
+        <h3 id="ext-imagegen"><span class="doc-emoji" aria-hidden="true">🎨</span> AI 图像生成（多后端）</h3>
+        <p>在聊天输入框直接输入 <code>/img 画面描述</code>（也支持 <code>/画图</code>）即可出图，生成结果自动以图片消息附加到当前聊天；也可以到面板里手动生成并预览。支持四种后端：<strong>Pollinations</strong>（免费公共接口，无需 Key）、<strong>OpenAI 兼容图像接口</strong>（DALL·E 3 / gpt-image-1 / 各类中转站）、<strong>Hugging Face</strong>（FLUX.1 等，需 Access Token）、<strong>Stable Diffusion WebUI</strong>（本机以 --api 启动）。</p>
+        <p>内置 45 种风格预设（动漫、水彩、写实、赛博朋克、吉卜力风……自动拼进提示词），可选尺寸与批量张数（1-4 张顺序生成），图片以 dataURL 保存、可随聊天记录一起导出。入口：<strong>设置 → 插件 → AI 图像生成</strong>。</p>
+
+        <h3 id="ext-live2d"><span class="doc-emoji" aria-hidden="true">🎭</span> VN Live2D 立绘</h3>
+        <p>给视觉小说模式加上 Live2D：为角色配置 <code>.model3.json</code> 的 HTTPS 直链（Cubism 3/4，模型目录需允许跨域），进入 VN 后舞台上会显示可动立绘，自带呼吸、眨眼与待机动作；未配置或加载失败时自动回退静态立绘，不影响原有素材。</p>
+        <p>运行库（Cubism Core + pixi.js + pixi-live2d-display）只在真的配置了模型并进入 VN 时按需从 CDN 加载。入口：<strong>设置 → 插件 → VN Live2D 立绘</strong>。</p>
+
+        <h3 id="ext-persona"><span class="doc-emoji" aria-hidden="true">😊</span> AI 生成人设（Persona 增强）</h3>
+        <p>「用户人设」原本只能手写描述。现在世界书 Tab 的人设编辑区多了一个「AI 生成人设」按钮：输入几个关键词（身份 / 性格 / 背景 / 说话习惯），AI 会扩写成一段 150~350 字、可直接注入对话上下文的人设描述，并自动带上当前聊天角色的名字；填入描述框确认后点「保存人设」即生效。会消耗你所配置 API 的额度。</p>
+
+        <h3 id="ext-english"><span class="doc-emoji" aria-hidden="true">🌐</span> AI 英文模式</h3>
+        <p>一个总开关，让 AI 在勾选的场景里只说英文，界面文字不受影响。生效范围可逐个勾选：<strong>正常聊天</strong>（含群聊、上线问候、主动关怀）、<strong>AI 直播间</strong>（台词 / 弹幕）、<strong>论坛</strong>（发帖 / 评论 / 私信）、<strong>学习辅导</strong>（讲解 / 追问 / 辅导通话）、<strong>语音 / 视频通话</strong>、<strong>小游戏</strong>（棋局闲聊、森林冰火人）。规则以「最高优先级」追加在系统提示词末尾，覆盖角色卡里要求中文的旧指令；表情占位符、分步讲解的【第N步】等格式标记保持原样，相关功能不受影响。</p>
+        <p>与角色卡翻译配合：在 English 界面下打开角色卡，用你自己配置的 API 翻出英文译文后，译文区新增<strong>「用英文替换角色提示词 / 开场白」</strong>按钮——一键把英文写回编辑框，点「保存修改」后角色卡即生效（中文原文请自行备份）。入口：<strong>设置 → 更多 → AI 英文模式</strong>。</p>
+
+        <hr>
+
+        <h2 id="forum"><i class="doc-h-ico ri-discuss-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">🗨️</span> 论坛功能</h2>
+        <p>侧边栏的「论坛」入口会打开一个类似贴吧的本地社区，AI 角色会在里面发帖、评论、点赞和私信你。
+        <strong>所有内容都由你的本机 API 配置生成，只存在你自己的浏览器里，不会被其他真实用户看到。</strong></p>
+
+        <h4>视图与浏览</h4>
+        <div class="docs-table-wrap">
+        <table class="docs-table">
+            <thead><tr><th>入口</th><th>说明</th></tr></thead>
+            <tbody>
+                <tr><td>推荐</td><td>全部帖子，默认按最新回复排序，置顶帖永远在最前。</td></tr>
+                <tr><td>热门榜</td><td>按「点赞 + 评论×2 + 浏览×0.06 + 转发×0.1 + 新鲜度加成」综合排序。</td></tr>
+                <tr><td>关注动态</td><td>只看你关注的角色的帖子。</td></tr>
+                <tr><td>我的收藏</td><td>你点过「收藏」的帖子都会集中在这里。</td></tr>
+                <tr><td>我的主页</td><td>发布 / 点赞 / 收藏的帖子、粉丝与关注列表，可编辑昵称、生日、简介与头像。</td></tr>
+                <tr><td>私信</td><td>互关角色的私信会话，支持发文字与图片；左侧联系人可长按拖动排序。</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <h4>发帖与互动</h4>
+        <ul>
+            <li><strong>分区</strong>：发帖时可选板块（默认 综合 / 剧情讨论 / 角色日常 / 同人创作 / 求助）。分区名可在「论坛设置」里按行自定义。</li>
+            <li><strong>工具栏</strong>：顶部有搜索框（搜标题、正文、作者、分区）、分区筛选与排序方式（最新回复 / 最新发布 / 热度 / 浏览 / 点赞）。</li>
+            <li><strong>楼中楼</strong>：评论可以回复某条评论，形成二级回复；顶层评论按时间正序编号为「1 楼、2 楼…」，楼主会带「楼主」标记。</li>
+            <li><strong>评论点赞</strong>：每条评论都能单独点赞，只刷新那一条的计数，不会打断你的阅读位置。</li>
+            <li><strong>收藏与置顶</strong>：帖子可收藏进「我的收藏」；自己发的帖子还能置顶（排到列表最前）。</li>
+            <li><strong>浏览数</strong>：每次打开详情页计一次浏览，列表里会显示浏览数与最后回复时间。</li>
+        </ul>
+
+        <h4>让 AI 动起来</h4>
+        <ul>
+            <li><strong>论坛角色</strong>：勾选参与发帖的角色并调整活跃度。活跃度越高越容易出场；活跃度为最低时不会主动发帖，只会极少回复。</li>
+            <li><strong>让活跃角色逛逛论坛</strong>：立即让一个（按活跃度加权随机选出的）角色在随机分区发一帖，并可能触发其他角色的点赞与评论。</li>
+            <li><strong>自由论坛</strong>：在「论坛设置」里开启后，每 90 秒会自动走一次 AI 论坛行为。设备吃力或只想安静看帖时建议关闭。</li>
+            <li><strong>肃静</strong>：一键停止全部 AI 主动发帖、回复、分享与私信，只保留你自己浏览。</li>
+            <li>你在帖子里 <code>@角色名</code>，被点名的角色会来回一句；被回复的 AI 也会接着说一句。</li>
+        </ul>
+
+        <h4>备份与迁移</h4>
+        <ul>
+            <li><strong>导出论坛数据</strong>：把帖子、评论、私信、关注、收藏与分区设置导出成一个 JSON 文件。</li>
+            <li><strong>导入论坛数据</strong>：可选择「合并」（按 id 去重后追加）或「覆盖」（先清空再写入）。合并时会保留互动数更多的那个版本，避免导入把点赞清零。</li>
+        </ul>
+
+        <div class="info-card warn">
+            <div class="info-card-title"><i class="ri-error-warning-line"></i> 想清空论坛？</div>
+            <p>论坛数据存在 <code>localStorage</code> 的 <code>myswForumData</code>。想彻底重来可以导出备份后用「导入 → 覆盖」写入一个空数据文件，
+            或在「论坛设置」里配合肃静模式手动删除自己的帖子。</p>
+        </div>
+
+        <hr>
+
+        <h2 id="faq"><i class="doc-h-ico ri-question-line" aria-hidden="true"></i><span class="doc-emoji" aria-hidden="true">❓</span> 常见问题 FAQ</h2>
+
+        <h4>Q1：填写完 API Key 但还是提示「请先配置 API」？</h4>
+        <p>A：检查是否点过 <strong>「保存设置」</strong>（不是「测试连接」）。保存后会自动关闭弹窗。如仍报错，刷新页面重试。</p>
+
+        <h4>Q2：AI 回复到一半就断了？</h4>
+        <p>A：通常是触发了 <code>maxTokens</code> 上限。在设置里调大「单条回复上限」即可。</p>
+
+        <h4>Q3：AI 经常「失忆」忘记前文？</h4>
+        <p>A：调大「最大上下文轮数」。但注意：上下文越大，每次消耗的 Token 越多、费用越高。</p>
+
+        <h4>Q4：「测试连接」成功，但实际聊天报错？</h4>
+        <p>A：可能是 Key 余额不足、模型名称写错、或平台风控拦截。检查 Key 对应平台的「用量」和「模型名是否含特殊前缀」。</p>
+
+        <h4>Q5：如何切换不同模型给不同角色？</h4>
+        <p>A：当前版本所有角色共享同一套 API 配置。如需为不同角色指定不同模型，可在使用中临时切换全局设置。</p>
+
+        <h4>Q6：可以把聊天记录分享给朋友看吗？</h4>
+        <p>A：可以。点击聊天右上角 <i class="ri-file-list-3-line"></i> → 切换到「导入导出」标签 → 导出单角色聊天记录为 JSON 或图片长截图。</p>
+
+        <h4>Q7：支持语音输入 / 语音回复吗？</h4>
+        <p>A：支持。语音输入默认用浏览器原生识别，部分浏览器（如夸克）原生识别不可用；可在「设置 → AI 配置 → 语音转文字（STT）」配置 OpenAI 兼容的 <code>/v1/audio/transcriptions</code> 接口（如 whisper-1），配置后语音按钮会改为「录音 → 上传转文字」，保存后立即生效。AI 语音播报（TTS）在「AI 配置 → 语音合成」里配置。</p>
+
+        <h4>Q8：能换主题色吗？</h4>
+        <p>A：顶部 <i class="ri-sun-line"></i> 按钮可切换深色 / 浅色主题。主题色在 CSS 变量中定义，高级用户可自行修改 <code>style.css</code>。</p>
+
+        <h4>Q9：AI 会把我的对话拿去训练吗？</h4>
+        <p>A：取决于你使用的 API 平台。多数<strong>付费 API 平台明确表示不会</strong>用你的 API 调用数据训练模型（详见各平台隐私政策）。本应用本身是纯前端应用，<em>不可能</em>收集你的数据。</p>
+
+        <h4>Q10：访问 <code>https://mysw-yg.pages.dev</code> 看不到侧边栏角色？</h4>
+        <p>A：首次访问时浏览器会预加载约 900KB 的角色数据，请稍等几秒。如仍为空，按 <span class="kbd">Ctrl</span>+<span class="kbd">F5</span> 强制刷新。</p>
+
+        <h4>Q19：测试连接报「模型不存在 / 404 / invalid model」，是不是 Key 坏了？</h4>
+        <p>A：多半不是。这是<strong>模型名过期</strong>——厂商下线旧模型、换上新模型，旧名字就不再受理。典型例子：DeepSeek 的 <code>deepseek-v4-flash</code> 和 <code>deepseek-v4-pro</code> 已在 2026 年 9 月下线，现在要填 <code>deepseek-flash</code>。修法只有一步：点「获取模型」，从平台真实返回的列表里选一个，别照旧教程抄名字。详见 <a href="#platforms">常见 API 平台推荐</a> 开头那条提示。</p>
+        <p>如果「获取模型」也报错，才是 Key / 地址 / 网络的问题。</p>
+
+        <h4>Q11：一打开就弹出「欢迎来到 My SW」的弹窗，可以关掉吗？</h4>
+        <p>A：那是首次访问引导，只会在<strong>完全没有任何使用痕迹</strong>时出现（没配过 API、没有自定义角色、也没有聊天记录）。点「查看使用文档」或「先自己逛逛」都会记住，之后不再打扰。它只提示一件事：可以去 <code>https://mysw-yg.pages.dev/docs</code> 查阅使用文档。</p>
+
+        <h4>Q12：开了？？？模式还是觉得卡怎么办？</h4>
+        <p>A：按顺序试：<strong>①</strong> 在「设置 → 界面外观 → 动效等级」里把等级降到「轻量」，只保留弹窗展开与按压反馈；<strong>②</strong> 关掉「毛玻璃效果」（大面积 <code>backdrop-filter</code> 是低端设备掉帧的主要原因）；<strong>③</strong> 仍然卡就切换到「兼容模式」，它会关闭全部动画与过渡。注意旧的？？？模式曾是常驻循环动画（渐变位移 + hue-rotate + 无限旋转），现已完全重写为「播一次就停」的动效，正常情况下不会再持续占用 GPU。</p>
+
+        <h4>Q13：想固定角色列表的顺序，不想被「最近聊过」打乱？</h4>
+        <p>A：到「设置 → 界面外观」，关掉「最近聊过的角色排在前面」，列表就只按你手动拖出来的顺序排列。这个功能本身也不会影响置顶角色 —— 置顶永远优先。</p>
+
+        <h4>Q14：好感度会不会太快刷满？</h4>
+        <p>A：「设置 → 实验室 → 好感度」里所有参数都能改。嫌快就把「档位衰减系数」调小（例如 0.7）、把「每人每日上限」调低，或把某个角色的倍率单独调到 0.5。想彻底不看衰减，把「每天自然衰减」设为 0 即可。</p>
+
+        <h4>Q15：我自己写的插件为什么不生效？</h4>
+        <p>A：按这个顺序检查：<strong>①</strong> 插件卡片上的「启用」是否勾上；<strong>②</strong> 卡片上有没有黄色提示条（说明权限没给全，需要先在「插件权限」打开总开关）；<strong>③</strong> 控制台有没有 <code>[插件名] xxx 失败</code> 的警告；<strong>④</strong> <code>id</code> 是否与已有插件重复（重复会覆盖）。详见 <a href="#plugins">插件编写指南</a>。</p>
+
+        <h4>Q16：论坛里的数据能备份吗？换设备怎么带过去？</h4>
+        <p>A：可以。右侧栏有「导出论坛数据 / 导入论坛数据」，导出会得到一个包含帖子、评论、私信、关注、收藏与分区设置的 JSON 文件。在另一台设备上导入时可选「合并」（按 id 去重后追加）或「覆盖」。合并导入会保留互动数更多的版本，不会把点赞清零。</p>
+
+        <h4>Q18：AI 老是叫错我的名字，或者把我当成两个人？</h4>
+        <p>A：两种原因。① <strong>叫错名字</strong>：默认会把你的账号昵称写进提示词，昵称改过之后旧对话里它还记着旧的 —— 改完昵称后开一条新对话即可，或者干脆到「设置 → 聊天设置 → 上下文与记忆」关掉「把『我的昵称』发给 AI」。② <strong>当成两个人</strong>：多半是语C 时昵称和你要演的角色不是同一个，提示词里同时出现「用户叫 A」和「用户在演 B」。详见 <a href="#rp-as">语C 章节</a>。</p>
+
+        <h4>Q17：我在「设置 → 插件」里看到一批新的扩展（正则脚本 / 聊天翻译 / 提示词预设 / 消息脚本 / 聊天检查点 / 向量记忆 / 数据银行 / 图像生成 / Live2D / 人设生成），需要另外安装吗？</h4>
+        <p>A：不用，它们随主站一起加载、默认就开着。不想用时有两种关法：① 在对应面板里关掉功能开关（数据保留）；② 到「设置 → 导入导出 → 加载 JS 文件设置」里把整个脚本关掉（入口消失、功能停用，已保存的数据不会被删除）。详见 <a href="#extensions">扩展模块</a> 章节。</p>
+
+        <h4>Q20：点「保存设置」之后，提示「设置没能保存 / 本地存储已满」？</h4>
+        <p>A：浏览器给每个站点划的 localStorage 只有几 MB，而聊天记录是其中最大的一块。存满之后，连几 KB 的 API Key 都写不进去 —— 表现就是「填好、点保存、关掉再打开又空了」。
+        现在的版本会在保存失败时明确告诉你<strong>哪几项没存上</strong>，并给一个「去清理」入口：到存储面板勾「只选可再生项」（缓存、缩略图这类），清完再点一次保存即可，聊天记录不会被删。
+        另外，聊天记录超过约 120 万字符后，localStorage 里只保留最近十几条的镜像，完整记录依然在 IndexedDB 中，导出和继续聊天都不受影响。</p>
+
+        <hr>
+
+        <div class="info-card success">
+            <div class="info-card-title"><i class="ri-rocket-2-line"></i> 玩得开心！</div>
+            <p>如果文档里没找到你的问题，回到聊天页按 <span class="kbd">?</span> 可以看内置的快捷键与指令速查；再不行就去项目主页提 issue。祝你玩得开心 ✨</p>
+        </div>
+
+        <div class="docs-pager">
+            <a href="index.html">
+                <strong>← 返回聊天</strong>
+                开始和你的 AI 角色对话
+            </a>
+            <a href="forum.html" style="text-align: right;">
+                <strong>前往论坛 →</strong>
+                和其他用户交流玩法
+            </a>
+        </div>
+
+    </article>
+    </main>
+</div>
+
+<button class="docs-toc-toggle" id="docs-toc-toggle" aria-label="显示目录" aria-expanded="false">
+    <i class="ri-list-unordered"></i>
+</button>
+
+<button class="docs-to-top" id="docs-to-top" aria-label="回到顶部" title="回到顶部">
+    <i class="ri-arrow-up-line"></i>
+</button>
+
+<script>
+(function () {
+    'use strict';
+
+    const sidebar  = document.getElementById('docs-sidebar');
+    const overlay  = document.getElementById('docs-sidebar-overlay');
+    const toggle   = document.getElementById('docs-toc-toggle');
+    const scrollBox= document.getElementById('docs-sidebar-scroll');
+    const searchEl = document.getElementById('docs-toc-search');
+    const countEl  = document.getElementById('docs-toc-count');
+    const progress = document.getElementById('docs-progress');
+    const toTop    = document.getElementById('docs-to-top');
+    const tocRoot  = document.querySelector('.docs-toc');
+
+    /* ---------------- 移动端抽屉 ---------------- */
+    function setDrawer(open) {
+        if (!sidebar) return;
+        sidebar.classList.toggle('open', open);
+        overlay?.classList.toggle('show', open);
+        document.body.classList.toggle('toc-open', open);
+        toggle?.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    toggle?.addEventListener('click', () => setDrawer(!sidebar.classList.contains('open')));
+    overlay?.addEventListener('click', () => setDrawer(false));
+
+    /* ---------------- 目录项与标题 ---------------- */
+    const tocLinks = Array.from(document.querySelectorAll('.docs-toc a[href^="#"]'));
+    const headings = Array.from(document.querySelectorAll('.docs-article h1[id], .docs-article h2[id], .docs-article h3[id]'));
+
+    // 点击目录：移动端收起抽屉
+    tocLinks.forEach(a => a.addEventListener('click', () => {
+        if (window.innerWidth <= 960) setDrawer(false);
+    }));
+
+    /* ---------------- 锚点跳转：自己算落点 ---------------- */
+    /* 原来靠浏览器原生锚点，位置由 html 的 scroll-padding-top 和标题的
+       scroll-margin-top 叠加决定（58+18+82≈158px），标题会被推到视口下沿，
+       看着像「点完停在上一节」。这里统一接管，落点 = 顶栏高度 + 16。 */
+    const topbarEl = document.querySelector('.docs-topbar');
+    function topbarH() { return (topbarEl && topbarEl.offsetHeight) || 58; }
+
+    let lockId = '';
+    let lockUntil = 0;      // 没有 scrollend 的浏览器靠超时兜底
+
+    function revealLink(act) {
+        if (!act || !scrollBox) return;
+        const box = scrollBox.getBoundingClientRect();
+        const item = act.getBoundingClientRect();
+        if (item.top < box.top + 8) scrollBox.scrollTop += item.top - box.top - 24;
+        else if (item.bottom > box.bottom - 8) scrollBox.scrollTop += item.bottom - box.bottom + 24;
+    }
+
+    function setActive(id) {
+        if (!id) return;
+        currentId = id;
+        let act = null;
+        tocLinks.forEach(a => {
+            const on = a.getAttribute('href') === '#' + id;
+            a.classList.toggle('active', on);
+            if (on) act = a;
+        });
+        revealLink(act);
+    }
+
+    function jumpTo(id, smooth) {
+        const target = document.getElementById(id);
+        if (!target) return false;
+        const y = Math.max(0, target.getBoundingClientRect().top + window.scrollY - topbarH() - 16);
+        const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        window.scrollTo({ top: y, behavior: (smooth && !reduce) ? 'smooth' : 'instant' });
+        lockId = id;          // 平滑滚动途中别让高亮乱跳，落地后再交还给 scrollspy
+        lockUntil = Date.now() + 2600;
+        setActive(id);
+        return true;
+    }
+
+    document.addEventListener('click', function (ev) {
+        if (ev.defaultPrevented || ev.button !== 0) return;
+        if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+        const a = ev.target.closest ? ev.target.closest('a[href^="#"]') : null;
+        if (!a || a.target === '_blank') return;
+        const raw = a.getAttribute('href') || '';
+        if (raw.length < 2) return;
+        let id = raw.slice(1);
+        try { id = decodeURIComponent(id); } catch (e) { /* 保持原样 */ }
+        if (!document.getElementById(id)) return;
+        ev.preventDefault();
+        try { history.replaceState(null, '', '#' + raw.slice(1)); } catch (e) { /* file:// 下可能失败 */ }
+        jumpTo(id, true);
+        if (window.innerWidth <= 960) setDrawer(false);
+    });
+
+    // 平滑滚动结束后立刻交还控制权（Chrome 114+ 有 scrollend）
+    window.addEventListener('scrollend', () => { lockId = ''; });
+
+    /* ---------------- 阅读进度 ---------------- */
+    let ticking = false;
+    function onScroll() {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+            ticking = false;
+            const doc = document.documentElement;
+            const max = doc.scrollHeight - doc.clientHeight;
+            const pct = max > 8 ? Math.min(100, (window.scrollY / max) * 100) : 0;
+            if (progress) progress.style.width = pct.toFixed(2) + '%';
+            toTop?.classList.toggle('show', window.scrollY > 640);
+            updateActive();
+        });
+    }
+
+    /* ---------------- 当前章节高亮 ---------------- */
+    let currentId = '';
+    function updateActive() {
+        if (lockId) {
+            // 目标还在、且没超时：保持点击时的高亮（平滑滚动途中不抢）
+            if (document.getElementById(lockId) && Date.now() < lockUntil) {
+                setActive(lockId);
+                return;
+            }
+            lockId = '';
+        }
+        const line = window.scrollY + topbarH() + 24;
+        let activeId = headings.length ? headings[0].id : '';
+        for (const h of headings) {
+            // offsetTop 相对的是 offsetParent，遇到定位祖先会算错，用文档坐标兜底
+            const top = h.getBoundingClientRect().top + window.scrollY;
+            if (top <= line) activeId = h.id; else break;
+        }
+        // 到底了：高亮最后一项，避免最后一节永远点不亮
+        if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4 && headings.length) {
+            activeId = headings[headings.length - 1].id;
+        }
+        if (activeId === currentId) return;
+        currentId = activeId;
+
+        let activeLink = null;
+        tocLinks.forEach(a => {
+            const on = a.getAttribute('href') === '#' + activeId;
+            a.classList.toggle('active', on);
+            if (on) activeLink = a;
+        });
+
+        // 让高亮项始终留在可视区（目录很长时尤其明显）
+        revealLink(activeLink);
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    onScroll();
+
+    toTop?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+    /* ---------------- 目录搜索 ---------------- */
+    function normalize(s) { return String(s || '').replace(/\s+/g, '').toLowerCase(); }
+
+    function filterToc(raw) {
+        if (!tocRoot) return;
+        const kw = normalize(raw);
+        const items = Array.from(tocRoot.querySelectorAll('li')).filter(li => !li.classList.contains('toc-group'));
+        let shown = 0;
+
+        if (!kw) {
+            items.forEach(li => li.classList.remove('is-hidden'));
+            tocRoot.querySelectorAll('.toc-group').forEach(g => g.classList.remove('is-empty'));
+            if (countEl) countEl.textContent = '';
+            return;
+        }
+
+        // 先算二级（子项），再算一级 —— 子项命中时父项必须显示
+        items.forEach(li => {
+            if (li.parentElement?.closest('li')) li.dataset.hit = normalize(li.textContent).includes(kw) ? '1' : '0';
+        });
+        items.forEach(li => {
+            if (li.parentElement?.closest('li')) return;
+            const own = normalize(li.querySelector(':scope > a')?.textContent).includes(kw);
+            const childHit = Array.from(li.querySelectorAll('ul li')).some(c => c.dataset.hit === '1');
+            li.dataset.hit = (own || childHit) ? '1' : '0';
+            if (li.dataset.hit === '1') shown++;
+        });
+        items.forEach(li => li.classList.toggle('is-hidden', li.dataset.hit !== '1'));
+
+        // 分组标题：该组下面全被滤掉就一起隐藏
+        const groups = Array.from(tocRoot.querySelectorAll('.toc-group'));
+        groups.forEach((g, i) => {
+            let node = g.nextElementSibling;
+            let any = false;
+            while (node && !node.classList.contains('toc-group')) {
+                if (node.dataset.hit === '1') { any = true; break; }
+                node = node.nextElementSibling;
+            }
+            g.classList.toggle('is-empty', !any);
+        });
+
+        if (countEl) countEl.textContent = shown ? shown + ' 节' : '无';
+    }
+
+    let searchTimer = null;
+    searchEl?.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        const v = searchEl.value;
+        searchTimer = setTimeout(() => filterToc(v), 90);
+    });
+    searchEl?.addEventListener('keydown', e => {
+        if (e.key === 'Escape') { searchEl.value = ''; filterToc(''); searchEl.blur(); }
+    });
+
+    /* ---------------- 目录分组标题跟随界面语言 ---------------- */
+    const GROUP_EN = {
+        '上手指南': 'Getting started',
+        '角色与玩法': 'Characters & play',
+        '功能与插件': 'Features & plugins',
+        '扩展与社区': 'Extensions & community',
+        '帮助': 'Help'
+    };
+    const TITLE_EL = document.querySelector('.docs-sidebar-title');
+    function syncSidebarLang() {
+        let lang = 'zh';
+        try { lang = localStorage.getItem('siteLang') || 'zh'; } catch (e) { }
+        const en = lang === 'en';
+        document.querySelectorAll('.toc-group').forEach(group => {
+            if (!group.dataset.zh) group.dataset.zh = group.textContent.trim();
+            group.textContent = en ? (GROUP_EN[group.dataset.zh] || group.dataset.zh) : group.dataset.zh;
+        });
+        if (TITLE_EL) TITLE_EL.textContent = en ? 'CONTENTS' : '目录';
+        if (searchEl) searchEl.placeholder = en ? 'Search docs…' : '搜索文档…';
+    }
+    window.addEventListener('sitelangchange', syncSidebarLang);
+    syncSidebarLang();
+
+    /* ---------------- 功能速查表：按关键词过滤 ---------------- */
+    (function () {
+        const box = document.getElementById('where-search');
+        if (!box) return;
+        const groups = Array.from(document.querySelectorAll('.where-group'));
+        const rows = Array.from(document.querySelectorAll('.where-row'));
+        const count = document.getElementById('where-count');
+        const empty = document.getElementById('where-empty');
+        // 记一遍初始的展开状态，清空搜索时按它还原
+        const openState = new Map();
+        groups.forEach(g => {
+            openState.set(g, g.open);
+            g.addEventListener('toggle', () => {
+                if (!box.value.trim()) openState.set(g, g.open);
+            });
+        });
+
+        function apply() {
+            const q = box.value.trim().toLowerCase();
+            let hit = 0;
+            groups.forEach(g => {
+                let n = 0;
+                g.querySelectorAll('.where-row').forEach(r => {
+                    const ok = !q || r.textContent.toLowerCase().includes(q);
+                    r.hidden = !ok;
+                    if (ok) n++;
+                });
+                g.hidden = q ? n === 0 : false;
+                g.open = q ? n > 0 : openState.get(g);
+                g.querySelector('summary').setAttribute('data-count', String(n));
+                hit += n;
+            });
+            // 数字两边都看得懂，不用做双语
+            count.textContent = q ? hit + ' / ' + rows.length : '';
+            empty.hidden = !q || hit > 0;
+        }
+
+        // 输入框的 placeholder 不归 i18n 管，自己跟着语言走
+        function syncPlaceholder() {
+            const en = (document.documentElement.getAttribute('lang') || '').indexOf('en') === 0;
+            box.placeholder = en
+                ? 'Search a feature: theme / token / backup'
+                : '搜功能名，例如：主题 / Token / 备份';
+        }
+        syncPlaceholder();
+        // 首屏直接以英文打开时，i18n 只是把 <html lang> 改掉、不派发 sitelangchange，
+        // 所以这里再盯一眼 lang 属性
+        try {
+            new MutationObserver(syncPlaceholder).observe(document.documentElement, {
+                attributes: true, attributeFilter: ['lang']
+            });
+        } catch (e) { /* 老浏览器没有 MutationObserver，忽略 */ }
+
+        box.addEventListener('input', apply);
+        // 切换语言会整块替换名字与路径，过滤结果要按新文字重算
+        window.addEventListener('sitelangchange', () => {
+            syncPlaceholder();
+            setTimeout(apply, 0);
+        });
+    })();
+
+    /* ---------------- 没包滚动容器的宽表格 ---------------- */
+    /* 文档里还有几个裸 <table>，桌面端 540px 宽没问题，手机上会把整页
+       撑出横向滚动条（正文跟着一起横移）。窄屏时补一层现成的滚动容器。 */
+    if (window.matchMedia && window.matchMedia('(max-width: 900px)').matches) {
+        document.querySelectorAll('.docs-article table').forEach(t => {
+            const p = t.parentElement;
+            if (!p || p.classList.contains('docs-table-wrap')) return;
+            const w = document.createElement('div');
+            w.className = 'docs-table-wrap';
+            p.insertBefore(w, t);
+            w.appendChild(t);
+        });
+    }
+
+    /* ---------------- 代码块复制 ---------------- */
+    document.querySelectorAll('.docs-article pre').forEach(pre => {
+        if (pre.parentElement?.classList.contains('docs-article') === false) { /* 仍然处理，保持宽松 */ }
+        if (pre.querySelector('.code-copy')) return;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'code-copy';
+        btn.innerHTML = '<i class="ri-file-copy-line"></i>复制';
+        btn.setAttribute('aria-label', '复制代码');
+        btn.addEventListener('click', async () => {
+            const codeEl = pre.querySelector('code');
+            const text = (codeEl ? codeEl.textContent : pre.textContent) || '';
+            try {
+                await navigator.clipboard.writeText(text);
+                btn.classList.add('done');
+                btn.innerHTML = '<i class="ri-check-line"></i>已复制';
+            } catch (e) {
+                // 非安全上下文（http / 老浏览器）退化为选中
+                const range = document.createRange();
+                range.selectNodeContents(pre);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+                btn.innerHTML = '<i class="ri-error-warning-line"></i>请按 Ctrl+C';
+            }
+            setTimeout(() => {
+                btn.classList.remove('done');
+                btn.innerHTML = '<i class="ri-file-copy-line"></i>复制';
+            }, 1800);
+        });
+        pre.appendChild(btn);
+    });
+})();
+</script>
+</body>
+</html>
